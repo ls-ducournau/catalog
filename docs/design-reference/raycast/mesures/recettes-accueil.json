@@ -1,0 +1,72 @@
+{
+ "keycap": {
+  "bg": "rgba(0, 0, 0, 0)",
+  "img": "radial-gradient(75% 75% at 50% 91.9%, rgb(18, 18, 18) 0%, rgb(13, 13, 13) 100%)",
+  "shadow": "rgba(0, 0, 0, 0.4) 0px 1.5px 0.5px 2.5px, rgb(0, 0, 0) 0px 0px 0.5px 1px, rgba(0, 0, 0, 0.25) 0px 2px 1px 1px inset, rgba(255, 255, 255, 0.2) 0px 1px 1px 1px inset, rgba(0, 0, 0, 0) 0px 0px 0px 0px inset",
+  "border": "0px none rgb(255, 255, 255)",
+  "radius": "11px",
+  "backdrop": "none",
+  "h": 110,
+  "w": 167,
+  "font": "23.75px/27.3125px 500 normal",
+  "color": "rgb(255, 255, 255)",
+  "pad": "14.5px 15px",
+  "transition": "opacity 0.4s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.2s cubic-bezier(0.23, 1, 0.32, 1), transform 0.2s cubic-bezier(0.23, 1, 0.32, 1), color 0.2s cubic-bezier(0.23, 1, 0.32, 1), --key-bg-start-co"
+ },
+ "nav": {
+  "bg": "rgba(0, 0, 0, 0)",
+  "img": "linear-gradient(137deg, rgba(17, 18, 20, 0.75) 4.87%, rgba(12, 13, 15, 0.9) 75.88%)",
+  "shadow": "rgba(255, 255, 255, 0.15) 0px 1px 1px 0px inset",
+  "border": "1px solid rgba(255, 255, 255, 0.06)",
+  "radius": "16px",
+  "backdrop": "blur(5px)",
+  "h": 76,
+  "w": 1204,
+  "font": "16px/18.4px 400 normal",
+  "color": "rgb(255, 255, 255)",
+  "pad": "16px 32px",
+  "transition": "height 0.3s, transform 0.3s"
+ },
+ "download": {
+  "bg": "rgb(230, 230, 230)",
+  "img": "none",
+  "shadow": "rgba(0, 0, 0, 0.5) 0px 0px 0px 2px, rgba(255, 255, 255, 0.19) 0px 0px 14px 0px, rgba(0, 0, 0, 0.2) 0px -1px 0.4px 0px inset, rgb(255, 255, 255) 0px 1px 0.4px 0px inset",
+  "border": "0px none rgb(47, 48, 49)",
+  "radius": "8px",
+  "backdrop": "none",
+  "h": 36,
+  "w": 116.6875,
+  "font": "14px/16px 500 0.2px",
+  "color": "rgb(47, 48, 49)",
+  "pad": "8px 12px",
+  "transition": "background-image 0.2s, background-color 0.2s, box-shadow 0.2s ease-in-out, transform 0.1s ease-in-out"
+ },
+ "iconTile": {
+  "bg": "rgba(0, 0, 0, 0)",
+  "img": "none",
+  "shadow": "none",
+  "border": "0px none rgba(0, 0, 0, 0)",
+  "radius": "25%",
+  "backdrop": "none",
+  "h": 16,
+  "w": 16,
+  "font": "11.9px/11.9px 400 normal",
+  "color": "rgba(0, 0, 0, 0)",
+  "pad": "0px",
+  "transition": "all"
+ },
+ "navLink": {
+  "bg": "rgba(0, 0, 0, 0)",
+  "img": "none",
+  "shadow": "none",
+  "border": "0px none rgb(156, 156, 157)",
+  "radius": "6px",
+  "backdrop": "none",
+  "h": 41,
+  "w": 52.5,
+  "font": "14px/normal 500 0.2px",
+  "color": "rgb(156, 156, 157)",
+  "pad": "12px 8px",
+  "transition": "0.2s ease-in-out"
+ }
+}

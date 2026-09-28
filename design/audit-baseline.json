@@ -1,0 +1,18 @@
+{
+  "date": "2026-09-28",
+  "comptes": {
+    "tailles-arbitraires": 0,
+    "textes-sous-12px": 0,
+    "couleurs-en-dur": 0,
+    "durees-hors-jetons": 0,
+    "courbes-hors-jetons": 0,
+    "courbes-a-depassement": 0,
+    "boutons-hors-ui": 0,
+    "tweens-hors-preselections": 0,
+    "interlettrage-negatif": 0,
+    "corail-hors-marque": 0,
+    "teintes-hors-jetons": 0,
+    "tirets-cadratins": 0,
+    "animations-css": 12
+  }
+}
