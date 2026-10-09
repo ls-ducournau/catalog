@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
  * - `secondary` : le relief « touche de clavier ». Actions de second rang.
  * - `ghost` : texte Ash, blanc au survol. Actions discrètes, barres d'outils.
  * - `glass` : sur le contenu (revenir en haut, flèches de rangée). `overlay` : sur une affiche.
+ * - `rail` : le fond du rail d'onglets (flèches rondes du carrousel de l'accueil, taille `xl`).
  * - `danger` : même aspect que `primary` (aucun bouton de couleur) ; le libellé dit l'action.
  *
  * Rendu en lien quand `href` est donné (lien interne, ou externe avec `external`).
@@ -23,9 +24,10 @@ export const buttonVariants = cva("btn", {
       ghost: "btn-ghost",
       glass: "btn-glass",
       overlay: "btn-overlay",
+      rail: "btn-rail",
       danger: "btn-danger",
     },
-    size: { sm: "btn-sm", md: "", lg: "btn-lg" },
+    size: { sm: "btn-sm", md: "", lg: "btn-lg", xl: "btn-xl" },
     icon: { true: "btn-icon", false: "" },
   },
   defaultVariants: { variant: "secondary", size: "md", icon: false },

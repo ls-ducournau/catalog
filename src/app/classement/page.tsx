@@ -31,10 +31,15 @@ import {
   Eyebrow,
   MetaRow,
   Skeleton,
+  StarCount,
+  StarIcon,
+  StarRow,
   Tabs,
   Toast,
 } from "@/components/ui";
 import { DetailPanel } from "@/components/DetailPanel";
+import { ROLE_ICON, ROLE_ORDER, ROLE_PLURAL, RoleBadges } from "@/components/PersonRoles";
+import type { PersonRole } from "@/lib/personCredits";
 import { useMyServices } from "@/components/useMyServices";
 import type { Category, ItemPatch, LibraryItem } from "@/lib/libraryItem";
 import type { PersonView } from "@/lib/peopleService";
@@ -65,10 +70,6 @@ const CATEGORY_STORAGE_KEY = "watchlist:rankingCategory";
 const TIER_PREVIEW = 18;
 /** Grille d'affiches du Store : colonnes de 104 px au moins. */
 const POSTER_GRID = "grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-x-3 gap-y-6";
-
-function tierLabel(stars: number): string {
-  return stars === 0 ? "💩" : "★".repeat(stars);
-}
 
 /** Nom lu par un lecteur d'écran, à la place des symboles. */
 function tierName(stars: number): string {
@@ -241,7 +242,7 @@ function TitlesRanking({
                 className={buttonClass({ variant: "ghost", size: "sm", className: "tabular-nums" })}
               >
                 <span aria-hidden="true" className="text-foreground">
-                  {t.stars === 0 ? "💩" : `${t.stars} ★`}
+                  {t.stars === 0 ? "💩" : <StarCount value={t.stars} />}
                 </span>
                 <span className="sr-only">{tierName(t.stars)} :</span>
                 {t.items.length}
@@ -363,13 +364,13 @@ function TierSection({
   const headingId = `palier-${tier.stars}-titre`;
 
   return (
-    <section id={`palier-${tier.stars}`} aria-labelledby={headingId} className="scroll-mt-24">
+    <section id={`palier-${tier.stars}`} aria-labelledby={headingId} className="scroll-mt-24 lg:scroll-mt-28">
       <SectionHeading
         id={headingId}
         title={
           <>
-            <span aria-hidden="true" className="tracking-wider">
-              {tierLabel(tier.stars)}
+            <span aria-hidden="true" className="inline-flex align-[-2px]">
+              {tier.stars === 0 ? "💩" : <StarRow count={tier.stars} size={18} />}
             </span>
             <span className="sr-only">{tierName(tier.stars)}</span>
           </>
@@ -510,15 +511,12 @@ function RankedPoster({
 
 // ---------- Personnes (FR-6) ----------
 
-const ROLE_LABEL: Record<string, string> = {
-  cast: "Interprète",
-  director: "Réalisation",
-  producer: "Production",
-};
+type RoleFilter = "all" | PersonRole;
 
 function PeopleView({ slots }: { slots: ToolbarSlots }) {
   const [people, setPeople] = useState<PersonView[] | null>(null);
   const [side, setSide] = useState<"liked" | "disliked">("liked");
+  const [role, setRole] = useState<RoleFilter>("all");
   const [removed, setRemoved] = useState<PersonView | null>(null);
   const removeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // FR-12 : réinitialisation confirmée, puis « Annuler » pendant 10 s.
@@ -619,8 +617,10 @@ function PeopleView({ slots }: { slots: ToolbarSlots }) {
 
   const liked = (people ?? []).filter((p) => p.opinion === 1);
   const disliked = (people ?? []).filter((p) => p.opinion === -1);
+  const sidePeople = side === "liked" ? liked : disliked;
+  const roleCount = (r: PersonRole) => sidePeople.filter((p) => p.roles.includes(r)).length;
   // FR-13 : les mieux notées d'abord, puis le nombre de titres vus.
-  const shown = (side === "liked" ? liked : disliked).sort(
+  const shown = sidePeople.filter((p) => role === "all" || p.roles.includes(role)).sort(
     (a, b) => (b.rating ?? 0) - (a.rating ?? 0) || b.seen.length - a.seen.length || a.name.localeCompare(b.name, "fr")
   );
   const sideLabel = side === "liked" ? "« J'aime »" : "« Je n'aime pas »";
@@ -636,6 +636,16 @@ function PeopleView({ slots }: { slots: ToolbarSlots }) {
           ]}
           value={side}
           onChange={setSide}
+          subtle
+        />
+        <Tabs
+          label="Rôle"
+          options={[
+            { value: "all" as const, label: "Tous" },
+            ...ROLE_ORDER.map((r) => ({ value: r, label: `${ROLE_PLURAL[r]} · ${roleCount(r)}`, icon: ROLE_ICON[r] })),
+          ]}
+          value={role}
+          onChange={setRole}
           subtle
         />
       </Slot>
@@ -734,15 +744,14 @@ function PersonCard({
   onRemove: () => void;
 }) {
   const average = person.averageStars === null ? null : person.averageStars.toFixed(1).replace(".", ",");
-  const roles = person.roles.map((r) => ROLE_LABEL[r]).filter(Boolean).join(" · ");
 
   return (
     <Card as="article" className="flex h-full flex-col gap-3 p-4">
       <div className="flex items-center gap-3">
         <Avatar src={person.photoUrl} name={person.name} size={48} />
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-medium text-foreground">{person.name}</h3>
-          {roles && <p className="truncate text-xs text-muted">{roles}</p>}
+          <h3 className="truncate text-base text-foreground">{person.name}</h3>
+          <RoleBadges roles={person.roles} className="mt-1.5" />
         </div>
         <Button
           variant="ghost"
@@ -763,7 +772,11 @@ function PersonCard({
         <span className="text-foreground">
           {person.seen.length} titre{person.seen.length > 1 ? "s" : ""} vu{person.seen.length > 1 ? "s" : ""}
         </span>
-        {average && <span>moyenne {average} ★</span>}
+        {average && (
+          <span>
+            moyenne <StarCount value={average} size={12} />
+          </span>
+        )}
         {person.duelElo !== null && <span>Elo {Math.round(person.duelElo)}</span>}
       </MetaRow>
 
@@ -805,8 +818,8 @@ function PersonCard({
 }
 
 /**
- * Note d'une personne aimée (FR-13) : cinq étoiles blanches, recliquer sur la note choisie la
- * retire. Le survol prévisualise la note avant le clic. Cibles de 24 px (WCAG 2.5.8).
+ * Note d'une personne aimée (FR-13) : les cinq étoiles de Catalog (StarIcon), recliquer sur la
+ * note choisie la retire. Le survol prévisualise la note avant le clic. Cibles de 24 px (WCAG 2.5.8).
  */
 function PersonStars({
   name,
@@ -832,14 +845,15 @@ function PersonStars({
           onClick={() => onRate(rating === n ? null : n)}
           className="flex h-6 w-6 items-center justify-center rounded-md outline-none transition-transform active:scale-90 focus-visible:ring-2 focus-visible:ring-focus"
         >
-          <Star
-            size={16}
-            aria-hidden="true"
-            className={`transition-colors ${n <= shown ? "fill-current text-foreground" : "text-subtle"}`}
-          />
+          <StarIcon filled={n <= shown} size={16} />
         </button>
       ))}
       {rating === null && hover === null && <span className="ml-1 text-xs text-muted">Noter</span>}
+      {rating === 0 && hover === null && (
+        <span className="ml-1 text-xs text-muted" title="Noté 💩">
+          💩
+        </span>
+      )}
     </div>
   );
 }

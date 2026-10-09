@@ -6,8 +6,9 @@ import { centeredOpinions, opinionValue } from "./personPreference";
 
 export type OpinionRow = { personId: number; name: string; opinion: 1 | -1; rating: number | null; updatedAt: string };
 
+/** Note d'une personne aimée : 0 (💩, elle ne pèse plus) à 5 étoiles, comme les titres. */
 export function isRating(value: unknown): value is number {
-  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 5;
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 5;
 }
 
 /**

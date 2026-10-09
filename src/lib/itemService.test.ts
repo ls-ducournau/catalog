@@ -138,6 +138,17 @@ describe("listItems", () => {
     expect(result.items.map((i) => i.name)).toEqual(["Excellent"]);
   });
 
+  it("filtre par note exacte, 💩 compris (histogramme de l'accueil)", () => {
+    seedItem(db, { name: "Nul", rating: "💩" });
+    seedItem(db, { name: "Moyen", rating: "⭐️⭐️" });
+    seedItem(db, { name: "Moyen aussi", rating: "⭐️⭐️" });
+    seedItem(db, { name: "Excellent", rating: "⭐️⭐️⭐️⭐️⭐️" });
+
+    expect(listItems(db, { rating: 0 }).items.map((i) => i.name)).toEqual(["Nul"]);
+    expect(listItems(db, { rating: 2 }).items.map((i) => i.name)).toEqual(["Moyen", "Moyen aussi"]);
+    expect(listItems(db, { rating: 4 }).total).toBe(0);
+  });
+
   it("trie par Elo décroissant (les items sans duel restent en fin de liste)", () => {
     seedItem(db, { name: "Haut Elo", elo_score: 1400, duels_count: 5 });
     seedItem(db, { name: "Bas Elo", elo_score: 1100, duels_count: 5 });

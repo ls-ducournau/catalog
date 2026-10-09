@@ -3,8 +3,21 @@ import { RATING_RANK_SQL } from "./itemService";
 
 // Journal local des gestes — spec: specs/tri-rapide-v1.md (FR-1, FR-8)
 
-export type EventKind = "added" | "removed" | "rated" | "dismissed" | "undismissed" | "triage";
-export type SubjectType = "item" | "tmdb" | "person";
+export type EventKind =
+  | "added"
+  | "removed"
+  | "rated"
+  | "dismissed"
+  | "undismissed"
+  | "triage"
+  // playlists-v2 FR-12 : les gestes des playlists, pour mesurer le résultat visé.
+  | "playlist_created"
+  | "playlist_deleted"
+  | "playlist_item_added"
+  | "playlist_item_removed"
+  | "playlist_watched"
+  | "playlist_rated";
+export type SubjectType = "item" | "tmdb" | "person" | "playlist";
 
 /** D'où vient un ajout : seuls les ajouts issus d'une proposition comptent pour FR-8. */
 export type AddSource = "search" | "discover" | "suggestions" | "triage" | "tonight" | "calendar";

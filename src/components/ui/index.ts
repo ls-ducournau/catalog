@@ -7,5 +7,6 @@ export { ActionBar, ListRow, type Action } from "./command";
 export { Toast, Tooltip } from "./feedback";
 export { Chip, ChipLink, SearchField } from "./form";
 export { SegmentedControl as Tabs } from "@/components/SegmentedControl";
+export { StarCount, StarIcon, StarRating, StarRow, StarsReadOnly } from "@/components/StarRating";
 export { FilterSelect as Select } from "@/components/FilterSelect";
 export { ConfirmDialog } from "@/components/ConfirmDialog";

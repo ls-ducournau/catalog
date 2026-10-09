@@ -10,6 +10,7 @@ import { featuresToTitle, getCompatibility, loadModelTitles, rankTitles } from "
 import { isReleaseStale, type ReleaseInfo } from "./release";
 import type { Trailer, TrailerInfo } from "./trailer";
 import { discoverReleases, getRelease, posterUrl, type TmdbSearchResult } from "./tmdb";
+import { parseGenres } from "./genres";
 
 // Calendrier des sorties — spec: specs/sorties-v1.md (FR-3 à FR-6, NFR-1, NFR-2)
 
@@ -22,6 +23,8 @@ export type CalendarEntry = {
   tmdbId: number;
   mediaType: "Movie" | "TV Series";
   isDocumentary: boolean;
+  /** Genres TMDB, en anglais (affichés avec `genreLabel`). */
+  genres: string[];
   title: string;
   posterUrl: string | null;
   overview: string;
@@ -210,6 +213,7 @@ export async function getCalendar(
         tmdbId: row.tmdb_id!,
         mediaType: row.type,
         isDocumentary: isDocumentaryGenre(row.genre),
+        genres: parseGenres(row.genre),
         title: row.name,
         posterUrl: posterUrl(row.poster_path),
         overview: row.overview ?? "",
@@ -269,6 +273,7 @@ export async function getCalendar(
         tmdbId: r.tmdbId,
         mediaType: r.type,
         isDocumentary: r.isDocumentary,
+        genres: fetched.get(key)?.features.genres ?? [],
         title: r.title,
         posterUrl: posterUrl(r.posterPath),
         overview: r.overview,

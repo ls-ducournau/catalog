@@ -152,6 +152,31 @@ CREATE TABLE IF NOT EXISTS settings (
   value TEXT NOT NULL
 );
 
+-- Playlists faites à la main (spec playlists-v1) : locales, rien vers Notion (NFR-1).
+CREATE TABLE IF NOT EXISTS playlists (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS playlist_items (
+  playlist_id INTEGER NOT NULL REFERENCES playlists(id),
+  item_id INTEGER NOT NULL REFERENCES items(id),
+  position INTEGER NOT NULL,
+  added_at TEXT NOT NULL,
+  PRIMARY KEY (playlist_id, item_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_playlist_items_item ON playlist_items(item_id);
+
+-- « Pas celui-là » dans les suggestions d'une playlist (spec playlists-v2 FR-5).
+CREATE TABLE IF NOT EXISTS playlist_suggestion_dismissals (
+  playlist_id INTEGER NOT NULL REFERENCES playlists(id),
+  item_id INTEGER NOT NULL REFERENCES items(id),
+  PRIMARY KEY (playlist_id, item_id)
+);
 CREATE INDEX IF NOT EXISTS idx_items_watch_status ON items(watch_status);
 CREATE INDEX IF NOT EXISTS idx_duels_pair ON duels(item_a_id, item_b_id);
 `;

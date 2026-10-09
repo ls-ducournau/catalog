@@ -6,9 +6,10 @@ import { Badge, Button, Card, Keycap, Skeleton, type Action } from "@/components
 import { CommandWindow, EmptyState } from "@/components/sections";
 import { cn } from "@/lib/utils";
 import type { Band, TierItem, TierStep } from "@/lib/tierDuelService";
+import { genreLine } from "@/lib/genres";
 
 // Départage d'un palier — spec: specs/classement-v1.md (FR-1, FR-7 à FR-11)
-// Présentation : fenêtre de commande (design-system-v2 § 7, CommandLayout), touches affichées.
+// Présentation : fenêtre de commande (design-system-v2 § 7, HeroLayout en scène), touches affichées.
 
 type StepResponse = TierStep;
 type PlayableStep = Extract<TierStep, { step: "band" } | { step: "quad" }>;
@@ -209,6 +210,13 @@ export function TierFlow({
     );
   }, [step, bestId, stars, submitting, send]);
 
+  /** Duel du départage : « Passer » tire une autre paire, sans rien enregistrer. */
+  const skipPair = useCallback(() => {
+    if (!step || !("step" in step) || step.step !== "quad" || bestId !== null || submitting) return;
+    press("Espace");
+    void loadNext();
+  }, [step, bestId, submitting, press, loadNext]);
+
   /** FR-1 : défait le dernier tour (répartition ou quatuor) et remet son écran. */
   const undoLast = useCallback(async () => {
     if (bestId !== null) {
@@ -270,6 +278,9 @@ export function TierFlow({
         } else if (e.key === " " && bestId !== null) {
           e.preventDefault();
           passRest();
+        } else if (e.key === " " && step.items.length === 2) {
+          e.preventDefault();
+          skipPair();
         } else if (e.key === "Escape") {
           setBestId(null);
         }
@@ -277,7 +288,7 @@ export function TierFlow({
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [step, pause, bestId, placeBand, pickInQuad, passRest, undoLast]);
+  }, [step, pause, bestId, placeBand, pickInQuad, passRest, skipPair, undoLast]);
 
   const last = history[history.length - 1] ?? null;
 
@@ -303,6 +314,9 @@ export function TierFlow({
     primary = { label: pause.next, keys: ["↵"], onClick: () => setPause(null) };
   } else if (step && "step" in step && step.step === "quad" && bestId !== null) {
     primary = { label: "Passer le reste", keys: ["Espace"], onClick: passRest, disabled: submitting };
+    secondary = [undo];
+  } else if (step && "step" in step && step.step === "quad" && step.items.length === 2) {
+    primary = { label: "Passer", keys: ["Espace"], onClick: skipPair, disabled: submitting };
     secondary = [undo];
   } else {
     primary = undo;
@@ -498,8 +512,10 @@ function BandCard({
 
         <div className="flex min-w-0 flex-1 flex-col gap-4 sm:justify-center">
           <div>
-            <h2 className="text-lg font-medium text-foreground">{item.name}</h2>
-            {item.year && <p className="text-sm text-muted">{item.year}</p>}
+            <h2 className="text-lg text-foreground">{item.name}</h2>
+            {(item.year || item.genres.length > 0) && (
+              <p className="text-sm text-muted">{[item.year, genreLine(item.genres)].filter(Boolean).join(" · ")}</p>
+            )}
             <p className="mt-2 text-sm text-muted">Où le places-tu parmi tes {starsLabel} ?</p>
           </div>
 
@@ -584,7 +600,7 @@ function QuadBoard({
   const choosingWorst = bestId !== null;
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      <h2 className="text-base font-medium text-foreground" aria-live="polite">
+      <h2 className="text-base text-foreground" aria-live="polite">
         {choosingWorst ? "Et le moins bon ?" : items.length === 2 ? "Lequel est au-dessus ?" : "Le meilleur des " + items.length + " ?"}
       </h2>
       {/* Mobile : cases compactes (petite affiche, titre à côté) pour voir les quatre d'un coup.
@@ -592,7 +608,11 @@ function QuadBoard({
       <div
         className={cn(
           "grid w-full grid-cols-2 gap-2 sm:gap-3",
-          items.length >= 4 ? "sm:grid-cols-4" : items.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"
+          items.length >= 4
+            ? "sm:grid-cols-4"
+            : items.length === 3
+              ? "sm:grid-cols-3"
+              : "sm:w-auto sm:grid-cols-[repeat(2,minmax(0,12rem))] sm:gap-6"
         )}
       >
         {items.map((item, index) => {
@@ -618,7 +638,7 @@ function QuadBoard({
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="line-clamp-2 text-sm font-medium text-foreground sm:line-clamp-1">{item.name}</span>
                   <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
-                    {item.year}
+                    {[item.year, genreLine(item.genres, 1)].filter(Boolean).join(" · ")}
                     {isBest && <Badge>Meilleur</Badge>}
                   </span>
                 </span>

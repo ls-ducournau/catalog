@@ -369,11 +369,29 @@ describe("Choix des quatuors (FR-5, AC-7)", () => {
     const far = [5, 6, 7].map((id) => ({ id, comparisons: TIER_SETTLED_DUELS, score: 1600 + id }));
     let nearCount = 0;
     for (let i = 0; i < 200; i++) {
-      const quad = pickQuad([anchor, ...near, ...far], rng);
+      const quad = pickQuad([anchor, ...near, ...far], rng, { size: 4 });
       nearCount += quad.filter((m) => near.includes(m)).length;
     }
     // Sur 200 quatuors, les voisins proches dominent largement.
     expect(nearCount / 200).toBeGreaterThan(2.2);
+  });
+
+  it("en duel (taille par défaut), oppose l'ancre à un voisin proche", () => {
+    let seedValue = 11;
+    const rng = () => {
+      seedValue = (seedValue * 16807) % 2147483647;
+      return seedValue / 2147483647;
+    };
+    const anchor = { id: 1, comparisons: 0, score: 1200 };
+    const near = { id: 2, comparisons: 0, score: 1210 };
+    const far = [5, 6, 7].map((id) => ({ id, comparisons: TIER_SETTLED_DUELS, score: 1600 + id }));
+    let bothNear = 0;
+    for (let i = 0; i < 200; i++) {
+      const pair = pickQuad([anchor, near, ...far], rng);
+      expect(pair).toHaveLength(QUAD_SIZE);
+      if (pair.includes(anchor) && pair.includes(near)) bothNear += 1;
+    }
+    expect(bothNear / 200).toBeGreaterThan(0.8);
   });
 });
 

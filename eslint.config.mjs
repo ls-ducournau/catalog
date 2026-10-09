@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     // Graphiques Bklit : code du registre shadcn, copié tel quel pour rester à jour avec
     // `npx shadcn add @bklit/...` ; on ne le réécrit pas pour nos règles.
     "src/components/charts/**",
+    // Skills et documentation des agents : du code d'exemple tiers, pas celui de Catalog.
+    ".claude/**",
   ]),
   // Mouvement (spec design-system-v2 § 4.3) : hors de src/lib/motion.ts et de components/motion/,
   // on n'écrit pas de tween, on appelle un préréglage.

@@ -83,8 +83,10 @@ publie les données), et présenter « À découvrir » en rangées comme « Ma 
 
 ## 6. Précisions de mise en œuvre
 
-- La frise s'ouvre sur la semaine en cours ; les semaines passées restent au-dessus, les jours
-  passés estompés ; en-têtes de semaine collants.
+- La frise s'ouvre sur la semaine en cours, juste sous les filtres ; les semaines passées sont
+  repliées derrière un bouton (« Voir les N sorties des semaines passées »), sans défilement
+  automatique qui masquerait les filtres (2026-09-28) ; les jours passés estompés ; en-têtes de
+  semaine collants.
 - « Pour toi » : titres de la bibliothèque, et titres dont la compatibilité dépasse le taux de
   base. Les titres écartés (« Ne plus me proposer ») n'y figurent pas.
 - En révélant des séries confidentielles à 85 %, le calendrier a mené à la moyenne bayésienne de

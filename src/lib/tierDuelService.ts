@@ -1,4 +1,5 @@
 import type Database from "better-sqlite3";
+import { parseGenres } from "./genres";
 import { DEFAULT_ELO, K_FACTOR } from "./elo";
 import { categoryFilter, RATING_SCALE } from "./itemService";
 import type { Category } from "./libraryItem";
@@ -29,8 +30,11 @@ export function parseBand(value: unknown): Band | null {
 export const TIER_SETTLED_DUELS = 5;
 /** FR-8 : à partir de cette taille (dans la catégorie choisie), on répartit avant d'affiner. */
 export const BAND_MIN_TITLES = 60;
-/** FR-10 : titres montrés à la fois. */
-export const QUAD_SIZE = 4;
+/**
+ * FR-10 : titres montrés à la fois. Deux (un duel) depuis le 2026-09-28 : quatre titres à
+ * classer d'un coup demandaient trop d'effort (décision de l'utilisateur).
+ */
+export const QUAD_SIZE = 2;
 
 /**
  * FR-4 : les données de départage (score, comparaisons, groupe) ne valent que pour la note à
@@ -57,6 +61,8 @@ export type TierItem = {
   id: number;
   name: string;
   year: string | null;
+  /** Genres TMDB, en anglais (affichés avec `genreLabel`). */
+  genres: string[];
   posterUrl: string | null;
   /** Score de palier ; null tant que le titre n'a pas été comparé dans ce palier. */
   tierScore: number | null;
@@ -117,13 +123,14 @@ function nextUnsettledTier(db: Database.Database, stars: Stars, category?: Categ
 }
 
 function toItems(db: Database.Database, members: Member[]): TierItem[] {
-  const get = db.prepare(`SELECT name, year, poster_path FROM items WHERE id = ?`);
+  const get = db.prepare(`SELECT name, year, genre, poster_path FROM items WHERE id = ?`);
   return members.map((m) => {
-    const row = get.get(m.id) as { name: string; year: string | null; poster_path: string | null };
+    const row = get.get(m.id) as { name: string; year: string | null; genre: string | null; poster_path: string | null };
     return {
       id: m.id,
       name: row.name,
       year: row.year,
+      genres: parseGenres(row.genre),
       posterUrl: posterUrl(row.poster_path),
       tierScore: m.comparisons > 0 ? m.score : null,
       comparisons: m.comparisons,
@@ -140,9 +147,9 @@ function toItems(db: Database.Database, members: Member[]): TierItem[] {
 export function pickQuad<T extends { comparisons: number; score: number }>(
   group: T[],
   rng: () => number = Math.random,
-  { onlyUnsettled = true }: { onlyUnsettled?: boolean } = {}
+  { onlyUnsettled = true, size = QUAD_SIZE }: { onlyUnsettled?: boolean; size?: number } = {}
 ): T[] {
-  if (group.length <= QUAD_SIZE) return [...group].sort(() => rng() - 0.5);
+  if (group.length <= size) return [...group].sort(() => rng() - 0.5);
 
   const unsettled = group.filter((m) => m.comparisons < TIER_SETTLED_DUELS);
   const anchorPool = onlyUnsettled && unsettled.length > 0 ? unsettled : group;
@@ -167,7 +174,7 @@ export function pickQuad<T extends { comparisons: number; score: number }>(
         rng() * 0.8,
     }))
     .sort((a, b) => a.key - b.key)
-    .slice(0, QUAD_SIZE - 1)
+    .slice(0, size - 1)
     .map((p) => p.m);
 
   return [anchor, ...partners].sort(() => rng() - 0.5);

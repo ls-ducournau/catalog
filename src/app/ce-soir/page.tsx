@@ -30,11 +30,14 @@ import {
   X,
   Zap,
   type LucideIcon,
+  ListPlus,
+  ListVideo,
 } from "lucide-react";
 import { CompatibilityChip } from "@/components/CompatibilityChip";
 import { ProviderLogo } from "@/components/ProviderLogo";
 import { ReleaseBadge } from "@/components/ReleaseBadge";
 import { TrailerButton } from "@/components/TrailerButton";
+import { openPlaylistDialog } from "@/components/playlists/PlaylistDialog";
 import { useMyServices } from "@/components/useMyServices";
 import { includedIn } from "@/lib/availability";
 import {
@@ -47,10 +50,12 @@ import {
   type TonightContext,
   type Where,
 } from "@/lib/tonight";
+import type { PlaylistSummary } from "@/lib/playlistService";
 import type { TonightPick, TonightResult } from "@/lib/tonightService";
+import { genreLabel } from "@/lib/genres";
 import { HeroLayout } from "@/components/layouts";
 import { EmptyState as EmptyBlock } from "@/components/sections";
-import { Button, Eyebrow, IconCircle, Skeleton } from "@/components/ui";
+import { Button, Eyebrow, IconCircle, Select, Skeleton, Toast } from "@/components/ui";
 
 // Ce soir v2 — spec: specs/ce-soir-v2.md
 
@@ -86,11 +91,13 @@ const WHERES: Option<Where>[] = [
 ];
 const SOURCES: Option<Source>[] = [
   { value: "pile", label: "Ma pile", icon: Library },
+  { value: "playlist", label: "Une playlist", icon: ListVideo },
   { value: "catalog", label: "Tout le catalogue", icon: Globe },
 ];
 
 const RELAX_LABEL: Record<NonNullable<TonightResult["relax"]>, string> = {
   mood: "Changer d'envie",
+  genre: "Tous les genres",
   format: "Accepter tous les formats",
   maxMinutes: "Retirer la limite de durée",
   company: "Regarder seul",
@@ -98,6 +105,14 @@ const RELAX_LABEL: Record<NonNullable<TonightResult["relax"]>, string> = {
 
 const CONTEXT_STORAGE_KEY = "watchlist:tonightContext";
 const TRIO = 3;
+/** Durée du bandeau « Annuler » : le temps de se raviser. */
+const UNDO_MS = 6000;
+
+/** Le dernier geste réversible (hors « Je regarde ça », qui a son propre écran d'annulation). */
+type UndoAction =
+  | { kind: "skip"; pick: TonightPick; wasHero: boolean }
+  | { kind: "later"; pick: TonightPick; id: number; added: boolean }
+  | { kind: "ideas"; start: number; heroKey: string | null };
 
 function formatRuntime(minutes: number | null, type: "Movie" | "TV Series"): string | null {
   if (!minutes) return null;
@@ -132,6 +147,25 @@ export default function CeSoirPage() {
   const requestSeq = useRef(0);
   /** Mobile : réglages repliés en une ligne de résumé, pour voir les propositions d'emblée. */
   const [panelOpen, setPanelOpen] = useState(false);
+  const [undo, setUndo] = useState<UndoAction | null>(null);
+  /** Genres de ta bibliothèque, pour le choix du genre. */
+  const [genres, setGenres] = useState<string[]>([]);
+  /** Tes playlists, pour la source « Une playlist » (playlists-v2 FR-8). */
+  const [playlists, setPlaylists] = useState<PlaylistSummary[]>([]);
+
+  useEffect(() => {
+    fetch("/api/playlists")
+      .then((res) => (res.ok ? (res.json() as Promise<{ playlists: PlaylistSummary[] }>) : { playlists: [] }))
+      .then((body) => setPlaylists(body.playlists))
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/genres")
+      .then((res) => (res.ok ? (res.json() as Promise<{ genres: string[] }>) : { genres: [] }))
+      .then((body) => setGenres(body.genres))
+      .catch(() => undefined);
+  }, []);
 
   // FR-1 : le contexte est mémorisé d'une soirée à l'autre.
   useEffect(() => {
@@ -169,7 +203,9 @@ export default function CeSoirPage() {
       where: ctx.where,
       source: ctx.source,
     });
+    if (ctx.playlistId !== null) params.set("playlistId", String(ctx.playlistId));
     if (ctx.maxMinutes !== null) params.set("maxMinutes", String(ctx.maxMinutes));
+    if (ctx.genre !== null) params.set("genre", ctx.genre);
     try {
       const res = await fetch(`/api/tonight?${params}`);
       const body: TonightResult = await res.json();
@@ -177,6 +213,8 @@ export default function CeSoirPage() {
       setResult(body);
       setStart(0);
       setHeroKey(null);
+      // D'autres propositions : le dernier geste ne s'annule plus.
+      setUndo(null);
     } catch {
       if (seq === requestSeq.current) setFailed(true);
     } finally {
@@ -201,11 +239,13 @@ export default function CeSoirPage() {
 
   /** FR-6 : trois nouvelles idées ; au bout de la liste, on repart du début. */
   function nextIdeas() {
+    setUndo({ kind: "ideas", start, heroKey });
     setHeroKey(null);
     setStart((s) => (s + TRIO < queue.length ? s + TRIO : 0));
   }
 
   function skip(pick: TonightPick) {
+    setUndo({ kind: "skip", pick, wasHero: pick === hero });
     setSkipped((prev) => new Set(prev).add(pick.key));
     if (heroKey === pick.key) setHeroKey(null);
   }
@@ -244,7 +284,10 @@ export default function CeSoirPage() {
     setMessage(null);
     try {
       const added = await addToLibrary(pick);
-      if (added) markInLibrary(pick, added.id, "Unwatched");
+      if (added) {
+        markInLibrary(pick, added.id, "Unwatched");
+        setUndo({ kind: "later", pick, id: added.id, added: !added.alreadyExists });
+      }
     } finally {
       setPending(null);
     }
@@ -307,16 +350,91 @@ export default function CeSoirPage() {
     }
   }
 
+  /** Défait le dernier geste : le titre écarté revient, l'ajout est retiré, les idées d'avant reviennent. */
+  const undoLast = useCallback(async () => {
+    const action = undo;
+    if (!action) return;
+    setUndo(null);
+    if (action.kind === "skip") {
+      setSkipped((prev) => {
+        const next = new Set(prev);
+        next.delete(action.pick.key);
+        return next;
+      });
+      if (action.wasHero) setHeroKey(action.pick.key);
+    } else if (action.kind === "ideas") {
+      setStart(action.start);
+      setHeroKey(action.heroKey);
+    } else if (action.added) {
+      setPending(action.pick.key);
+      try {
+        const res = await fetch(`/api/items/${action.id}`, { method: "DELETE" });
+        if (!res.ok) {
+          setMessage("L'annulation n'a pas pu être appliquée.");
+          return;
+        }
+        setResult((prev) =>
+          prev
+            ? {
+                ...prev,
+                picks: prev.picks.map((p) => (p.key === action.pick.key ? { ...p, libraryId: null, libraryStatus: null } : p)),
+              }
+            : prev
+        );
+      } finally {
+        setPending(null);
+      }
+    }
+  }, [undo]);
+
+  // Le bandeau s'efface de lui-même ; Ctrl+Z (⌘Z) annule, comme dans le Tri rapide.
+  useEffect(() => {
+    if (!undo) return;
+    const timer = setTimeout(() => setUndo(null), UNDO_MS);
+    return () => clearTimeout(timer);
+  }, [undo]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "z" || e.shiftKey) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("input, textarea, [contenteditable='true']")) return;
+      if (undo) {
+        e.preventDefault();
+        void undoLast();
+      } else if (watching) {
+        e.preventDefault();
+        void undoWatch();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  const undoLabel =
+    undo?.kind === "skip"
+      ? `« ${undo.pick.title} » écarté pour ce soir`
+      : undo?.kind === "later"
+        ? undo.added
+          ? `« ${undo.pick.title} » ajouté à ta pile`
+          : `« ${undo.pick.title} » est déjà dans ta pile`
+        : undo?.kind === "ideas"
+          ? "Trois nouvelles idées"
+          : null;
+
   const noServices = services.loaded && services.subscriptionIds.length === 0;
   const summary = [
     MOODS.find((o) => o.value === context.mood)?.label,
+    context.genre !== null ? genreLabel(context.genre) : null,
     FORMATS.find((o) => o.value === context.format)?.label,
     context.format !== "TV Series" && context.maxMinutes !== null
       ? DURATIONS.find((o) => o.value === String(context.maxMinutes))?.label
       : null,
     COMPANIES.find((o) => o.value === context.company)?.label,
     WHERES.find((o) => o.value === context.where)?.label,
-    SOURCES.find((o) => o.value === context.source)?.label,
+    context.source === "playlist"
+      ? `« ${playlists.find((p) => p.id === context.playlistId)?.name ?? "Une playlist"} »`
+      : SOURCES.find((o) => o.value === context.source)?.label,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -326,7 +444,7 @@ export default function CeSoirPage() {
       compact
       hero={
         <div className="flex max-w-2xl flex-col items-center gap-3">
-          <h1 className="text-balance text-heading font-normal text-foreground sm:text-heading-lg">
+          <h1 className="text-balance text-heading text-foreground sm:text-heading-lg">
             Ce soir.<span className="text-muted"> Qu&apos;est-ce qui te ferait envie ?</span>
           </h1>
           <p className="max-w-md text-base text-muted">
@@ -339,7 +457,7 @@ export default function CeSoirPage() {
       {/* minmax(0, 1fr) : une ligne longue (le résumé) ne doit jamais élargir la colonne. */}
       <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-8">
         {/* FR-1 : tout le contexte, sur un écran, modifiable à tout moment. */}
-        <aside aria-label="Ta soirée" className="lg:sticky lg:top-20 lg:self-start">
+        <aside aria-label="Ta soirée" className="lg:sticky lg:top-28 lg:self-start">
           <button
             onClick={() => setPanelOpen((v) => !v)}
             aria-expanded={panelOpen}
@@ -357,6 +475,18 @@ export default function CeSoirPage() {
             className={`${panelOpen ? "mt-4 flex" : "hidden"} flex-col gap-5 lg:mt-0 lg:flex`}
           >
           <ChipGroup label="Envie" options={MOODS} value={context.mood} onChange={(mood) => update({ mood })} />
+          <div>
+            <p className="eyebrow">Genre</p>
+            <div className="mt-2">
+              <Select
+                placeholder="Tous les genres"
+                value={context.genre ?? ""}
+                onChange={(genre) => update({ genre: genre || null })}
+                options={genres.map((g) => ({ value: g, label: genreLabel(g) }))}
+                searchable
+              />
+            </div>
+          </div>
           <ChipGroup label="Format" options={FORMATS} value={context.format} onChange={(format) => update({ format })} />
           {context.format !== "TV Series" && (
             <ChipGroup
@@ -380,7 +510,37 @@ export default function CeSoirPage() {
               </p>
             )}
           </div>
-          <ChipGroup label="Parmi" options={SOURCES} value={context.source} onChange={(source) => update({ source })} />
+          <ChipGroup
+            label="Parmi"
+            options={SOURCES}
+            value={context.source}
+            onChange={(source) =>
+              // « Une playlist » : la dernière choisie, sinon la première qui a un titre à voir.
+              update(
+                source === "playlist"
+                  ? { source, playlistId: context.playlistId ?? (playlists.find((p) => p.next !== null) ?? playlists[0])?.id ?? null }
+                  : { source, playlistId: null }
+              )
+            }
+          />
+          {context.source === "playlist" &&
+            (playlists.length > 0 ? (
+              <Select
+                placeholder="Choisis une playlist"
+                value={context.playlistId !== null ? String(context.playlistId) : ""}
+                onChange={(value) => update({ playlistId: value ? Number(value) : null })}
+                options={playlists.map((p) => ({ value: String(p.id), label: p.name }))}
+                clearable={false}
+              />
+            ) : (
+              <p className="text-sm text-muted">
+                Aucune playlist pour l&apos;instant :{" "}
+                <Link href="/playlists?nouvelle=1" className="link">
+                  crée-en une
+                </Link>
+                .
+              </p>
+            ))}
           </div>
         </aside>
 
@@ -389,7 +549,7 @@ export default function CeSoirPage() {
             <WatchingCard watching={watching} pending={pending === watching.pick.key} onUndo={undoWatch} onClose={() => setWatching(null)} />
           ) : (
             <>
-              <div className="flex min-h-9 flex-wrap items-center gap-3 text-sm text-muted">
+              <div className="mb-4 flex min-h-9 flex-wrap items-center gap-3 text-sm text-muted">
                 {result && !loading && queue.length > 0 && (
                   <span>
                     {result.matched} titre{result.matched > 1 ? "s" : ""} pour ta soirée · les plus compatibles d&apos;abord
@@ -454,6 +614,12 @@ export default function CeSoirPage() {
           )}
         </section>
       </div>
+
+      {undo && undoLabel && !watching && (
+        <Toast action="Annuler" onAction={() => void undoLast()}>
+          {undoLabel}
+        </Toast>
+      )}
     </HeroLayout>
   );
 }
@@ -542,7 +708,7 @@ function HeroCard({
             <Poster pick={pick} />
           </div>
           <div className="flex min-w-0 flex-col gap-2">
-            <h2 className="text-balance text-xl font-semibold leading-tight text-foreground sm:text-2xl">{pick.title}</h2>
+            <h2 className="text-balance text-xl leading-tight text-foreground sm:text-2xl">{pick.title}</h2>
             <p className="text-sm text-muted">{[pick.year, kindOf(pick), runtime].filter(Boolean).join(" · ")}</p>
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <CompatibilityChip value={pick.compatibility} size="md" countUp />
@@ -592,6 +758,23 @@ function HeroCard({
               Ajouter à ma pile
             </button>
           )}
+          {/* playlists-v2 FR-2 : garder l'idée pour plus tard, dans une playlist. */}
+          <button
+            onClick={() =>
+              openPlaylistDialog(
+                pick.libraryId !== null
+                  ? { kind: "item", itemId: pick.libraryId, name: pick.title }
+                  : { kind: "tmdb", tmdbId: pick.tmdbId!, mediaType: pick.type, name: pick.title },
+                "ce-soir"
+              )
+            }
+            disabled={pending || (pick.libraryId === null && pick.tmdbId === null)}
+            aria-label={`Ajouter « ${pick.title} » à une playlist`}
+            title="Ajouter à une playlist"
+            className={buttonClass({ variant: "ghost", size: "lg", icon: true })}
+          >
+            <ListPlus size={16} aria-hidden="true" />
+          </button>
           <button
             onClick={onSkip}
             disabled={pending}
@@ -713,6 +896,7 @@ function EmptyState({
   // EC-1 : dire quel réglage relâcher, et le faire d'un clic.
   const relaxPatch: Record<NonNullable<TonightResult["relax"]>, Partial<TonightContext>> = {
     mood: { mood: "any" },
+    genre: { genre: null },
     format: { format: "any" },
     maxMinutes: { maxMinutes: null },
     company: { company: "alone" },
@@ -721,7 +905,13 @@ function EmptyState({
     <div className="card mt-4">
       <EmptyBlock
         icon={<Popcorn size={20} aria-hidden="true" />}
-        title={result.catalogUnavailable ? "TMDB ne répond pas pour le moment" : "Rien ne correspond à toute ta soirée"}
+        title={
+          result.catalogUnavailable
+            ? "TMDB ne répond pas pour le moment"
+            : context.source === "playlist"
+              ? "Rien à voir dans cette playlist pour ta soirée"
+              : "Rien ne correspond à toute ta soirée"
+        }
         action={
           <div className="flex flex-wrap justify-center gap-2">
             {result.relax && (
@@ -733,7 +923,7 @@ function EmptyState({
             {context.source === "pile" ? (
               <Button onClick={() => onRelax({ source: "catalog" })}>Chercher dans tout le catalogue</Button>
             ) : (
-              <Button onClick={() => onRelax({ source: "pile" })}>Revenir à ma pile</Button>
+              <Button onClick={() => onRelax({ source: "pile", playlistId: null })}>Revenir à ma pile</Button>
             )}
           </div>
         }

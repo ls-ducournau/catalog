@@ -1,8 +1,9 @@
 "use client";
 
 import { buttonClass } from "@/components/ui/Button";
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { EyeOff, Info } from "lucide-react";
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { EyeOff, Info, ListPlus } from "lucide-react";
+import { openPlaylistDialog } from "@/components/playlists/PlaylistDialog";
 import { StarRating, StarsReadOnly } from "@/components/StarRating";
 import {
   SynopsisTooltip,
@@ -37,10 +38,10 @@ export function ItemCard({
   showTrailer = false,
 }: {
   item: LibraryItem;
-  /** Sélection par lot — bibliothèque uniquement. */
+  /** Sélection par lot — bibliothèque uniquement. `range` : Maj+clic, toute la plage depuis le dernier clic. */
   selectionMode?: boolean;
   selected?: boolean;
-  onToggleSelect?: () => void;
+  onToggleSelect?: (range: boolean) => void;
   onOpen: () => void;
   onQuickChange: (id: number, patch: ItemPatch) => void;
   /** Absent = pas de bouton de suppression sur la carte. */
@@ -82,7 +83,7 @@ export function ItemCard({
     };
   }, []);
 
-  const open = () => (selectionMode ? onToggleSelect?.() : onOpen());
+  const open = (e: MouseEvent<HTMLButtonElement>) => (selectionMode ? onToggleSelect?.(e.shiftKey) : onOpen());
 
   // Motif du « lien étiré » : le titre est le seul bouton qui ouvre la fiche, et son ::after couvre
   // toute la carte (affiche comprise). Les autres contrôles (statut, synopsis, étoiles,
@@ -172,6 +173,27 @@ export function ItemCard({
       {showTrailer && !selectionMode && item.trailer && (
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex aspect-[2/3] items-center justify-center">
           <TrailerButton trailer={item.trailer} title={item.name} variant="icon" className="pointer-events-auto" />
+        </div>
+      )}
+
+      {/* playlists-v2 FR-1 : « Ajouter à une playlist », en bas à droite de l'affiche. Révélé au
+          survol sur ordinateur, toujours visible au doigt, comme les autres gestes de la carte. */}
+      {!selectionMode && (
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex aspect-[2/3] items-end justify-end p-2">
+          <button
+            type="button"
+            onClick={() => openPlaylistDialog({ kind: "item", itemId: item.id, name: item.name }, "carte")}
+            title="Ajouter à une playlist"
+            aria-label={`Ajouter « ${item.name} » à une playlist`}
+            className={buttonClass({
+              variant: "overlay",
+              size: "sm",
+              icon: true,
+              className: "pointer-events-auto focus-visible:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100",
+            })}
+          >
+            <ListPlus size={14} aria-hidden="true" />
+          </button>
         </div>
       )}
 

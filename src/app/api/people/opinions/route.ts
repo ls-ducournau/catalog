@@ -14,7 +14,7 @@ export async function PUT(request: Request) {
     typeof body?.id !== "number" ||
     typeof body?.name !== "string" ||
     (body?.opinion !== 1 && body?.opinion !== -1) ||
-    // classement-v1 FR-13 : note de 1 à 5, ou null pour la retirer ; absente, inchangée.
+    // classement-v1 FR-13 : note de 0 (💩) à 5, ou null pour la retirer ; absente, inchangée.
     (body?.rating !== undefined && body.rating !== null && !isRating(body.rating))
   ) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });

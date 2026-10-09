@@ -48,7 +48,7 @@ export function SettingsMenu() {
         aria-controls="app-settings"
         aria-label="Réglages"
         title="Réglages"
-        className={buttonClass({ variant: "ghost", icon: true })}
+        className={buttonClass({ variant: "secondary", icon: true })}
       >
         <Settings size={18} aria-hidden="true" />
       </button>

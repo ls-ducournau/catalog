@@ -16,6 +16,7 @@ import {
   MOOD_GENRES,
   matchesContext,
   mostRestrictive,
+  type Relaxation,
   type TonightCandidate,
   type TonightContext,
 } from "./tonight";
@@ -50,7 +51,7 @@ export type TonightResult = {
   /** Titres qui correspondent au contexte, avant de garder les meilleurs. */
   matched: number;
   /** EC-1 : le réglage à relâcher quand rien ne correspond. */
-  relax: "mood" | "format" | "maxMinutes" | "company" | null;
+  relax: Relaxation | null;
   /** EC-3 : TMDB n'a rien renvoyé pour « tout le catalogue ». */
   catalogUnavailable: boolean;
   baseRate: number | null;
@@ -80,6 +81,11 @@ function reasonOf(neighbours: { name: string }[]): string | null {
 function fromPile(db: Database.Database, context: TonightContext, covered: number[]): TonightResult {
   const conditions = [`watch_status = 'Unwatched'`, NOT_DISMISSED_ITEM];
   const params: (string | number)[] = [];
+  // playlists-v2 FR-8 : seulement les titres de la playlist choisie (pas encore vus).
+  if (context.source === "playlist" && context.playlistId !== null) {
+    conditions.push(`id IN (SELECT item_id FROM playlist_items WHERE playlist_id = ?)`);
+    params.push(context.playlistId);
+  }
   if (context.where === "services" && covered.length > 0) {
     const services = onServicesCondition(covered);
     conditions.push(services.sql);
@@ -138,15 +144,18 @@ function fromPile(db: Database.Database, context: TonightContext, covered: numbe
 async function fromCatalog(db: Database.Database, context: TonightContext, covered: number[]): Promise<TonightResult> {
   const kinds: ("Movie" | "TV Series")[] =
     context.format === "Movie" ? ["Movie"] : context.format === "TV Series" ? ["TV Series"] : ["Movie", "TV Series"];
-  // Dégrossir côté TMDB : les genres de l'envie (ou de la soirée en famille), le documentaire.
+  // Dégrossir côté TMDB : le genre choisi, sinon les genres de l'envie (ou de la soirée en
+  // famille), le documentaire ; le reste est vérifié titre par titre (matchesContext).
   const genreNames =
-    context.format === "Documentary"
-      ? ["Documentary"]
-      : context.mood !== "any"
-        ? MOOD_GENRES[context.mood]
-        : context.company === "family"
-          ? FAMILY_GENRES
-          : null;
+    context.genre !== null
+      ? [context.genre]
+      : context.format === "Documentary"
+        ? ["Documentary"]
+        : context.mood !== "any"
+          ? MOOD_GENRES[context.mood]
+          : context.company === "family"
+            ? FAMILY_GENRES
+            : null;
   const providerIds = context.where === "services" && covered.length > 0 ? covered : null;
 
   const pages = await Promise.all(
@@ -239,7 +248,7 @@ export async function getTonight(
   context: TonightContext,
   coveredServices: number[]
 ): Promise<TonightResult> {
-  return context.source === "pile"
-    ? fromPile(db, context, coveredServices)
-    : fromCatalog(db, context, coveredServices);
+  return context.source === "catalog"
+    ? fromCatalog(db, context, coveredServices)
+    : fromPile(db, context, coveredServices);
 }

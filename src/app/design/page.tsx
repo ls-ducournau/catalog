@@ -17,8 +17,12 @@ import {
   MetaRow,
   MonoMeta,
   Skeleton,
+  StarCount,
+  StarRow,
+  StarsReadOnly,
 } from "@/components/ui";
 import { ScoreBadge } from "@/components/ScoreBadge";
+import { CompatibilityChip } from "@/components/CompatibilityChip";
 import { ChipDemo, ControlsDemo, FieldDemo, MotionDemo, SwitchDemo } from "./Demos";
 import { ArchetypesDemo, SectionsDemo } from "./Archetypes";
 
@@ -56,17 +60,18 @@ function contrast(fg: string, bg: string): string | null {
 const GROUPS: { title: string; names: string[]; text?: boolean }[] = [
   { title: "Surfaces", names: ["background", "surface", "surface-2", "surface-3", "brand-tint"] },
   { title: "Texte", names: ["foreground", "muted", "subtle", "disabled-foreground"], text: true },
-  { title: "Lignes", names: ["border", "line-strong", "divider", "selection", "field"] },
+  { title: "Lignes", names: ["border", "card-edge", "field-edge", "line-strong", "divider", "selection", "field"] },
   { title: "Action et marque", names: ["accent", "accent-foreground", "brand", "info", "success"] },
+  { title: "Notes et scores", names: ["rating", "score-high", "score-mid", "score-low"] },
 ];
 
 // Classes écrites en toutes lettres : Tailwind ne génère que celles qu'il lit.
 const TYPE: { name: string; className: string; sample: string }[] = [
-  { name: "display", className: "text-display font-semibold text-foreground", sample: "Catalog." },
-  { name: "heading-lg", className: "text-heading-lg text-foreground", sample: "Ce soir, un film." },
-  { name: "heading", className: "text-heading font-medium text-foreground", sample: "Bibliothèque" },
-  { name: "heading-sm", className: "text-heading-sm font-semibold text-foreground", sample: "Le meilleur pour toi" },
-  { name: "subheading", className: "text-subheading text-foreground", sample: "Proche de Breaking Bad" },
+  { name: "display", className: "font-heading text-display font-semibold text-foreground", sample: "Catalog." },
+  { name: "heading-lg", className: "font-heading text-heading-lg font-semibold text-foreground", sample: "Ce soir, un film." },
+  { name: "heading", className: "font-heading text-heading font-semibold text-foreground", sample: "Bibliothèque" },
+  { name: "heading-sm", className: "font-heading text-heading-sm font-semibold text-foreground", sample: "Le meilleur pour toi" },
+  { name: "subheading", className: "font-heading text-subheading font-semibold text-foreground", sample: "Proche de Breaking Bad" },
   { name: "lg", className: "text-lg text-foreground", sample: "Six ans avant de croiser le chemin de Walter White." },
   { name: "base", className: "text-base text-foreground", sample: "Note d'un clic sur les étoiles, ouvre une fiche pour le reste." },
   { name: "sm", className: "text-sm font-medium text-foreground", sample: "Ajouter un titre · Sélectionner" },
@@ -78,7 +83,7 @@ function Section({ id, title, lead, children }: { id: string; title: string; lea
   return (
     <section id={id} aria-labelledby={`${id}-titre`} className="flex flex-col gap-6">
       <div>
-        <h2 id={`${id}-titre`} className="text-heading-sm font-semibold text-foreground">
+        <h2 id={`${id}-titre`} className="text-heading-sm text-foreground">
           {title}
         </h2>
         <p className="mt-1 max-w-2xl text-sm text-muted">{lead}</p>
@@ -119,7 +124,7 @@ export default function DesignPage() {
     <main className="frame flex flex-col gap-20 px-4 pb-24 pt-12 sm:px-6">
       <header className="flex flex-col gap-4">
         <Logo className="h-9 w-auto self-start text-foreground" />
-        <h1 className="text-heading font-medium text-foreground">
+        <h1 className="text-heading text-foreground">
           Système de design.<span className="text-muted"> Jetons, primitives et mouvement de Catalog.</span>
         </h1>
         <p className="max-w-2xl text-base text-muted">
@@ -129,7 +134,7 @@ export default function DesignPage() {
         <MonoMeta>v2 | Inter · Geist Mono | grille de 8 | design/tokens.json</MonoMeta>
       </header>
 
-      <Section id="couleurs" title="Couleurs" lead="98 % de gris. Le corail est une marque (logo, héros, badge IA), jamais un signal. Contraste mesuré sur le fond.">
+      <Section id="couleurs" title="Couleurs" lead="98 % de gris. Le corail est une marque (logo, héros, badge IA), jamais un signal. Seules couleurs de l'interface : les notes et les scores. Contraste mesuré sur le fond.">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {GROUPS.map((group) => (
             <div key={group.title} className="flex flex-col gap-3">
@@ -142,7 +147,7 @@ export default function DesignPage() {
         </div>
       </Section>
 
-      <Section id="typographie" title="Typographie" lead="Inter 400, 500, 600 ; interlettrage positif, jamais négatif ; plancher de 12 px.">
+      <Section id="typographie" title="Typographie" lead="Titres en Bricolage Grotesque 600 (taille optique automatique) ; texte en Inter 400, 500, 600 ; interlettrage positif, jamais négatif ; plancher de 12 px.">
         <div className="flex flex-col divide-y divide-divider">
           {TYPE.map((t) => (
             <div key={t.name} className="flex flex-col gap-1 py-4 sm:flex-row sm:items-baseline sm:gap-6">
@@ -153,18 +158,18 @@ export default function DesignPage() {
         </div>
       </Section>
 
-      <Section id="relief" title="Forme et relief" lead="Rayons 6, 8, 11, 12, 16, 20 ; le relief « touche de clavier » sur toutes les cartes, aucune ombre portée.">
+      <Section id="relief" title="Forme et relief" lead="Rayons 6, 8, 11, 12, 20 ; les cartes sont définies par leur arête (blanc 6 %) et un reflet haut, sans ombre portée. Le relief « touche » est celui du bouton sombre.">
         <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
           {[
             ["badge", "6"],
             ["control", "8"],
             ["key", "11"],
             ["frame", "12"],
-            ["card", "16"],
+            ["card", "12"],
             ["card-lg", "20"],
           ].map(([name, px]) => (
             <div key={name} className="flex flex-col items-center gap-2">
-              <span className="h-16 w-full bg-surface shadow-[var(--shadow-key)]" style={{ borderRadius: `var(--r-${name})` }} />
+              <span className="h-16 w-full border border-card-edge bg-surface shadow-[var(--shadow-card)]" style={{ borderRadius: `var(--r-${name})` }} />
               <MonoMeta>
                 {name} | {px}
               </MonoMeta>
@@ -173,21 +178,21 @@ export default function DesignPage() {
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <Card className="p-6">
-            <p className="text-sm text-foreground">Carte « touche »</p>
-            <p className="mt-1 text-sm text-muted">--shadow-key : reflet haut, anneau blanc à 25 %, ombre basse.</p>
+            <p className="text-sm text-foreground">Carte</p>
+            <p className="mt-1 text-sm text-muted">Onyx, arête --card-edge (blanc 6 %), reflet --shadow-card ; cliquable, lueur venue du haut au survol.</p>
           </Card>
           <Card variant="edge" className="p-6">
             <p className="text-sm text-foreground">Carte à arête</p>
-            <p className="mt-1 text-sm text-muted">Arête --border et reflet intérieur, transparente.</p>
+            <p className="mt-1 text-sm text-muted">Arête --card-edge et reflet intérieur, transparente, rayon 20.</p>
           </Card>
           <Card variant="tile" className="p-6">
             <p className="text-sm text-foreground">Tuile</p>
-            <p className="mt-1 text-sm text-muted">Arête seule ; survolée, blanc 5 %.</p>
+            <p className="mt-1 text-sm text-muted">{"La carte en ligne (icône, nom, précision) ; s'enfonce à l'appui."}</p>
           </Card>
         </div>
       </Section>
 
-      <Section id="boutons" title="Boutons" lead="Un seul bouton plein (Mist, texte Iron). Aucun bouton de couleur, même pour effacer.">
+      <Section id="boutons" title="Boutons" lead="Un seul bouton plein (Mist, texte Slate, cerne et halo). Le secondaire est la « touche » sombre : voile blanc, anneau discret (12 %, 20 % au survol). Focus clavier : anneau blanc à 40 %, décalé. Aucun bouton de couleur, même pour effacer.">
         <div className="flex flex-col gap-6">
           {(["primary", "secondary", "ghost"] as const).map((variant) => (
             <div key={variant} className="flex flex-wrap items-center gap-4">
@@ -246,12 +251,13 @@ export default function DesignPage() {
         </div>
       </Section>
 
-      <Section id="petits" title="Badges, touches, métadonnées" lead="Badges Graphite ; le badge de marque est le seul en corail. Mentions techniques en Geist Mono.">
+      <Section id="petits" title="Badges, touches, métadonnées" lead="Badges en lavis (15 % de la couleur du texte) ; le badge de marque est le seul en corail. Mentions techniques en Geist Mono.">
         <div className="flex flex-wrap items-center gap-3">
           <Badge>Dans ta pile</Badge>
           <Badge>VF</Badge>
+          <Badge variant="success">Cette semaine</Badge>
           <Badge variant="count">43</Badge>
-          <Badge variant="brand">IA</Badge>
+          <Badge variant="brand">v2.5</Badge>
           <Kbd>↵</Kbd>
           <Kbd>⌘</Kbd>
           <Kbd>K</Kbd>
@@ -272,11 +278,29 @@ export default function DesignPage() {
           <IconCircle>
             <Star size={18} aria-hidden="true" />
           </IconCircle>
+        </div>
+        <Divider />
+      </Section>
+
+      <Section
+        id="notes"
+        title="Notes et scores"
+        lead="Seules couleurs de l'interface : l'étoile, toujours la même, pleine en jaune ; le score, vert dès 70, jaune de 40 à 69, gris dessous. Le chiffre reste toujours affiché."
+      >
+        <div className="flex flex-wrap items-center gap-6">
+          <StarsReadOnly rating="⭐️⭐️⭐️" />
+          <StarRow count={5} size={18} />
+          <StarCount value={4} />
+          <StarCount value="4,2" size={12} />
+        </div>
+        <div className="flex flex-wrap items-center gap-4">
           <ScoreBadge voteAverage={8.7} voteCount={5200} size="md" />
           <ScoreBadge voteAverage={5.6} voteCount={900} size="md" />
           <ScoreBadge voteAverage={3.1} voteCount={40} size="md" />
+          <CompatibilityChip value={0.81} />
+          <CompatibilityChip value={0.52} />
+          <CompatibilityChip value={0.28} />
         </div>
-        <Divider />
       </Section>
 
       <Section id="controles" title="Contrôles" lead="Puces, onglets, menus, champs et interrupteurs : les mêmes états partout.">

@@ -38,7 +38,7 @@ export function RecommendationRow({ title, children }: { title: string; children
   return (
     <section className="mt-8 first:mt-6" aria-label={title}>
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-medium text-foreground">{title}</h2>
+        <h2 className="text-subheading text-foreground">{title}</h2>
         <div className="hidden items-center gap-1 [@media(hover:hover)]:flex">
           <button
             onClick={() => page(-1)}

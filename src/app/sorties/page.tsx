@@ -2,13 +2,28 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { CalendarX, Check, Clapperboard, CloudOff, LayoutGrid, Plus, Sparkles, Tv, type LucideIcon } from "lucide-react";
+import {
+  CalendarX,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Clapperboard,
+  CloudOff,
+  LayoutGrid,
+  ListPlus,
+  Plus,
+  Sparkles,
+  Tv,
+  type LucideIcon,
+} from "lucide-react";
 import { CompatibilityChip } from "@/components/CompatibilityChip";
+import { openPlaylistDialog } from "@/components/playlists/PlaylistDialog";
 import { TrailerButton } from "@/components/TrailerButton";
 import { TimelineLayout } from "@/components/layouts";
 import { EmptyState, PageHeader, TimelineSection, Toolbar } from "@/components/sections";
 import { Badge, Button, Card, MetaRow, MonoMeta, Select, Skeleton, Tabs, Toast } from "@/components/ui";
-import { calendarWindows, groupByWeek, type CalendarEvent } from "@/lib/calendar";
+import { genreLine } from "@/lib/genres";
+import { calendarWindows, dayLabel, eventLabel, groupByWeek, kindLabel } from "@/lib/calendar";
 import type { CalendarEntry, CalendarResult } from "@/lib/calendarService";
 
 // Calendrier des sorties — spec: specs/sorties-v1.md (FR-3 à FR-6)
@@ -29,13 +44,6 @@ const KINDS: { value: Kind; label: string; icon: LucideIcon }[] = [
   { value: "TV Series", label: "Séries", icon: Tv },
 ];
 
-const EVENT_LABEL: Record<CalendarEvent, string> = {
-  theatrical: "Sortie en salle",
-  digital: "Sortie numérique",
-  series_premiere: "Nouvelle série",
-  season_premiere: "Nouvelle saison",
-};
-
 /** Horizon de la frise (FR-6 bis) : jusqu'où regarder devant. */
 const HORIZONS: { value: string; label: string; phrase: string }[] = [
   { value: "3", label: "3 mois", phrase: "3 prochains mois" },
@@ -52,17 +60,6 @@ const SCOPE_STORAGE_KEY = "watchlist:releasesScope";
 const KIND_STORAGE_KEY = "watchlist:releasesKind";
 const HORIZON_STORAGE_KEY = "watchlist:releasesHorizon";
 
-function eventLabel(entry: CalendarEntry): string {
-  return entry.event === "season_premiere" && entry.season !== null
-    ? `Saison ${entry.season}`
-    : EVENT_LABEL[entry.event];
-}
-
-function kindLabel(entry: CalendarEntry): string {
-  if (entry.isDocumentary) return "Documentaire";
-  return entry.mediaType === "Movie" ? "Film" : "Série";
-}
-
 function utcDate(iso: string): Date {
   return new Date(`${iso}T12:00:00Z`);
 }
@@ -76,12 +73,6 @@ function weekRange(start: string): string {
   return from.getUTCMonth() === to.getUTCMonth()
     ? `${from.getUTCDate()} – ${dayMonth(to)}`
     : `${dayMonth(from)} – ${dayMonth(to)}`;
-}
-
-/** « Lundi 21 » : le jour dans la semaine, le mois est déjà dans la colonne. */
-function dayLabel(iso: string): string {
-  const label = utcDate(iso).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", timeZone: "UTC" });
-  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 /** Les sorties d'une semaine, par jour (elles arrivent déjà triées par date). */
@@ -111,7 +102,8 @@ export default function SortiesPage() {
   const [changes, setChanges] = useState<Map<string, number | null>>(new Map());
   const [pending, setPending] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const scrolled = useRef(false);
+  /** Les semaines passées, repliées à l'ouverture : la frise commence à la semaine en cours. */
+  const [showPast, setShowPast] = useState(false);
 
   useEffect(() => {
     try {
@@ -212,13 +204,11 @@ export default function SortiesPage() {
     return date.toISOString().slice(0, 10);
   }, [todayIso]);
 
-  // La frise s'ouvre sur la semaine en cours ; les sorties récentes restent au-dessus.
-  useEffect(() => {
-    if (scrolled.current || weeks.length === 0) return;
-    scrolled.current = true;
-    const target = weeks.find((w) => w.start >= currentWeekStart);
-    if (target) document.getElementById(`semaine-${target.start}`)?.scrollIntoView({ block: "start" });
-  }, [weeks, currentWeekStart]);
+  // La frise s'ouvre sur la semaine en cours, juste sous les filtres : les semaines passées se
+  // replient derrière un bouton plutôt que de faire défiler la page (qui cachait les filtres).
+  const pastWeeks = weeks.filter((w) => w.start < currentWeekStart);
+  const pastCount = pastWeeks.reduce((sum, w) => sum + w.entries.length, 0);
+  const shownWeeks = showPast ? weeks : weeks.filter((w) => w.start >= currentWeekStart);
 
   function libraryIdOf(entry: CalendarEntry): number | null {
     const key = `${entry.mediaType}:${entry.tmdbId}`;
@@ -376,13 +366,33 @@ export default function SortiesPage() {
           />
         )}
 
-        {weeks.map((week) => {
+        {/* Les semaines passées : repliées, ouvertes sur demande juste au-dessus de la semaine en cours. */}
+        {pastCount > 0 && (
+          <TimelineSection
+            className="-mb-12"
+            aside={
+              <div className={ASIDE}>
+                <Badge>Semaines passées</Badge>
+                <MonoMeta>30 derniers jours</MonoMeta>
+              </div>
+            }
+          >
+            <Button size="sm" aria-expanded={showPast} onClick={() => setShowPast((v) => !v)}>
+              {showPast ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronUp size={14} aria-hidden="true" />}
+              {showPast
+                ? "Masquer les semaines passées"
+                : `Voir les ${pastCount} sortie${pastCount > 1 ? "s" : ""} des semaines passées`}
+            </Button>
+          </TimelineSection>
+        )}
+
+        {shownWeeks.map((week) => {
           const isCurrent = week.start === currentWeekStart;
           return (
             <TimelineSection
               key={week.start}
               id={`semaine-${week.start}`}
-              className="scroll-mt-24"
+              className="scroll-mt-24 lg:scroll-mt-28"
               aside={
                 <div className={ASIDE}>
                   <h2>
@@ -397,7 +407,7 @@ export default function SortiesPage() {
                 {byDay(week.entries).map((day) => (
                   <div key={day.date} className="flex flex-col gap-3">
                     <h3
-                      className={`flex items-center gap-2 text-sm font-medium ${
+                      className={`flex items-center gap-2 text-sm ${
                         day.date < todayIso ? "text-muted" : "text-foreground"
                       }`}
                     >
@@ -410,7 +420,8 @@ export default function SortiesPage() {
                         const key = `${entry.mediaType}:${entry.tmdbId}`;
                         const canToggle = entry.libraryId === null;
                         // Sur téléphone, les actions passent sous le titre : l'affiche couvre alors deux rangées.
-                        const hasActions = entry.compatibility !== null || canToggle;
+                        // Toujours au moins « Ajouter à une playlist » (playlists-v2 FR-2).
+                        const hasActions = true;
                         return (
                           <Card
                             as="li"
@@ -436,6 +447,7 @@ export default function SortiesPage() {
                                 <Badge>{eventLabel(entry)}</Badge>
                                 <MetaRow>
                                   <span>{kindLabel(entry)}</span>
+                                  {entry.genres.length > 0 && <span>{genreLine(entry.genres)}</span>}
                                   {libraryId !== null && entry.libraryStatus && (
                                     <span>{entry.libraryStatus === "Watched" ? "Vu" : "Dans ta pile"}</span>
                                   )}
@@ -449,6 +461,23 @@ export default function SortiesPage() {
                             {hasActions && (
                               <div className="flex items-center gap-2 self-start sm:self-center">
                                 <CompatibilityChip value={entry.compatibility} />
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  icon
+                                  onClick={() =>
+                                    openPlaylistDialog(
+                                      libraryId !== null
+                                        ? { kind: "item", itemId: libraryId, name: entry.title }
+                                        : { kind: "tmdb", tmdbId: entry.tmdbId, mediaType: entry.mediaType, name: entry.title },
+                                      "sorties"
+                                    )
+                                  }
+                                  aria-label={`Ajouter « ${entry.title} » à une playlist`}
+                                  title="Ajouter à une playlist"
+                                >
+                                  <ListPlus size={14} aria-hidden="true" />
+                                </Button>
                                 {canToggle && (
                                   <Button
                                     size="sm"

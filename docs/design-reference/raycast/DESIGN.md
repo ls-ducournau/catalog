@@ -1,6 +1,11 @@
 # Raycast — Style Reference
 > Midnight command center, coral neon
 
+> **Catalog, 2026-09-28** : ce document est une description générée. Pour les composants, les
+> fiches de [`composants/`](composants/README.md) (relevés de raycast.com, captures, listes de
+> contrôle) **priment** sur les valeurs ci-dessous (spec, décision D5). Ce document reste la
+> référence des principes.
+
 **Theme:** dark
 
 Source measurements are normalized; roles and recommendations are interpreted. Font summary lists are independent, not paired by position. HTML examples are reconstructions, not source components.

@@ -22,8 +22,8 @@ export function ServicesFilter({
     <div
       className={`flex items-center rounded-full border transition ${
         active
-          ? "border-line-strong bg-accent/10 text-foreground"
-          : "border-surface-border bg-surface text-muted hover:text-foreground"
+          ? "border-transparent bg-surface-2 text-foreground"
+          : "border-field-edge text-muted hover:border-field-edge-hover hover:text-foreground"
       }`}
     >
       <button

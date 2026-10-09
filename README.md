@@ -48,8 +48,9 @@ toute requête `/api` autre qu'une lecture est interceptée (`tests/securite.ts`
 ## Système de design
 
 Catalog suit le langage visuel de Raycast, d'après `docs/design-reference/raycast/DESIGN.md`
-(référence normative). Le plan et les critères d'acceptation sont dans
-`specs/design-system-v2-raycast.md`.
+(référence normative des principes) et les fiches de QA par composant de
+`docs/design-reference/raycast/composants/` (relevés de raycast.com, qui priment pour les
+recettes). Le plan et les critères d'acceptation sont dans `specs/design-system-v2-raycast.md`.
 
 - **Jetons** : `design/tokens.json` est la seule source. `npm run tokens` génère
   `src/styles/tokens.css` et `src/lib/tokens.ts`.

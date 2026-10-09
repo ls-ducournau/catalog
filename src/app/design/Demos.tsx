@@ -179,7 +179,7 @@ export function MotionDemo() {
       </div>
       <div className="flex flex-col gap-3">
         <MonoMeta>« slide » : un repère glisse jusqu&apos;à sa cible, 300 ms</MonoMeta>
-        <div className="relative flex w-max gap-1 rounded-full p-1 shadow-[inset_0_0_0_1px_var(--border)]">
+        <div className="relative flex w-max gap-1 rounded-full p-1 shadow-[inset_0_0_0_1px_var(--field-edge)]">
           <span data-demo-marker aria-hidden="true" className="absolute left-1 top-1 h-7 w-20 rounded-full bg-selection" />
           {["Titres", "Personnes", "Paliers"].map((label, i) => (
             <button

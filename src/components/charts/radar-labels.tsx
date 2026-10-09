@@ -20,7 +20,7 @@ export function RadarLabels({
   interactive = false,
   className = "",
 }: RadarLabelsProps) {
-  const { metrics, radius, levels, getAngle, animate } = useRadarStable();
+  const { metrics, radius, levels, getAngle, animate, enterTransition } = useRadarStable();
 
   // Label animation delay (starts after grid begins)
   const gridStagger = 0.08;
@@ -47,8 +47,9 @@ export function RadarLabels({
                 duration: 0.5,
                 delay: animate ? labelDelay + i * 0.08 : 0,
               },
-              x: { type: "spring", stiffness: 80, damping: 15 },
-              y: { type: "spring", stiffness: 80, damping: 15 },
+              // Catalog : la transition du graphique (tween, sans dépassement) quand elle est donnée.
+              x: enterTransition ?? { type: "spring", stiffness: 80, damping: 15 },
+              y: enterTransition ?? { type: "spring", stiffness: 80, damping: 15 },
             }}
           >
             <text

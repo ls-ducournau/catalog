@@ -84,7 +84,7 @@ export function ServicesPicker({
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">Mes abonnements</h2>
+            <h2 className="text-lg text-foreground">Mes abonnements</h2>
             <p className="mt-1 text-sm text-muted">
               Coche les services auxquels tu es abonné. Les formules avec publicité sont incluses
               d&apos;office.
@@ -111,7 +111,7 @@ export function ServicesPicker({
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Chercher un service…"
             aria-label="Chercher un service"
-            className="w-full rounded-full border border-surface-border bg-background py-2 pl-11 pr-4 text-sm text-foreground outline-none transition placeholder:text-muted focus:border-line-strong"
+            className="w-full rounded-full border border-field-edge bg-background py-2 pl-11 pr-4 text-sm text-foreground outline-none transition placeholder:text-muted hover:border-field-edge-hover focus:border-field-edge-focus"
           />
         </div>
 
@@ -126,8 +126,8 @@ export function ServicesPicker({
                 onClick={() => toggle(provider.id)}
                 className={`relative flex items-center gap-2.5 rounded-xl border p-2 text-left text-sm transition active:scale-[0.98] ${
                   active
-                    ? "border-accent/70 bg-accent/10 text-foreground"
-                    : "border-surface-border text-muted hover:text-foreground"
+                    ? "border-field-edge-focus bg-selection text-foreground"
+                    : "border-card-edge text-muted hover:border-field-edge-hover hover:text-foreground"
                 }`}
               >
                 <ProviderLogo provider={provider} size={28} />

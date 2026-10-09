@@ -2,7 +2,7 @@
 
 import { buttonClass } from "@/components/ui/Button";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { EyeOff, Info, Plus, Trash2 } from "lucide-react";
+import { EyeOff, Info, ListPlus, Plus, Trash2 } from "lucide-react";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import {
   SynopsisTooltip,
@@ -16,6 +16,7 @@ import { ReleaseBadge } from "@/components/ReleaseBadge";
 import type { ReleaseInfo } from "@/lib/release";
 import type { Trailer } from "@/lib/trailer";
 import { TrailerButton } from "@/components/TrailerButton";
+import { openPlaylistDialog } from "@/components/playlists/PlaylistDialog";
 
 /** Titre venant de TMDB, pas encore (ou juste) entré en bibliothèque. */
 export type DiscoverCardItem = {
@@ -209,6 +210,17 @@ export function DiscoverCard({
           retirer) à droite, là où le pouce et la souris les attendent. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 aspect-[2/3]">
         <div className="pointer-events-auto absolute bottom-2 right-2 flex items-center gap-1">
+        {/* playlists-v2 FR-2 et FR-3 : dans une playlist, et dans ta pile s'il n'y est pas encore. */}
+        <button
+          type="button"
+          onClick={() => openPlaylistDialog({ kind: "tmdb", tmdbId: item.tmdbId, mediaType: item.type, name: item.title }, "decouvrir")}
+          disabled={pending}
+          title="Ajouter à une playlist"
+          aria-label={`Ajouter « ${item.title} » à une playlist`}
+          className={buttonClass({ variant: "overlay", size: "sm", icon: true, className: "opacity-0 focus-visible:opacity-100 disabled:hidden [@media(hover:none)]:opacity-100 [@media(hover:hover)]:group-hover:opacity-100" })}
+        >
+          <ListPlus size={16} aria-hidden="true" />
+        </button>
         {onDismiss && item.libraryStatus === null && (
           <button
             type="button"

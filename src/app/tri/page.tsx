@@ -20,20 +20,24 @@ import {
   Tv,
   UsersRound,
   type LucideIcon,
+  ListPlus,
 } from "lucide-react";
-import { CommandLayout } from "@/components/layouts";
+import { HeroLayout } from "@/components/layouts";
+import { PersonRatingFlow } from "@/components/PersonRatingFlow";
+import { RoleBadges } from "@/components/PersonRoles";
+import { RatingKeys, ratedAs } from "@/components/RatingKeys";
 import { CommandWindow, EmptyState } from "@/components/sections";
 import { Badge, Button, Card, Keycap, Skeleton, Tabs, Toast, buttonClass } from "@/components/ui";
 import { CompatibilityChip } from "@/components/CompatibilityChip";
 import { ProviderLogo } from "@/components/ProviderLogo";
 import { ReleaseBadge } from "@/components/ReleaseBadge";
 import { TrailerButton } from "@/components/TrailerButton";
+import { openPlaylistDialog } from "@/components/playlists/PlaylistDialog";
 import { useMyServices } from "@/components/useMyServices";
 import { cn } from "@/lib/utils";
 import { includedIn } from "@/lib/availability";
 import type { Category } from "@/lib/libraryItem";
 import type {
-  PersonRole,
   TriageAnswer,
   TriageCard,
   TriageFamily,
@@ -47,6 +51,8 @@ type TriageCategory = "" | Category;
 type HistoryEntry = {
   card: TriageCard;
   answer: TriageAnswer;
+  /** Note donnée à un titre déjà vu (0 à 5). */
+  rating?: number;
   /** Résolue quand le serveur a appliqué la réponse ; null si elle a échoué. */
   undo: Promise<TriageUndo | null>;
 };
@@ -60,6 +66,14 @@ const FAMILIES: { value: TriageFamily; label: string; icon: LucideIcon }[] = [
   { value: "person", label: "Personnes", icon: UsersRound },
 ];
 const FAMILIES_COMPACT = FAMILIES.map(({ value, label }) => ({ value, label }));
+
+/** Famille Personnes : trier (aime / n'aime pas) ou noter les personnes aimées une à une. */
+type PersonMode = "sort" | "rate";
+const PERSON_MODES: { value: PersonMode; label: string }[] = [
+  { value: "sort", label: "Trier" },
+  { value: "rate", label: "Noter" },
+];
+const PERSON_MODE_STORAGE_KEY = "watchlist:triagePersonMode";
 
 const CATEGORIES: { value: TriageCategory; label: string; icon: LucideIcon }[] = [
   { value: "", label: "Tout", icon: LayoutGrid },
@@ -96,7 +110,7 @@ const COPY: Record<
     empty: "Plus de découvertes à trier pour l'instant.",
   },
   seen: {
-    question: "Tu as aimé ?",
+    question: "Quelle note lui donnes-tu ?",
     like: "Aimé",
     dislike: "Pas aimé",
     likeEffect: "Noter 4 étoiles",
@@ -115,12 +129,6 @@ const COPY: Record<
     dislikedAs: "pas aimé",
     empty: "Tu as donné ton avis sur toutes les personnes de tes titres vus.",
   },
-};
-
-const ROLE_LABEL: Record<PersonRole, string> = {
-  cast: "Interprète",
-  director: "Réalisation",
-  producer: "Production",
 };
 
 const ERROR_MESSAGE: Record<string, string> = {
@@ -166,6 +174,7 @@ function cardTitle(card: TriageCard): string {
 
 export default function TriPage() {
   const [family, setFamily] = useState<TriageFamily>("unseen");
+  const [personMode, setPersonMode] = useState<PersonMode>("sort");
   const [category, setCategory] = useState<TriageCategory>("");
   const [queue, setQueue] = useState<TriageCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -197,10 +206,14 @@ export default function TriPage() {
   // l'emporte (lien direct depuis une autre page).
   useEffect(() => {
     try {
-      const fromUrl = new URLSearchParams(window.location.search).get("famille");
+      const params = new URLSearchParams(window.location.search);
+      const fromUrl = params.get("famille");
       const storedFamily = fromUrl ?? window.localStorage.getItem(FAMILY_STORAGE_KEY);
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (FAMILIES.some((f) => f.value === storedFamily)) setFamily(storedFamily as TriageFamily);
+      // `?mode=noter` : noter les personnes aimées (lien direct, menu « Tes goûts »).
+      const storedMode = params.get("mode") === "noter" ? "rate" : window.localStorage.getItem(PERSON_MODE_STORAGE_KEY);
+      if (storedMode === "rate" || storedMode === "sort") setPersonMode(storedMode);
       const storedCategory = window.localStorage.getItem(CATEGORY_STORAGE_KEY);
       if (storedCategory !== null && CATEGORIES.some((c) => c.value === storedCategory)) {
         setCategory(storedCategory as TriageCategory);
@@ -280,13 +293,16 @@ export default function TriPage() {
     }
   }, [ready, queue.length, loading, exhausted, loadBatch]);
 
-  /** FR-4 : applique la réponse sans attendre le serveur ; FR-6 : garde de quoi l'annuler. */
+  /**
+   * FR-4 : applique la réponse sans attendre le serveur ; FR-6 : garde de quoi l'annuler.
+   * `rating` : la note d'un titre déjà vu (0 à 5).
+   */
   const answer = useCallback(
-    (value: TriageAnswer, fromX: number | null) => {
+    (value: TriageAnswer, fromX: number | null, rating?: number) => {
       const card = queue[0];
       if (!card) return;
 
-      press(KEY_OF[value]);
+      press(rating !== undefined ? String(rating) : KEY_OF[value]);
       setQueue((prev) => prev.slice(1));
       setDragX(null);
       // Au clavier, pas d'animation : le geste se répète trop vite pour qu'elle serve. Ni la carte
@@ -300,14 +316,14 @@ export default function TriPage() {
       const request = fetch("/api/triage/answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ card, answer: value }),
+        body: JSON.stringify({ card, answer: value, ...(rating !== undefined ? { rating } : {}) }),
       }).then(async (res) => {
         const body = await res.json();
         if (!res.ok || "error" in body) throw new Error(body.error ?? "unknown");
         return body.undo as TriageUndo;
       });
 
-      const entry: HistoryEntry = { card, answer: value, undo: request.catch(() => null) };
+      const entry: HistoryEntry = { card, answer: value, rating, undo: request.catch(() => null) };
       setHistory((h) => [...h.slice(-(HISTORY_MAX - 1)), entry]);
 
       request.catch((err: Error) => {
@@ -347,8 +363,12 @@ export default function TriPage() {
     if (!res?.ok) showError("L'annulation n'a pas pu être appliquée.");
   }, [history, showError]);
 
-  // FR-5 : 1 / ← je n'aime pas, 2 / → j'aime, 3 passer ; Ctrl+Z annule.
+  const ratingPeople = family === "person" && personMode === "rate";
+
+  // FR-5 : 1 / ← je n'aime pas, 2 / → j'aime, 3 passer ; Ctrl+Z annule. En mode « Noter », les
+  // touches sont celles de la notation (PersonRatingFlow).
   useEffect(() => {
+    if (ratingPeople) return;
     function onKey(e: KeyboardEvent) {
       if (e.target instanceof HTMLElement && e.target.closest("input, textarea, select, [contenteditable]")) {
         return;
@@ -359,6 +379,17 @@ export default function TriPage() {
         return;
       }
       if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+      // Déjà vus : 0 à 5 notent, Espace passe (comme la notation des personnes).
+      if (family === "seen") {
+        if (/^[0-5]$/.test(e.key)) {
+          e.preventDefault();
+          answer("like", null, Number(e.key));
+        } else if (e.key === " " && !(e.target instanceof HTMLButtonElement)) {
+          e.preventDefault();
+          answer("skip", null);
+        }
+        return;
+      }
       if (e.key === "1" || e.key === "ArrowLeft") {
         e.preventDefault();
         answer("dislike", null);
@@ -372,12 +403,13 @@ export default function TriPage() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [answer, undoLast]);
+  }, [answer, undoLast, ratingPeople, family]);
 
   // ---------- balayage (FR-5, mobile ; marche aussi à la souris) ----------
 
   function onPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
-    if (e.button !== 0 || !queue[0]) return;
+    // Déjà vus : six notes, pas deux ; le balayage n'a pas de sens.
+    if (e.button !== 0 || !queue[0] || family === "seen") return;
     e.currentTarget.setPointerCapture(e.pointerId);
     setInstant(false);
     drag.current = {
@@ -437,6 +469,19 @@ export default function TriPage() {
       <div className="hidden sm:block">
         <Tabs label="Que trier" options={FAMILIES} value={family} onChange={chooseFamily} />
       </div>
+      {/* Personnes : trier ou noter. */}
+      {family === "person" && (
+        <Tabs
+          label="Personnes"
+          options={PERSON_MODES}
+          value={personMode}
+          onChange={(next) => {
+            setPersonMode(next);
+            remember(PERSON_MODE_STORAGE_KEY, next);
+          }}
+          subtle
+        />
+      )}
       {/* FR-3 : les deux familles de titres acceptent le filtre de catégorie. */}
       {family !== "person" && (
         <Tabs
@@ -454,12 +499,23 @@ export default function TriPage() {
   );
 
   return (
-    <CommandLayout>
-      <header className="flex flex-col items-center gap-1 text-center">
-        <h1 className="text-heading-sm font-medium text-foreground">{copy.question}</h1>
-        <p className="text-sm text-muted sm:hidden">Balaie la carte, ou utilise les boutons</p>
-      </header>
+    <HeroLayout
+      stage
+      hero={
+        <>
+          <h1 className="text-balance text-heading text-foreground">{ratingPeople ? "Quelle note leur donnes-tu ?" : copy.question}</h1>
+          <p className="text-base text-muted">
+            <span className="sm:hidden">Balaie la carte, ou utilise les boutons.</span>
+            <span className="hidden sm:inline">Une carte à la fois : une touche, et la suivante arrive.</span>
+          </p>
+        </>
+      }
+    >
 
+      {ratingPeople ? (
+        <PersonRatingFlow head={head} />
+      ) : (
+        <>
       <CommandWindow
         head={head}
         className="max-w-3xl"
@@ -480,6 +536,9 @@ export default function TriPage() {
           </>
         }
         primary={{ label: "Annuler", keys: ["Ctrl", "Z"], onClick: undoLast, disabled: !last }}
+        secondary={
+          family === "seen" ? [{ label: "Passer", keys: ["Espace"], onClick: () => answer("skip", null), disabled: !current }] : undefined
+        }
       >
         {/* La pile : carte du dessus, la suivante qui dépasse derrière, et celle qui s'en va. */}
         <div className="p-3 pb-7 sm:p-4 sm:pb-8">
@@ -574,9 +633,17 @@ export default function TriPage() {
         </div>
       </CommandWindow>
 
+      {/* Déjà vus : six notes, de 💩 à cinq étoiles, comme la notation des personnes. */}
+      {family === "seen" && (
+        <div className="sticky bottom-[var(--bottom-nav-h)] z-30 -mb-4 flex w-full justify-center bg-gradient-to-t from-background from-70% to-transparent pb-4 pt-5 sm:static sm:mb-0 sm:bg-none sm:p-0">
+          <RatingKeys onRate={(n) => answer("like", null, n)} disabled={!current} pressed={pressed} />
+        </div>
+      )}
+
       {/* FR-5 : deux grands boutons, « non » à gauche et « oui » à droite, « passer » entre eux,
           chacun avec sa touche. Sur mobile ils restent collés en bas de l'écran, même quand la
           carte dépasse. */}
+      {family !== "seen" && (
       <div className="sticky bottom-[var(--bottom-nav-h)] z-30 -mb-4 flex w-full justify-center bg-gradient-to-t from-background from-70% to-transparent pb-4 pt-5 sm:static sm:mb-0 sm:bg-none sm:p-0">
         <div className="grid w-full max-w-3xl grid-cols-[1fr_auto_1fr] items-stretch gap-2 sm:gap-3">
           <AnswerButton
@@ -614,19 +681,25 @@ export default function TriPage() {
           />
         </div>
       </div>
+      )}
 
       {/* Retour de la dernière réponse : au clavier, c'est le seul signe visible. */}
       <p className="-mt-2 min-h-5 text-center text-xs text-muted" aria-live="polite">
         {last &&
           (last.answer === "skip"
             ? `« ${cardTitle(last.card)} » passé`
+            : last.rating !== undefined
+              ? `« ${cardTitle(last.card)} » ${ratedAs(last.rating)}`
             : `« ${cardTitle(last.card)} » ${
                 last.answer === "like" ? COPY[last.card.family].likedAs : COPY[last.card.family].dislikedAs
               }`)}
       </p>
 
+        </>
+      )}
+
       {error && <Toast>{error}</Toast>}
-    </CommandLayout>
+    </HeroLayout>
   );
 }
 
@@ -720,7 +793,7 @@ function CardFace({ card, covered, interactive }: { card: TriageCard; covered: S
 
   let meta: string;
   if (card.family === "person") {
-    meta = card.roles.map((r) => ROLE_LABEL[r]).join(" · ");
+    meta = "";
   } else if (card.family === "seen") {
     const kind = card.category === "Movie" ? "Film" : card.category === "TV Series" ? "Série" : "Documentaire";
     meta = [card.year, kind].filter(Boolean).join(" · ");
@@ -738,22 +811,36 @@ function CardFace({ card, covered, interactive }: { card: TriageCard; covered: S
         <CardImage src={image} alt={title} fallback={fallback} />
         {/* La bande-annonce sert à trancher « ça me tente ? » : en évidence, sur l'affiche. */}
         {interactive && card.family !== "person" && (
-          <div className="absolute right-3 top-3 z-10">
+          <div className="absolute right-3 top-3 z-10 flex items-center gap-2">
+            {/* playlists-v2 FR-2 : l'ajouter à une playlist (et donc à ta pile), sans trancher la carte. */}
+            {card.family === "unseen" && (
+              <button
+                type="button"
+                onClick={() => openPlaylistDialog({ kind: "tmdb", tmdbId: card.tmdbId, mediaType: card.mediaType, name: card.title }, "tri")}
+                aria-label={`Ajouter « ${card.title} » à une playlist`}
+                title="Ajouter à une playlist"
+                className={buttonClass({ variant: "overlay", icon: true })}
+              >
+                <ListPlus size={16} aria-hidden="true" />
+              </button>
+            )}
             <TrailerButton trailer={card.trailer} title={card.title} className={buttonClass({ variant: "overlay" })} />
           </div>
         )}
         {/* Sur mobile, le titre vit sur l'affiche pour laisser la place au texte dessous. */}
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/90 via-background/60 to-transparent p-4 pt-12 sm:hidden">
-          <h2 className="line-clamp-2 text-lg font-medium leading-tight text-foreground">{title}</h2>
+          <h2 className="line-clamp-2 text-lg leading-tight text-foreground">{title}</h2>
           {meta && <p className="mt-1 text-xs text-contrast-foreground">{meta}</p>}
         </div>
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden p-4 sm:p-5">
         <div className="hidden sm:block">
-          <h2 className="line-clamp-2 text-subheading font-medium text-foreground">{title}</h2>
+          <h2 className="line-clamp-2 text-subheading text-foreground">{title}</h2>
           {meta && <p className="mt-1 text-sm text-muted">{meta}</p>}
+          {card.family === "person" && <RoleBadges roles={card.roles} className="mt-2" />}
         </div>
+        {card.family === "person" && <RoleBadges roles={card.roles} className="sm:hidden" />}
 
         {card.family === "unseen" && (card.seeds.length > 0 || card.compatibility !== null || card.release) && (
           <div className="flex min-w-0 items-center gap-2 text-xs text-muted">

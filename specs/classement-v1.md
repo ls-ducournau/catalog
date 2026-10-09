@@ -61,7 +61,7 @@ Un palier de 21 titres se départage vite ; un palier de 160 demande 8 fois plus
 - **FR-9** (répartir) — Dans un palier de 60 titres ou plus, chaque titre DOIT d'abord être rangé
   en Bas, Milieu ou Haut du palier, une carte à la fois (1, 2, 3 ; ou ←, ↓, →). Le classement
   range alors le palier par groupe, du Haut au Bas, dès cette étape.
-- **FR-10** (quatuors) — L'affinage DOIT montrer 4 titres d'un même groupe (moins s'il en reste
+- **FR-10** (quatuors) — *Modifié le 2026-09-28 : l'affinage montre 2 titres (un duel : « Lequel est au-dessus ? », Espace pour passer), quatre étant trop exigeant ; le calcul ci-dessous vaut pour deux titres (une comparaison).* L'affinage DOIT montrer 4 titres d'un même groupe (moins s'il en reste
   moins) : on désigne le meilleur, puis le moins bon. Deux touches valent 5 comparaisons ; si le
   moins bon est indécidable, « Passer » ne retient que le meilleur (3 comparaisons). Les quatuors
   réunissent de préférence les titres les moins comparés et proches en score. Le score de palier

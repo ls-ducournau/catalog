@@ -10,7 +10,7 @@ export type PersonView = {
   name: string;
   photoUrl: string | null;
   opinion: 1 | -1;
-  /** Note de 1 à 5 d'une personne aimée (classement-v1 FR-13). */
+  /** Note de 0 (💩) à 5 d'une personne aimée (classement-v1 FR-13). */
   rating: number | null;
   roles: PersonRole[];
   /** Tes titres vus où elle figure, les mieux notés d'abord. */

@@ -19,26 +19,15 @@ export function TimelineLayout({ children, className }: { children: ReactNode; c
 }
 
 /**
- * Palette de commandes : une colonne centrée (question, fenêtre, barre d'actions et touches).
- * Duels, Tri rapide.
- */
-export function CommandLayout({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <main className={cn(MAIN, "relative flex flex-col items-center gap-6 overflow-x-clip pt-8 sm:pt-12", className)}>
-      {children}
-    </main>
-  );
-}
-
-/**
- * Accueil : héros en éclats (le seul décor en couleur), puis le contenu. Accueil, Ce soir.
- * `hero` reçoit le titre et l'action ; `shards` pose le décor derrière lui.
+ * Accueil : héros en éclats (le seul décor en couleur), puis le contenu. Accueil, Ce soir, Duels,
+ * Tri rapide. `hero` reçoit le titre et l'action ; `shards` pose le décor derrière lui.
  */
 export function HeroLayout({
   hero,
   children,
   shards = true,
   compact = false,
+  stage = false,
   className,
 }: {
   hero: ReactNode;
@@ -46,8 +35,24 @@ export function HeroLayout({
   shards?: boolean;
   /** Outil plutôt que vitrine (Ce soir) : le héros laisse vite la place au contenu. */
   compact?: boolean;
+  /**
+   * Scène (Duels, Tri rapide ; la fenêtre de Raycast sur son héros) : la question, puis la fenêtre
+   * de commande posée sur le décor, dans le héros ; `children` reçoit la fenêtre et ses à-côtés.
+   */
+  stage?: boolean;
   className?: string;
 }) {
+  if (stage) {
+    return (
+      <main className={cn("flex flex-1 flex-col", className)}>
+        <section className="relative isolate flex flex-1 flex-col items-center gap-6 overflow-x-clip px-4 pb-16 pt-8 sm:px-6 sm:pt-10">
+          {shards && <ShardsBackdrop />}
+          <div className="flex flex-col items-center gap-2 text-center">{hero}</div>
+          {children && <div className="frame flex w-full flex-col items-center gap-6">{children}</div>}
+        </section>
+      </main>
+    );
+  }
   return (
     <main className={cn("flex flex-1 flex-col", className)}>
       <section

@@ -1,5 +1,6 @@
 /**
- * Score TMDB façon "note d'audience" (cercle % coloré) — voteCount=0 → "NR" plutôt qu'un faux 0%.
+ * Score TMDB façon "note d'audience" (cercle % coloré, docs/design-reference/raycast/composants/
+ * note-et-score.md) — voteCount=0 → "NR" plutôt qu'un faux 0%.
  * Le tracé est vectoriel : seule la taille de la boîte et celle du chiffre changent selon `size`
  * ("md" pour les listes et les fiches où on lit le score, "sm" dans un coin d'affiche).
  */
@@ -27,8 +28,9 @@ export function ScoreBadge({
   }
 
   const pct = Math.round((voteAverage ?? 0) * 10);
-  // Une seule teinte (DESIGN.md, système monochrome) : l'intensité de l'arc dit le niveau.
-  const colorClass = pct >= 70 ? "stroke-foreground" : pct >= 40 ? "stroke-muted" : "stroke-subtle";
+  // Couleur des scores (décision D6) : vert dès 70, jaune de 40 à 69, gris dessous. Le chiffre
+  // reste au centre : la couleur ne porte jamais seule l'information.
+  const colorClass = pct >= 70 ? "stroke-score-high" : pct >= 40 ? "stroke-score-mid" : "stroke-score-low";
   const radius = 13;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (pct / 100) * circumference;
