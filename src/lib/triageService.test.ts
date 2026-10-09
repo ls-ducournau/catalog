@@ -148,6 +148,21 @@ describe("Tri rapide — réponses et annulation (AC-2, AC-3, FR-4, FR-6)", () =
     expect(ratingOf(db, id)).toBeNull();
   });
 
+  it("une note de 0 à 5 sur un titre vu la pose telle quelle ; l'annulation la retire", async () => {
+    const top = seed(db, { name: "Chef-d'œuvre", status: "Watched" });
+    const bad = seed(db, { name: "Nul", status: "Watched" });
+
+    const five = await answerTriage(db, { family: "seen", id: top }, "like", 5);
+    if ("error" in five) throw new Error(five.error);
+    expect(ratingOf(db, top)).toBe("⭐️⭐️⭐️⭐️⭐️");
+
+    await answerTriage(db, { family: "seen", id: bad }, "like", 0);
+    expect(ratingOf(db, bad)).toBe("💩");
+
+    await undoTriage(db, five.undo);
+    expect(ratingOf(db, top)).toBeNull();
+  });
+
   it("« Je n'aime pas » sur un titre vu pose ⭐⭐", async () => {
     const id = seed(db, { name: "Vu sans note", status: "Watched" });
     await answerTriage(db, { family: "seen", id }, "dislike");

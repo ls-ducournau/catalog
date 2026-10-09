@@ -1,8 +1,11 @@
-import { Film, Inbox } from "lucide-react";
+import { Film, Inbox, Swords } from "lucide-react";
 import { Badge, Button, MonoMeta } from "@/components/ui";
 import {
+  ArrowLink,
   DetailHeader,
   EmptyState,
+  FeatureEyebrow,
+  FeatureSection,
   FeaturedRow,
   InfoTable,
   SectionHeading,
@@ -33,6 +36,28 @@ export function SectionsDemo() {
           </div>
         ))}
       </FeaturedRow>
+
+      <FeatureSection
+        id="demo-fonction"
+        eyebrow={<FeatureEyebrow icon={<Swords size={16} />}>FeatureSection</FeatureEyebrow>}
+        title="Texte et visuel côte à côte."
+        lead="Une fonction de l'accueil : surtitre, titre, explication, chiffres et actions ; le visuel est une vraie commande (RatingPreview, DuelPreview, ReleasesPreview). « reverse » le passe à gauche."
+        meta="533 titres classés | 6 paliers"
+        actions={
+          <>
+            <Button href="/duels">Lancer les duels</Button>
+            <ArrowLink href="/classement">Voir ton classement</ArrowLink>
+          </>
+        }
+        visual={
+          <div className="feature-stage">
+            <div className="mx-auto grid w-full max-w-sm grid-cols-2 gap-6">
+              <span className="aspect-[2/3] rounded-frame bg-surface-3" />
+              <span className="aspect-[2/3] rounded-frame bg-surface-3" />
+            </div>
+          </div>
+        }
+      />
 
       <div className="flex flex-col gap-6">
         <SectionHeading title="TimelineSection" lead="Entrées datées du Changelog : colonne collante à gauche." />
@@ -109,10 +134,10 @@ export function SectionsDemo() {
 /** Vignettes schématiques : la structure de chaque archétype, en blocs. */
 const ARCHETYPES: { name: string; model: string; views: string; blocks: string[][] }[] = [
   { name: "HeroLayout", model: "Accueil", views: "Accueil, Ce soir", blocks: [["hero"], ["row"]] },
+  { name: "HeroLayout stage", model: "Fenêtre sur le héros", views: "Duels, Tri rapide", blocks: [["ask"], ["window"], ["bar"]] },
   { name: "CatalogLayout", model: "Store", views: "Bibliothèque, Recommandations, Classement", blocks: [["head"], ["bar"], ["grid"]] },
   { name: "DetailLayout", model: "Page d'extension", views: "Fiche d'un titre", blocks: [["head"], ["tabs"], ["body", "aside"]] },
   { name: "TimelineLayout", model: "Changelog", views: "Sorties", blocks: [["head"], ["date", "body"], ["date", "body"]] },
-  { name: "CommandLayout", model: "Palette", views: "Duels, Tri rapide, Ajouter", blocks: [["ask"], ["window"], ["bar"]] },
 ];
 
 const BLOCK: Record<string, string> = {

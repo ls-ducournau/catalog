@@ -1,16 +1,17 @@
 "use client";
 
 import type { ComponentPropsWithoutRef, ReactNode, Ref } from "react";
-import { Search, X } from "lucide-react";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Kbd } from "./primitives";
 
-// Saisie — spec: specs/design-system-v2-raycast.md § 5 (DESIGN.md « Inset Input Field »).
+// Saisie — spec: specs/design-system-v2-raycast.md § 5 ; relevé : docs/design-reference/raycast/
+// composants/champ-recherche.md.
 
 /**
- * Recherche : champ en creux, loupe, raccourci affiché à droite ; le bas du champ « balaie »
- * pendant une requête (`searching`). Avec `onClear`, une croix remplace le raccourci dès qu'on
- * a tapé quelque chose.
+ * Recherche (Store de Raycast) : champ Onyx à arête, sans loupe, raccourci affiché à droite ; le
+ * bas du champ « balaie » pendant une requête (`searching`). Avec `onClear`, une croix remplace
+ * le raccourci dès qu'on a tapé quelque chose.
  */
 export function SearchField({
   shortcut,
@@ -29,8 +30,7 @@ export function SearchField({
 }) {
   const filled = typeof rest.value === "string" ? rest.value !== "" : false;
   return (
-    <label className={cn("field flex h-10 items-center gap-2 px-3", searching && "is-searching", className)}>
-      <Search size={16} aria-hidden="true" className="shrink-0 text-muted" />
+    <label className={cn("field field-search flex items-center gap-2", searching && "is-searching", className)}>
       <input
         ref={ref}
         type="search"
@@ -47,7 +47,7 @@ export function SearchField({
           <X size={15} aria-hidden="true" />
         </button>
       ) : shortcut && (
-        <span aria-hidden="true" className="hidden shrink-0 items-center gap-1 sm:flex">
+        <span aria-hidden="true" className="hidden shrink-0 items-center gap-1.5 sm:flex">
           {shortcut.map((k) => (
             <Kbd key={k}>{k}</Kbd>
           ))}

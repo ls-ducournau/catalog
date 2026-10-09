@@ -74,8 +74,7 @@ for (const [nom] of entries(tokens.role.color)) {
   L.push(`  --color-${nom}: var(--${nom});`);
 }
 L.push("  --color-line: var(--surface-border);");
-L.push(`  --font-sans: ${tokens.tailwind.font.sans.$value};`);
-L.push(`  --font-mono: ${tokens.tailwind.font.mono.$value};`);
+for (const [nom, t] of entries(tokens.tailwind.font)) L.push(`  --font-${nom}: ${t.$value};`);
 L.push("}");
 L.push("");
 L.push("@theme {");

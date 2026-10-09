@@ -3,6 +3,7 @@ import { isStale, type Availability } from "./availability";
 import { isReleaseStale, type ReleaseInfo } from "./release";
 import type { TrailerInfo } from "./trailer";
 import type { Category, LibraryItem, WatchStatus } from "./libraryItem";
+import { parseGenres } from "./genres";
 import {
   getDetails,
   getDetailsFr,
@@ -58,6 +59,7 @@ function toLibraryItem(row: ItemRow): LibraryItem {
     year: row.year,
     type: row.type as "Movie" | "TV Series",
     category: isDocumentaryGenre(row.genre) ? "Documentary" : (row.type as "Movie" | "TV Series"),
+    genres: parseGenres(row.genre),
     watchStatus: row.watch_status as WatchStatus | null,
     posterUrl: posterUrl(row.poster_path),
     rating: row.rating,
@@ -170,6 +172,8 @@ export type ListItemsOptions = {
   genre?: string;
   /** Note personnelle minimale, 1 à 5 étoiles (💩 exclu de ce filtre : ce n'est pas "au moins 0 étoile"). */
   minRating?: number;
+  /** Note personnelle exacte, de 0 (💩) à 5 étoiles : une barre de l'histogramme de l'accueil. */
+  rating?: number;
   /**
    * Identifiants de services couverts par tes abonnements (formules avec publicité comprises) :
    * ne garde que les titres inclus sur l'un d'eux (disponibilite-streaming-v1 FR-5).
@@ -235,6 +239,10 @@ export function listItems(db: Database.Database, options: ListItemsOptions = {})
     const acceptable = RATING_SCALE.slice(options.minRating); // exclut 💩, inclut N étoiles et plus
     conditions.push(`rating IN (${acceptable.map(() => "?").join(",")})`);
     params.push(...acceptable);
+  }
+  if (options.rating !== undefined && Number.isInteger(options.rating) && options.rating >= 0 && options.rating <= 5) {
+    conditions.push("rating = ?");
+    params.push(RATING_SCALE[options.rating]);
   }
 
   if (options.onServices) {
@@ -615,6 +623,9 @@ export function deleteItemLocally(db: Database.Database, id: number): boolean {
   const tx = db.transaction(() => {
     db.prepare(`DELETE FROM duels WHERE item_a_id = ? OR item_b_id = ?`).run(id, id);
     db.prepare(`DELETE FROM tier_duels WHERE item_a_id = ? OR item_b_id = ?`).run(id, id);
+    // playlists-v1 FR-9 : un titre retiré de la bibliothèque quitte aussi les playlists.
+    db.prepare(`DELETE FROM playlist_items WHERE item_id = ?`).run(id);
+    db.prepare(`DELETE FROM playlist_suggestion_dismissals WHERE item_id = ?`).run(id);
     return db.prepare(`DELETE FROM items WHERE id = ?`).run(id);
   });
 

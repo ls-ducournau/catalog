@@ -2,7 +2,8 @@
 
 import { buttonClass } from "@/components/ui/Button";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
-import { ArrowDown, ArrowUp, CircleAlert, Info, RotateCcw, Search, X, ZoomIn, ZoomOut, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, CircleAlert, Info, ListPlus, RotateCcw, Search, X, ZoomIn, ZoomOut, Plus } from "lucide-react";
+import { openPlaylistDialog } from "@/components/playlists/PlaylistDialog";
 import { DetailPanel } from "@/components/DetailPanel";
 import { DiscoverCard } from "@/components/DiscoverCard";
 import { FilterSelect } from "@/components/FilterSelect";
@@ -12,7 +13,7 @@ import { useMyServices } from "@/components/useMyServices";
 import { includedIn } from "@/lib/availability";
 import { ItemCard } from "@/components/ItemCard";
 import { ScoreBadge } from "@/components/ScoreBadge";
-import { StarRating } from "@/components/StarRating";
+import { StarCount, StarRating } from "@/components/StarRating";
 import { YearInput } from "@/components/YearInput";
 import {
   SynopsisTooltip,
@@ -146,14 +147,24 @@ export default function LibraryPage() {
   const [showAddModal, setShowAddModal] = useState(false);
 
   // « Ajouter un titre » de la barre du haut : à l'arrivée (?ajouter=1) ou sur place (événement).
+  // Depuis l'accueil : ?fiche=<id> ouvre la fiche d'un titre, ?q= préremplit la recherche.
   useEffect(() => {
     function open() {
       setShowAddModal(true);
     }
-    if (new URLSearchParams(window.location.search).get("ajouter") === "1") {
-      open();
-      window.history.replaceState(null, "", window.location.pathname);
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("ajouter") === "1") open();
+    const query = params.get("q");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (query) setQ(query);
+    const fiche = Number(params.get("fiche"));
+    if (Number.isInteger(fiche) && fiche > 0) {
+      fetch(`/api/items/${fiche}`)
+        .then((res) => (res.ok ? (res.json() as Promise<LibraryItem>) : null))
+        .then((item) => item && setSelected(item))
+        .catch(() => undefined);
     }
+    if (params.size > 0) window.history.replaceState(null, "", window.location.pathname);
     window.addEventListener(ADD_TITLE_EVENT, open);
     return () => window.removeEventListener(ADD_TITLE_EVENT, open);
   }, []);
@@ -424,6 +435,27 @@ export default function LibraryPage() {
     return () => clearTimeout(t);
   }, [deleteErrorItem]);
 
+  /** Dernière carte cochée, point de départ d'une plage (Maj+clic). */
+  const lastToggled = useRef<number | null>(null);
+
+  /** Coche ou décoche une carte ; avec Maj, coche toute la plage depuis la dernière (playlists-v2 FR-4). */
+  function toggleSelect(id: number, range: boolean) {
+    const from = lastToggled.current === null ? -1 : items.findIndex((i) => i.id === lastToggled.current);
+    const to = items.findIndex((i) => i.id === id);
+    lastToggled.current = id;
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (range && from >= 0 && to >= 0) {
+        const [start, end] = from < to ? [from, to] : [to, from];
+        for (const item of items.slice(start, end + 1)) next.add(item.id);
+        return next;
+      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   /** Sélection par lot : applique un statut à tous les items sélectionnés en parallèle. */
   async function bulkSetStatus(status: WatchStatus) {
     const ids = Array.from(selectedIds);
@@ -510,7 +542,12 @@ export default function LibraryPage() {
             onChange={(v) => setMinRating(v === "" ? 0 : Number(v))}
             options={[1, 2, 3, 4, 5].map((n) => ({
               value: String(n),
-              label: `${"⭐️".repeat(n)} et plus`,
+              label: `${n} étoile${n > 1 ? "s" : ""} et plus`,
+              display: (
+                <>
+                  <StarCount value={n} /> et plus
+                </>
+              ),
             }))}
           />
           <ServicesFilter
@@ -643,14 +680,7 @@ export default function LibraryPage() {
             item={item}
             selectionMode={selectionMode}
             selected={selectedIds.has(item.id)}
-            onToggleSelect={() =>
-              setSelectedIds((prev) => {
-                const next = new Set(prev);
-                if (next.has(item.id)) next.delete(item.id);
-                else next.add(item.id);
-                return next;
-              })
-            }
+            onToggleSelect={(range) => toggleSelect(item.id, range)}
             onOpen={() => setSelected(item)}
             onQuickChange={patchItem}
             onDelete={(i) => requestDelete([i])}
@@ -690,6 +720,16 @@ export default function LibraryPage() {
                   Marquer « {STATUS_META[status].label} »
                 </Button>
               ))}
+              {/* playlists-v2 FR-4 : la sélection entière, dans l'ordre où elle a été faite. */}
+              <Button
+                onClick={() =>
+                  openPlaylistDialog({ kind: "items", itemIds: Array.from(selectedIds) }, "selection", () => setSelectedIds(new Set()))
+                }
+                size="sm"
+              >
+                <ListPlus size={14} aria-hidden="true" />
+                Ajouter à une playlist
+              </Button>
               <Button onClick={() => requestDelete(items.filter((i) => selectedIds.has(i.id)))} size="sm">
                 Supprimer
               </Button>
@@ -1164,7 +1204,7 @@ function AddItemModal({
             d'actions au pied. */}
         <div className="bezel-inner flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between gap-4 px-4 pt-4 sm:px-5">
-          <h2 className="text-base font-medium text-foreground">
+          <h2 className="text-base text-foreground">
             {qualifying ? "Qualifier l’ajout" : "Ajouter un titre"}
           </h2>
           <Button onClick={onClose} aria-label="Fermer" variant="ghost" size="sm" icon>
@@ -1245,7 +1285,7 @@ function AddItemModal({
         ) : (
           <>
             <SearchField
-              className="mt-4 h-11"
+              className="mt-4"
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}

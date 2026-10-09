@@ -23,6 +23,8 @@ export type LibraryItem = {
   year: string | null;
   type: "Movie" | "TV Series";
   category: Category;
+  /** Genres TMDB, en anglais (affichés avec `genreLabel`, src/lib/genres.ts). */
+  genres: string[];
   watchStatus: WatchStatus | null;
   posterUrl: string | null;
   rating: string | null;

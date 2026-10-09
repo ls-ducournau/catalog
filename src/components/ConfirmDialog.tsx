@@ -61,7 +61,7 @@ export function ConfirmDialog({
         onClick={(e) => e.stopPropagation()}
         className="dialog-in card w-full max-w-sm p-5 shadow-[var(--shadow-raised)]"
       >
-        <h2 id="confirm-title" className="text-base font-medium text-foreground">
+        <h2 id="confirm-title" className="text-base text-foreground">
           {title}
         </h2>
         <div id="confirm-description" className="mt-2 text-sm leading-5 text-muted">

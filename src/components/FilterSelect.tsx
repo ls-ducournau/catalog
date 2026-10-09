@@ -1,10 +1,22 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 
-export type FilterOption = { value: string; label: string };
+/** `display` : rendu riche (des étoiles, par exemple) ; `label` reste le texte lu et cherché. */
+export type FilterOption = { value: string; label: string; display?: ReactNode };
+
+/** Libellé d'une option : le rendu riche à l'écran, le texte pour les lecteurs d'écran. */
+function OptionLabel({ option }: { option: FilterOption }) {
+  if (!option.display) return <>{option.label}</>;
+  return (
+    <>
+      <span aria-hidden="true">{option.display}</span>
+      <span className="sr-only">{option.label}</span>
+    </>
+  );
+}
 
 const VIEWPORT_MARGIN = 8;
 const GAP = 6;
@@ -167,7 +179,7 @@ export function FilterSelect({
         className={`inline-flex h-8 items-center rounded-full transition [@media(pointer:coarse)]:h-10 ${
           active
             ? "bg-surface-2 text-foreground"
-            : "text-muted shadow-[inset_0_0_0_1px_var(--surface-border)] hover:text-foreground hover:shadow-[inset_0_0_0_1px_var(--line-strong)]"
+            : "text-muted shadow-[inset_0_0_0_1px_var(--field-edge)] hover:text-foreground hover:shadow-[inset_0_0_0_1px_var(--field-edge-hover)]"
         }`}
       >
         <button
@@ -186,7 +198,7 @@ export function FilterSelect({
         >
           <span className="max-w-[11rem] truncate">
             {prefix && <span className="text-muted">{prefix} </span>}
-            {selected ? selected.label : placeholder}
+            {selected ? <OptionLabel option={selected} /> : placeholder}
           </span>
           <ChevronDown
             size={13}
@@ -230,7 +242,7 @@ export function FilterSelect({
             className="menu-pop menu-panel z-[60] max-h-[min(20rem,60vh)] w-max max-w-[calc(100vw-1rem)] overflow-y-auto outline-none"
           >
             {searchable && (
-              <div className="sticky top-0 z-10 mb-1 flex items-center gap-2 border-b border-surface-border bg-surface-raised px-2 pb-2 pt-1.5">
+              <div className="sticky top-0 z-10 mb-1 flex items-center gap-2 border-b border-divider bg-surface-raised px-2 pb-2 pt-1.5">
                 <Search size={13} aria-hidden="true" className="shrink-0 text-muted" />
                 <input
                   ref={searchRef}
@@ -263,7 +275,9 @@ export function FilterSelect({
                   data-highlighted={highlight === i}
                   className="menu-item"
                 >
-                  <span className="truncate">{row.label}</span>
+                  <span className="truncate">
+                    <OptionLabel option={row} />
+                  </span>
                   {isSelected && <Check size={14} aria-hidden="true" className="shrink-0 text-foreground" />}
                 </button>
               );

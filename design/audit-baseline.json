@@ -1,5 +1,5 @@
 {
-  "date": "2026-09-28",
+  "date": "2026-10-06",
   "comptes": {
     "tailles-arbitraires": 0,
     "textes-sous-12px": 0,
@@ -13,6 +13,6 @@
     "corail-hors-marque": 0,
     "teintes-hors-jetons": 0,
     "tirets-cadratins": 0,
-    "animations-css": 12
+    "animations-css": 13
   }
 }

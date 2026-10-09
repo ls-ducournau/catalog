@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { RefreshCw, Trash2, X } from "lucide-react";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { TrailerButton } from "@/components/TrailerButton";
+import { PlaylistPicker } from "@/components/playlists/PlaylistPicker";
 import { StarRating } from "@/components/StarRating";
 import { ratingPatch, type ItemPatch, type LibraryItem } from "@/lib/libraryItem";
 import { includedIn, isStale } from "@/lib/availability";
@@ -12,6 +13,7 @@ import { DetailLayout } from "@/components/layouts";
 import { DetailHeader, InfoTable } from "@/components/sections";
 import { Button, Kbd, Tabs } from "@/components/ui";
 import { ProviderLogo } from "@/components/ProviderLogo";
+import { genreLine } from "@/lib/genres";
 
 type Tab = "apercu" | "ou-voir";
 
@@ -82,6 +84,7 @@ export function DetailPanel({
   const info = ([
     item.year ? { label: "Année", value: item.year } : null,
     { label: "Type", value: categoryLabel },
+    item.genres.length > 0 ? { label: "Genres", value: genreLine(item.genres, 4) } : null,
     tmdb
       ? { label: "TMDB", value: `${tmdb} · ${(item.voteCount ?? 0).toLocaleString("fr-FR")} votes` }
       : { label: "TMDB", value: "Pas encore noté" },
@@ -117,6 +120,7 @@ export function DetailPanel({
                   meta={[
                     ...(item.year ? [item.year] : []),
                     categoryLabel,
+                    ...(item.genres.length > 0 ? [genreLine(item.genres)] : []),
                     ...(tmdb ? [`TMDB ${tmdb}`] : []),
                     ...(mine.length > 0
                       ? [
@@ -184,6 +188,12 @@ export function DetailPanel({
                         showWorstTier
                         showLabel
                       />
+                    </div>
+
+                    {/* playlists-v1 FR-4 : ajouter à une playlist, ou retirer, sans quitter la fiche. */}
+                    <div className="w-full">
+                      <p className="eyebrow">Playlists</p>
+                      <PlaylistPicker key={item.id} itemId={item.id} name={item.name} className="mt-2" />
                     </div>
 
                     {(item.trailer || item.voteCount) && (

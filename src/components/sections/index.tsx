@@ -2,57 +2,27 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Divider, Eyebrow, IconCircle, MetaRow } from "@/components/ui/primitives";
 import { ActionBar, type Action } from "@/components/ui/command";
+import { SectionHeading } from "./basics";
 
 // Sections — spec: specs/design-system-v2-raycast.md § 6. Blocs réutilisables qu'un archétype
 // (components/layouts) assemble ; chacun reprend une section relevée sur raycast.com.
 
 export { PageHeader } from "@/components/PageHeader";
+export { SectionHeading, Toolbar } from "./basics";
+export { FeatureWall, ShowcaseCard, ShowcaseCarousel, TitleListSection, TitleRowCard } from "./showcase";
+export { ArrowLink, FeatureEyebrow, FeatureSection } from "./feature";
+export { DuelPreview, RatingPreview, ReleasesPreview } from "./previews";
+export { RecommendationsWall } from "./recommendations-wall";
+export { PlaylistPreview } from "./playlist-preview";
 export { FlipGrid as MediaGrid } from "@/components/motion/FlipGrid";
 export { RecommendationRow as MediaRow } from "@/components/RecommendationRow";
-
-/** Barre d'outils d'une liste (Store) : onglets à gauche ; filtres et recherche à droite. */
-export function Toolbar({ start, end, className }: { start?: ReactNode; end?: ReactNode; className?: string }) {
-  return (
-    <div className={cn("flex flex-wrap items-center gap-3", className)}>
-      {start && <div className="flex min-w-0 flex-wrap items-center gap-2">{start}</div>}
-      {end && <div className="ml-auto flex min-w-0 flex-wrap items-center gap-2">{end}</div>}
-    </div>
-  );
-}
-
-/** Titre de section : titre, précision en gris, action à droite. */
-export function SectionHeading({
-  title,
-  lead,
-  action,
-  as: Tag = "h2",
-  id,
-}: {
-  title: ReactNode;
-  lead?: ReactNode;
-  action?: ReactNode;
-  as?: "h2" | "h3";
-  id?: string;
-}) {
-  return (
-    <div className="flex items-end justify-between gap-4">
-      <div className="min-w-0">
-        <Tag id={id} className="text-lg font-medium text-foreground">
-          {title}
-        </Tag>
-        {lead && <p className="mt-0.5 text-sm text-muted">{lead}</p>}
-      </div>
-      {action && <div className="shrink-0">{action}</div>}
-    </div>
-  );
-}
 
 /** Rangée « Featured » du Store : trois cartes centrées sous un titre. */
 export function FeaturedRow({ title, lead, children }: { title: ReactNode; lead?: ReactNode; children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-6">
+    <section className="flex flex-col gap-8">
       <SectionHeading title={title} lead={lead} />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">{children}</div>
     </section>
   );
 }
@@ -80,7 +50,7 @@ export function TimelineSection({
       {aside && (
         // Collante sous la barre de navigation : sur téléphone, elle passe au-dessus du contenu
         // (fond de page et léger flou pour rester lisible), sur ordinateur dans sa colonne.
-        <div className="sticky top-[4.25rem] z-20 -mx-4 bg-background/85 px-4 py-2 backdrop-blur-md md:top-20 md:z-auto md:mx-0 md:self-start md:bg-transparent md:p-0 md:backdrop-blur-none">
+        <div className="sticky top-[4.25rem] z-20 -mx-4 bg-background/85 px-4 py-2 backdrop-blur-md md:top-20 md:z-auto lg:top-28 md:mx-0 md:self-start md:bg-transparent md:p-0 md:backdrop-blur-none">
           {aside}
         </div>
       )}
@@ -107,7 +77,7 @@ export function DetailHeader({
     <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
       {media && <div className="shrink-0">{media}</div>}
       <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <h2 className="text-subheading font-semibold text-foreground">{title}</h2>
+        <h2 className="text-subheading text-foreground">{title}</h2>
         {summary && <p className="text-sm text-muted">{summary}</p>}
         {meta && meta.length > 0 && (
           <MetaRow>
@@ -194,7 +164,7 @@ export function SummaryCard({
     <div className={cn("card flex flex-col gap-4 p-6", className)}>
       <div>
         {eyebrow && <Eyebrow className="mb-1">{eyebrow}</Eyebrow>}
-        <h3 className="text-base font-medium text-foreground">{title}</h3>
+        <h3 className="text-base text-foreground">{title}</h3>
       </div>
       {children}
     </div>

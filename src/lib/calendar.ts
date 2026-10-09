@@ -9,6 +9,30 @@ export type CalendarEvent = "theatrical" | "digital" | "series_premiere" | "seas
 
 export type DatedEvent = { date: string; event: CalendarEvent; season: number | null };
 
+const EVENT_LABEL: Record<CalendarEvent, string> = {
+  theatrical: "Sortie en salle",
+  digital: "Sortie numérique",
+  series_premiere: "Nouvelle série",
+  season_premiere: "Nouvelle saison",
+};
+
+/** « Sortie en salle », « Nouvelle série », « Saison 3 ». */
+export function eventLabel(entry: { event: CalendarEvent; season: number | null }): string {
+  return entry.event === "season_premiere" && entry.season !== null ? `Saison ${entry.season}` : EVENT_LABEL[entry.event];
+}
+
+/** « Film », « Série » ou « Documentaire ». */
+export function kindLabel(entry: { mediaType: "Movie" | "TV Series"; isDocumentary: boolean }): string {
+  if (entry.isDocumentary) return "Documentaire";
+  return entry.mediaType === "Movie" ? "Film" : "Série";
+}
+
+/** « Lundi 21 » : le jour dans la semaine (date AAAA-MM-JJ). */
+export function dayLabel(iso: string): string {
+  const label = new Date(`${iso}T12:00:00Z`).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", timeZone: "UTC" });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
 /**
  * Événements datés d'un titre dans [from, to] (dates AAAA-MM-JJ). La sortie numérique n'est
  * demandée que pour ta bibliothèque : pour le reste, la sortie en salle suffit à le signaler.

@@ -5,12 +5,58 @@ import { Star } from "lucide-react";
 
 /** Échelle de notation Notion : "💩" (palier le plus bas), puis 1 à 5 "⭐️". */
 const WORST = "💩";
-const STAR_LABELS = ["Nul", "Bof", "Correct", "Bien", "Très bien", "Chef-d'œuvre"] as const;
+/** Nom de chaque note, de 💩 (0) à cinq étoiles : titres et personnes. */
+export const STAR_LABELS = ["Nul", "Bof", "Correct", "Bien", "Très bien", "Chef-d'œuvre"] as const;
 
 /** Nombre d'étoiles d'une note ; 0 pour "💩" comme pour une note absente. */
 export function starCount(rating: string | null): number {
   if (!rating) return 0;
   return rating.split("⭐️").length - 1;
+}
+
+/**
+ * L'étoile de Catalog, la même partout où une note s'affiche (décision D6 ; fiche
+ * docs/design-reference/raycast/composants/note-et-score.md) : pleine en jaune `--rating`,
+ * vide en contour Smoke. Aucun autre dessin d'étoile (ni « ★ », ni « ⭐️ ») dans l'interface.
+ */
+export function StarIcon({ filled, size = 14, className = "" }: { filled: boolean; size?: number; className?: string }) {
+  return (
+    <Star
+      size={size}
+      strokeWidth={1.5}
+      aria-hidden="true"
+      className={`shrink-0 transition-colors duration-150 ${filled ? "fill-rating text-rating" : "fill-transparent text-subtle"} ${className}`}
+    />
+  );
+}
+
+/** Nombre d'étoiles et une étoile pleine (« 4 ★ ») : paliers, moyennes, filtres. */
+export function StarCount({
+  value,
+  size = 13,
+  className = "",
+}: {
+  value: number | string;
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <span className={`inline-flex items-center gap-1 tabular-nums ${className}`}>
+      {value}
+      <StarIcon filled size={size} />
+    </span>
+  );
+}
+
+/** Rangée d'étoiles pleines (titre d'un palier) ; lue « n étoiles ». */
+export function StarRow({ count, size = 16, className = "" }: { count: number; size?: number; className?: string }) {
+  return (
+    <span role="img" aria-label={`${count} étoile${count > 1 ? "s" : ""}`} className={`inline-flex items-center gap-0.5 ${className}`}>
+      {Array.from({ length: count }, (_, i) => (
+        <StarIcon key={i} filled size={size} />
+      ))}
+    </span>
+  );
 }
 
 /** Directions de la gerbe d'étincelles, en px depuis le centre de l'étoile. */
@@ -87,7 +133,7 @@ export function StarRating({
           className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border text-sm transition duration-150 active:scale-95 ${
             rating === WORST
               ? "star-set border-accent bg-accent/10"
-              : "border-surface-border opacity-40 hover:scale-110 hover:opacity-100"
+              : "border-field-edge opacity-40 hover:scale-110 hover:opacity-100"
           }`}
         >
           {WORST}
@@ -128,13 +174,7 @@ export function StarRating({
                 className={`block ${popping ? "star-set" : ""}`}
                 style={popping ? { animationDelay: `${(n - 1) * stagger}ms` } : undefined}
               >
-                <Star
-                  size={iconSize}
-                  strokeWidth={1.5}
-                  className={`transition-colors duration-150 ${
-                    filled ? "fill-foreground text-foreground" : "fill-transparent text-subtle"
-                  }`}
-                />
+                <StarIcon filled={filled} size={iconSize} />
               </span>
 
               {/* Étincelles sur la dernière étoile de la cascade : le moment de récompense. */}
@@ -143,7 +183,7 @@ export function StarRating({
                   {SPARKLES.map((s, i) => (
                     <span
                       key={`${burst.key}-${i}`}
-                      className="star-sparkle absolute left-1/2 top-1/2 h-1 w-1 rounded-full bg-foreground"
+                      className="star-sparkle absolute left-1/2 top-1/2 h-1 w-1 rounded-full bg-rating"
                       style={
                         {
                           "--sx": s.sx,
@@ -174,13 +214,7 @@ export function StarsReadOnly({ rating, className = "" }: { rating: string | nul
   return (
     <span role="img" aria-label={count ? `Note : ${count} sur 5` : "Pas encore noté"} className={`flex items-center gap-px ${className}`}>
       {[1, 2, 3, 4, 5].map((n) => (
-        <Star
-          key={n}
-          size={12}
-          strokeWidth={1.5}
-          aria-hidden="true"
-          className={n <= count ? "fill-foreground text-foreground" : "fill-transparent text-subtle"}
-        />
+        <StarIcon key={n} filled={n <= count} size={12} />
       ))}
     </span>
   );

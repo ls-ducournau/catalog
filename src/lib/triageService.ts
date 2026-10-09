@@ -229,15 +229,24 @@ export type TriageUndo =
   | { kind: "rating"; itemId: number; previous: string | null }
   | { kind: "opinion"; personId: number; name: string; previous: 1 | -1 | null };
 
+/**
+ * `rating` (titres déjà vus seulement) : la note choisie, de 0 (💩) à 5 étoiles, à la place des
+ * deux notes fixes d'« Aimé » et « Pas aimé ».
+ */
 export async function answerTriage(
   db: Database.Database,
   card: TriageSubject,
-  answer: TriageAnswer
+  answer: TriageAnswer,
+  rating?: number
 ): Promise<{ undo: TriageUndo } | { error: ActionError }> {
   if (card.family === "unseen") {
     logEvent(db, "triage", "tmdb", tmdbKey(card.mediaType, card.tmdbId), { family: card.family, answer });
   } else {
-    logEvent(db, "triage", card.family === "seen" ? "item" : "person", card.id, { family: card.family, answer });
+    logEvent(db, "triage", card.family === "seen" ? "item" : "person", card.id, {
+      family: card.family,
+      answer,
+      ...(rating !== undefined ? { rating } : {}),
+    });
   }
 
   // FR-4 : « passer » n'a aucun effet, sinon le journal.
@@ -258,7 +267,9 @@ export async function answerTriage(
     const previous = (
       db.prepare(`SELECT rating FROM items WHERE id = ?`).get(card.id) as { rating: string | null } | undefined
     )?.rating ?? null;
-    updateItem(db, card.id, { rating: answer === "like" ? SEEN_LIKE_RATING : SEEN_DISLIKE_RATING });
+    const next =
+      rating !== undefined ? RATING_SCALE[rating] : answer === "like" ? SEEN_LIKE_RATING : SEEN_DISLIKE_RATING;
+    updateItem(db, card.id, { rating: next });
     return { undo: { kind: "rating", itemId: card.id, previous } };
   }
 

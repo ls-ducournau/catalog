@@ -35,6 +35,7 @@ import { EmptyState, Toolbar } from "@/components/sections";
 import { Button, MonoMeta, Skeleton, Toast } from "@/components/ui";
 import { TasteProfile } from "@/components/TasteProfile";
 import { FlipGrid } from "@/components/motion/FlipGrid";
+import { genreLabel } from "@/lib/genres";
 
 type AffinityEntry = { name: string; affinity: number; count: number };
 
@@ -92,40 +93,6 @@ const CARD_SIZE_LEVELS = [
 const CARD_SIZE_STORAGE_KEY = "watchlist:cardSizeIndex";
 
 /** Traduction des genres TMDB, qui arrivent en anglais dans la base. */
-const GENRE_FR: Record<string, string> = {
-  Action: "Action",
-  "Action & Adventure": "Action et aventure",
-  Adventure: "Aventure",
-  Animation: "Animation",
-  Comedy: "Comédie",
-  Crime: "Policier",
-  Documentary: "Documentaire",
-  Drama: "Drame",
-  Family: "Famille",
-  Fantasy: "Fantastique",
-  History: "Histoire",
-  Horror: "Horreur",
-  Kids: "Jeunesse",
-  Music: "Musique",
-  Mystery: "Mystère",
-  News: "Actualités",
-  Reality: "Télé-réalité",
-  Romance: "Romance",
-  "Science Fiction": "Science-fiction",
-  "Sci-Fi & Fantasy": "Science-fiction et fantastique",
-  Soap: "Feuilleton",
-  Talk: "Talk-show",
-  Thriller: "Thriller",
-  "TV Movie": "Téléfilm",
-  War: "Guerre",
-  "War & Politics": "Guerre et politique",
-  Western: "Western",
-};
-
-function genreLabel(name: string): string {
-  return GENRE_FR[name] ?? name;
-}
-
 /** Tri-rapide FR-8 et FR-2 : ce que la boucle d'apprentissage a mesuré. */
 type Feedback = {
   acceptance: { decided: number; keptRate: number | null; seen: number; lovedRate: number | null };

@@ -105,11 +105,12 @@ test.describe("mouvement standard", () => {
 
   test("Règle 3 : l'arrivée sur une page est une cascade courte, sans dépassement", async ({ page }) => {
     await ouvrir(page, "/classement");
-    const releve = await relever(
-      page,
-      () => page.getByRole("navigation", { name: "Navigation principale" }).getByRole("link", { name: "Bibliothèque" }).click(),
-      2500
-    );
+    // La Bibliothèque est dans le menu « Ta collection » : on l'ouvre avant de relever.
+    const nav = page.getByRole("navigation", { name: "Navigation principale" });
+    await nav.getByRole("button", { name: "Ta collection" }).click();
+    const lien = nav.getByRole("link", { name: /^Bibliothèque/ });
+    await lien.waitFor();
+    const releve = await relever(page, () => lien.click(), 2500);
     const cascades = releve.gsap.filter((t) => t.cascade);
     expect(cascades.length, "une cascade d'arrivée").toBeGreaterThan(0);
     for (const t of cascades) {

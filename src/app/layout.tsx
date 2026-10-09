@@ -1,14 +1,23 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Inter } from "next/font/google";
+import { Bricolage_Grotesque, Geist_Mono, Work_Sans } from "next/font/google";
 import NavBar from "./NavBar";
+import { PlaylistDialogHost } from "@/components/playlists/PlaylistDialog";
 import { MotionRoot } from "@/components/MotionRoot";
 import { BackToTop } from "@/components/BackToTop";
 import "./globals.css";
 
-// Polices de DESIGN.md (Raycast) : Inter pour l'interface, Geist Mono pour les mentions techniques.
-const inter = Inter({
-  variable: "--font-inter",
+// Polices (choix de l'utilisateur, 2026-09-28) : Work Sans pour le texte, Bricolage Grotesque en
+// 600 pour les titres ; Geist Mono pour les mentions techniques (DESIGN.md, Raycast). Bricolage est
+// une police variable avec l'axe de taille optique : un grand titre prend le dessin d'affichage.
+const workSans = Work_Sans({
+  variable: "--font-work-sans",
   subsets: ["latin"],
+});
+
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
+  subsets: ["latin"],
+  axes: ["opsz"],
 });
 
 const geistMono = Geist_Mono({
@@ -25,12 +34,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="fr"
-      className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${workSans.variable} ${bricolage.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <MotionRoot />
         <NavBar />
         {children}
+        {/* playlists-v2 FR-1 : la fenêtre « Ajouter à une playlist », ouverte depuis n'importe quelle carte. */}
+        <PlaylistDialogHost />
         <BackToTop />
       </body>
     </html>

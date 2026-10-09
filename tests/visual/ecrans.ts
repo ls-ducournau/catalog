@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 
 /**
- * Les 10 écrans du système de design v2 (spec § 8.5). `ouvrir` amène l'écran dans l'état capturé,
+ * Les écrans du système de design v2 (spec § 8.5 ; playlists ajoutées le 2026-10-06). `ouvrir` amène l'écran dans l'état capturé,
  * sans jamais déclencher d'écriture (ni statut, ni note, ni synchronisation).
  */
 export type Ecran = { nom: string; chemin: string; ouvrir?: (page: Page) => Promise<void> };
@@ -32,6 +32,7 @@ export const ECRANS: Ecran[] = [
   { nom: "duels", chemin: "/duels" },
   { nom: "tri", chemin: "/tri" },
   { nom: "sorties", chemin: "/sorties" },
+  { nom: "playlists", chemin: "/playlists" },
   { nom: "ce-soir", chemin: "/ce-soir" },
 ];
 

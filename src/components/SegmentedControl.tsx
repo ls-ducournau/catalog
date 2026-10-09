@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { gsap, prefersReducedMotion, preset, useGSAP } from "@/lib/motion";
 
@@ -17,8 +17,11 @@ export function SegmentedControl<T extends string>({
   subtle = false,
 }: {
   label: string;
-  /** `icon` facultatif : un libellé qui se suffit (« 4 ★ ») n'en a pas besoin. */
-  options: { value: T; label: string; icon?: LucideIcon; title?: string }[];
+  /**
+   * `icon` facultatif : un libellé qui se suffit n'en a pas besoin. `display` : rendu riche (des
+   * étoiles) à la place du libellé ; le nom lu devient alors `title`, sinon `label`.
+   */
+  options: { value: T; label: string; icon?: LucideIcon; title?: string; display?: ReactNode }[];
   value: T;
   onChange: (value: T) => void;
   /** Rang secondaire (la catégorie, sous le mode) : sans rail, choix en gris. */
@@ -48,7 +51,11 @@ export function SegmentedControl<T extends string>({
           height: active.offsetHeight,
           autoAlpha: 1,
         };
-        if (animated && placed.current && !prefersReducedMotion()) {
+        // Glisse seulement depuis une pastille réellement affichée. Après un remontage (changement
+        // de palier des Duels) ou le double montage du mode strict, le contexte GSAP a été annulé :
+        // la pastille est retombée invisible à l'origine, elle se pose sans glisser.
+        const shown = parseFloat(getComputedStyle(pill).opacity) > 0;
+        if (animated && placed.current && shown && !prefersReducedMotion()) {
           preset.slide(pill, target);
         } else {
           gsap.set(pill, target);
@@ -77,12 +84,13 @@ export function SegmentedControl<T extends string>({
             role="radio"
             aria-checked={option.value === value}
             title={option.title}
+            aria-label={option.display ? (option.title ?? option.label) : undefined}
             onClick={() => onChange(option.value)}
             className="segmented-item"
           >
             {/* Rang secondaire : sans icône sur mobile, pour tenir sur une ligne. */}
             {Icon && <Icon size={14} aria-hidden="true" className={subtle ? "hidden sm:block" : undefined} />}
-            {option.label}
+            {option.display ?? option.label}
           </button>
         );
       })}

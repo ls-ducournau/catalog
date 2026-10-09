@@ -9,11 +9,15 @@ const ANSWERS: TriageAnswer[] = ["like", "dislike", "skip"];
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const card = parseTriageSubject(body?.card);
-  if (!card || !ANSWERS.includes(body?.answer)) {
+  // Une note (0 à 5) n'a de sens que pour un titre déjà vu.
+  const rating = body?.rating;
+  const ratingOk =
+    rating === undefined || (card?.family === "seen" && typeof rating === "number" && Number.isInteger(rating) && rating >= 0 && rating <= 5);
+  if (!card || !ANSWERS.includes(body?.answer) || !ratingOk) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
 
-  const result = await answerTriage(getDb(), card, body.answer as TriageAnswer);
+  const result = await answerTriage(getDb(), card, body.answer as TriageAnswer, rating as number | undefined);
   if ("error" in result) {
     return NextResponse.json({ error: result.error }, { status: actionErrorStatus(result.error) });
   }

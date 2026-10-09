@@ -30,12 +30,15 @@ export function TrailerButton({
   trailer,
   title,
   variant = "pill",
+  onImage = false,
   className = "",
 }: {
   trailer: Trailer | null;
   title: string;
   /** pill : « ▶ Bande-annonce VF » ; icon : rond, pour les grappes d'actions sur une affiche. */
   variant?: "pill" | "icon";
+  /** Posé sur une image : la pastille prend l'aspect `overlay` (noir translucide, flou), lisible sur une affiche claire. */
+  onImage?: boolean;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -45,7 +48,9 @@ export function TrailerButton({
 
   const stop = (e: PointerEvent | MouseEvent) => e.stopPropagation();
   const style =
-    variant === "icon" ? buttonClass({ variant: "overlay", icon: true, className }) : buttonClass({ variant: "secondary", className });
+    variant === "icon"
+      ? buttonClass({ variant: "overlay", icon: true, className })
+      : buttonClass({ variant: onImage ? "overlay" : "secondary", className });
   const content = (
     <>
       <Play size={variant === "icon" ? 16 : 14} aria-hidden="true" className={variant === "icon" ? "" : "fill-current"} />

@@ -1,4 +1,5 @@
 import type Database from "better-sqlite3";
+import { parseGenres } from "./genres";
 import { DEFAULT_ELO, computeElo } from "./elo";
 import { pickPair, pairKey, RECENT_PAIR_WINDOW, type EligibleItem } from "./pairSelection";
 import { categoryFilter } from "./itemService";
@@ -14,6 +15,8 @@ export type DuelItem = {
   name: string;
   year: string | null;
   type: "Movie" | "TV Series";
+  /** Genres TMDB, en anglais (affichés avec `genreLabel`). */
+  genres: string[];
   posterUrl: string | null;
   eloScore: number;
   duelsCount: number;
@@ -25,6 +28,7 @@ function toDuelItem(row: {
   name: string;
   year: string | null;
   type: string;
+  genre: string | null;
   poster_path: string | null;
   elo_score: number;
   duels_count: number;
@@ -34,6 +38,7 @@ function toDuelItem(row: {
     notionPageId: row.notion_page_id,
     name: row.name,
     year: row.year,
+    genres: parseGenres(row.genre),
     type: row.type as "Movie" | "TV Series",
     posterUrl: posterUrl(row.poster_path),
     eloScore: row.elo_score,

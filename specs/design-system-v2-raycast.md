@@ -17,10 +17,12 @@ dans le rapport du dégradé fourni (`#ac3c3c` → `#680d10`, remis en une ligne
 
 | # | Question | Décision |
 |---|---|---|
-| D1 | Couleur principale | **Aucune couleur fonctionnelle**, comme dans DESIGN.md : les actions sont des boutons Mist `#e6e6e6` au texte Iron `#454647`. Le corail `#ff6363` est une marque : logo, visuel du héros, badge IA, fonds teintés `#452324`. Jamais pour un lien, un texte, une icône, une bordure, ni un bouton. |
-| D2 | Police | **Inter** 400, 500, 600, avec `calt`, `kern`, `liga`, `ss03` ; **Geist Mono** pour les mentions techniques. |
-| D3 | Barre du haut | **La barre de DESIGN.md** : pilule flottante en verre (flou 48 px), bordure `#363739`, rayon 8, marges 8×16 ; liens 13 à 14 px `#9c9c9d`, blanc au survol ; action Mist à droite. |
+| D1 | Couleur principale | **Aucune couleur fonctionnelle**, comme dans DESIGN.md : les actions sont des boutons Mist `#e6e6e6` au texte Slate `#2f3031` (relevé de raycast.com ; DESIGN.md disait Iron `#454647`). Le corail `#ff6363` est une marque : logo, visuel du héros, badge IA, fonds teintés `#452324`. Jamais pour un lien, un texte, une icône, une bordure, ni un bouton. |
+| D2 | Police | **Work Sans** pour le texte (choix de l'utilisateur, 2026-09-28 ; auparavant Inter 400, 500, 600 avec `ss03`), réglages `calt`, `kern`, `liga` ; **Geist Mono** pour les mentions techniques. **Titres (h1 à h3) : Bricolage Grotesque 600** (choix de l'utilisateur, 2026-09-28), police variable avec l'axe de taille optique ; la graisse vient d'une règle de base, jamais d'une classe sur le titre. |
+| D3 | Barre du haut | **La barre de raycast.com** (relevé du 2026-09-28, fiche `composants/barre-navigation.md` ; DESIGN.md disait flou 48 px, bordure `#363739`, rayon 8) : verre sombre en dégradé, flou 5 px, arête blanc 6 %, rayon 16, 76 de haut à l'ordinateur ; liens 14 px `#9c9c9d`, blancs au survol ; action Mist à droite. |
 | D4 | Palette ⌘K | **Plus tard**, dans une spec à part. |
+| D6 | Couleur des notes et des scores (2026-09-28) | À la demande de l'utilisateur (« apporter un peu de couleur »), **exception à D1** : l'étoile, une seule partout (`StarIcon`), pleine en jaune `#ffc531` (palette de raycast.com) ; l'anneau du score TMDB vert dès 70, jaune de 40 à 69, gris dessous ; la compatibilité en lavis vert dès 60 %. La couleur double toujours un chiffre. Plus de « ★ » ni de « ⭐️ » dans l'interface. Fiche `composants/note-et-score.md`. |
+| D5 | Écarts entre DESIGN.md et raycast.com (2026-09-28) | DESIGN.md est une description générée, approximative sur les composants. **Les relevés de raycast.com** (styles calculés, 2026-09-28), consignés composant par composant dans `docs/design-reference/raycast/composants/`, **priment** sur DESIGN.md pour les recettes. DESIGN.md reste la référence des principes : achromatique, corail de marque, pas d'ombre portée, interlettrage positif. |
 
 ## 1. Contexte
 
@@ -57,8 +59,9 @@ Ce que Raycast apporte, en résumé :
 ## 2. Principes
 
 1. **Achromatique.** Aucune couleur fonctionnelle ; le corail est la marque, pas un signal.
-2. **La matière par la lumière.** Le relief « touche de clavier » (reflet haut, anneau blanc à
-   25 %, ombre basse intérieure), jamais d'ombre portée sur une carte.
+2. **La matière par la lumière.** Une carte est une arête (blanc 6 %) et un reflet haut ; le relief
+   « touche de clavier » (reflet haut, anneau blanc à 25 %, ombre basse intérieure) est celui du
+   bouton sombre. Jamais d'ombre portée sur une carte.
 3. **Un geste, une animation.** Court, sans dépassement, jamais rejoué pour rien.
 4. **Composer, pas styler.** Une page assemble un archétype, des sections et des primitives. Elle
    ne définit ni couleur, ni taille, ni durée.
@@ -89,20 +92,27 @@ l'app d'un coup.
 | Rôle | Valeur | Nom DESIGN.md | Emploi |
 |---|---|---|---|
 | `--background` | `#040506` | Void Black | Seul fond de page |
-| `--surface`, `--panel`, `--surface-raised` | `#07080a` | Ink | Cartes, fenêtres, panneaux |
+| `--surface` | `#0c0d0f` | Onyx (raycast.com, grey-800) | Cartes, tuiles, rails d'onglets, recherche |
+| `--panel`, `--surface-raised` | `#07080a` | Ink | Fenêtres, panneaux |
 | `--surface-2`, `--surface-hover` | `#111214` | Obsidian | Champs, appui, survol |
 | `--surface-3` | `#1b1c1e` | Graphite | Badges, tuiles |
 | `--field`, `--card-hover` | blanc 5 % | | Champ en creux, survol de carte |
-| `--border`, `--surface-border`, `--input` | `#363739` | | Arête de la barre, des cartes, des champs |
-| `--line-strong`, `--focus-ring` | blanc 25 % | | Anneau de la touche, focus |
+| `--border`, `--surface-border`, `--input` | `#363739` | | Arête de la barre, des puces, des champs survolés |
+| `--card-edge` | blanc 6 % | | Arête des cartes, tuiles, touches (raycast.com) |
+| `--field-edge`, `-hover`, `-focus` | blanc 8 %, 14 %, 24 % | | Arête de la recherche : repos, survol, saisie (site : Slate ; adoucie le 2026-09-28) |
+| `--focus` / `--focus-ring` | blanc 40 % / blanc 6 % | | Anneau de focus clavier / halo d'un champ où l'on tape |
+| `--line-strong` | blanc 25 % | | Puce choisie, affiche survolée |
 | `--foreground` | `#ffffff` | Pure White | Titres, texte fort |
 | `--body`, `--muted` | `#9c9c9d` | Ash | Texte secondaire, corps (7,4:1) |
 | `--subtle` | `#6a6b6c` | Smoke | Libellés discrets (**3,2 à 3,8:1, exception assumée**, NFR-3) |
 | `--disabled-foreground` | `#454647` | Iron | Désactivé |
-| `--accent` / `--accent-foreground` | `#e6e6e6` / `#454647` | Mist / Iron | Seul bouton plein (7,6:1) |
+| `--accent` / `--accent-foreground` | `#e6e6e6` / `#2f3031` | Mist / Slate | Seul bouton plein (10,6:1) |
 | `--brand` | `#ff6363` | Coral Pulse | Marque seulement |
 | `--brand-tint` | `#452324` | Ember Hush | Fond teinté de marque |
 | `--info`, `--success` | `#56c2ff`, `#59d499` | Info Blue, Success Green | Lavis de mise en valeur, pas des statuts |
+| `--rating` | `#ffc531` | (palette de raycast.com) | Étoile pleine, partout (D6) |
+| `--score-high`, `--score-mid`, `--score-low` | `#59d499`, `#ffc531`, `#6a6b6c` | | Anneau du score : 70 et plus, 40 à 69, sous 40 (D6) |
+| `--switch-on` / `--switch-on-knob` | `#59d499` / `#040506` | | Interrupteur allumé et sa pastille (D6) |
 | `--chart-1…5` | Mist, Ash, Smoke, Iron, Slate | | Graphiques : rampe de gris, un seul ton |
 
 ### 3.3 Typographie (Inter, plancher 12 px)
@@ -125,11 +135,14 @@ Geist Mono 12 px pour les mentions techniques, séparées par des barres vertica
 
 ### 3.4 Forme, relief, espace
 
-- **Rayons** : badge 6 ; bouton et champ 8 ; touche 11 ; carte 16 ; grande carte 20 ; pastille
-  9999 ; conteneur d'icône en cercle. Les classes Tailwind s'y rangent : `rounded-xs` et `sm`
-  valent 6, `md` et `lg` valent 8, `xl` et `2xl` valent 16, `3xl` et `4xl` valent 20.
+- **Rayons** : badge 6 ; bouton et champ 8 ; touche 11 ; carte et recherche 12 (raycast.com ;
+  DESIGN.md disait 16) ; grande carte 20 ; pastille 9999 ; conteneur d'icône en cercle. Les
+  classes Tailwind s'y rangent : `rounded-xs` et `sm` valent 6, `md` et `lg` valent 8, `xl` et
+  `2xl` valent 12, `3xl` et `4xl` valent 20.
 - **Reliefs** (jetons de composant) :
-  - `--shadow-key` : toutes les cartes et blocs en relief ;
+  - `--shadow-card` sous l'arête `--card-edge` : cartes, tuiles, touches ;
+  - `--shadow-key` (anneau 12 %, `-hover` 20 %, `-active` 8 % ; le site dit 25, 50, 15) :
+    bouton secondaire ;
   - `--shadow-keycap` : touches ;
   - `--shadow-button` : bouton d'action ;
   - `--shadow-highlight` et `--shadow-nav` : reflets intérieurs ;
@@ -237,15 +250,15 @@ succès. Colonne « Reprise » : **1:1** reprend la recette mesurée ; **inspira
 
 | Primitive | Variantes | Modèle Raycast | Reprise |
 |---|---|---|---|
-| `Button` | primary (Mist, texte Iron, `--shadow-button`), secondary (relief touche), ghost, icon ; rayon 8 ; 32, 36, 40 (40, 44 au doigt) | Download ; DESIGN.md « Neutral Filled Button » | 1:1. Destructif : même bouton neutre, le libellé dit l'action (pas de bouton de couleur). |
+| `Button` | primary (Mist, texte Slate, `--shadow-button` : cerne noir, halo blanc), secondary (voile blanc 3 à 10 %, relief touche adouci : anneau 12 %, 20 % au survol), ghost, icon ; rayon 8 ; 28, 36, 40 (32, 40, 44 au doigt) | Button light et dark ; fiche `composants/bouton.md` | 1:1. Destructif : même bouton neutre, le libellé dit l'action (pas de bouton de couleur). |
 | `SplitButton` | primaire et menu | Install Extension et chevron | 1:1 (fiche : « Je regarde ça » et statuts) |
 | `Keycap` | sm 20 (barres), lg (démonstration) | Touches | 1:1 |
-| `Badge` | Graphite `#1b1c1e`, texte blanc, rayon 6, marges 0×6 ; compteur ; badge de marque (corail) réservé à l'IA | DESIGN.md « Badge Tag » | 1:1, relevé à 12 px |
-| `Chip` | filtre, sélectionnable | Puces 13 px | Inspiration (r 6, h 32) |
-| `Tabs` | pastille, soulignée | Onglets d'extension et du changelog | 1:1 |
-| `SearchField` | ⌘K, en cours (balayage) | Recherche du Store | 1:1 |
+| `Badge` | lavis à 15 % de la couleur du texte : neutre (blanc), succès, marque (corail) ; rayon 6, 13 px/400, 24 de haut ; compteur en pastille blanche à 20 %, 600 | Pill du Changelog, compteur Contributors ; fiche `composants/badge.md` | 1:1, ramené de 16 à 13 px |
+| `Chip` | filtre, sélectionnable ; arête blanc 8 % (14 % au survol), choisie en voile sans anneau ; menus de filtre et « Sur mes abonnements » au même aspect | Recherche et onglets du site ; fiche `composants/puce.md` | Inspiration (pastille, h 32) |
+| `Tabs` | rail (dégradé 137°, reflet haut, sans arête) ; pastille en relief (dégradé radial, arête blanche à 10 %), 42 de haut, 14 px/500 ; rang secondaire sans rail | Onglets d'extension, du Store et du Changelog ; fiche `composants/onglets.md` | 1:1 |
+| `SearchField` | Onyx, arête blanc 8 % (14 % au survol, 24 % et halo léger à la saisie), rayon 12, 44 de haut, sans loupe ; touches 20 × 20 ; ⌘K, en cours (balayage) | Recherche du Store ; fiche `composants/champ-recherche.md` | 1:1, arête adoucie, indication en Ash (contraste) |
 | `Menu`, `Select` | | Lignes de la palette | Inspiration |
-| `Card` | défaut (filet), vedette (centrée), dégradé 137°, média (affiche) | Store, tarifs | 1:1 |
+| `Card` | Onyx, arête blanche à 6 %, reflet haut, rayon 12 ; cliquable, lueur venue du haut au survol ; défaut, vedette (centrée), tuile, média (affiche) | ExtensionCard du Store ; fiche `composants/carte.md` | 1:1 |
 | `IconTile` | cercle, marge 20, fond sombre | DESIGN.md « Circular Icon Container » | 1:1 (plateformes, personnes) |
 | `MetaRow` | séparateurs verticaux | Auteur, installations | 1:1 |
 | `ListRow` | icône, titre, sous-titre, accessoires, sélection | Palette | 1:1 |
@@ -257,7 +270,7 @@ succès. Colonne « Reprise » : **1:1** reprend la recette mesurée ; **inspira
 | `Divider` | horizontal, vertical | Blanc 10 % | 1:1 |
 | `Skeleton` | | `shimmer` | 1:1 |
 | `Switch` | | Interrupteurs | Inspiration |
-| `NavBar`, `Dock` | pilule en verre (flou 48 px, bordure `#363739`, rayon 8, 8×16), onglets du bas | DESIGN.md « Glass Navigation Bar » | 1:1 (D3) |
+| `NavBar`, `Dock` | verre sombre en dégradé (flou 5 px, arête blanc 6 %, rayon 16 ; 76 de haut, marges 16 × 32 dès 1 024 px), onglets du bas | Barre de raycast.com ; fiche `composants/barre-navigation.md` | 1:1 (D3) |
 
 Écriture : recettes CSS dans `@layer components` ; composants React aux variantes typées (`cva`,
 déjà compatible avec shadcn et Bklit). Les pages n'emploient plus de classe `btn` à la main.
@@ -267,6 +280,10 @@ déjà compatible avec shadcn et Bklit). Les pages n'emploient plus de classe `b
 | Section | Anatomie | Modèle |
 |---|---|---|
 | `PageHero` | Titre, accroche, actions, halo en option | Accueil, Store |
+| `PageHeader` | Grand titre seul (32, puis 56 dès 640 px ; Bricolage 600), précision en Ash dessous, actions, description à droite | Changelog ; fiche `composants/titres.md` |
+| `ShowcaseCarousel`, `FeatureWall` + `RecommendationsWall`, `TitleListSection` | Vitrine de l'accueil : carrousel de cartes teintées par l'affiche (gestes de Ce soir), mur « À la une » (fenêtre de ta pile, tri à découvrir, tes goûts), liste à onglets (recherche pendant la frappe, notes sur place) ; fiche `composants/vitrine.md` | Accueil de raycast.com, Store, page Windows |
+| `FeatureSection` (`FeatureEyebrow`, `ArrowLink`) + `RatingPreview`, `DuelPreview`, `ReleasesPreview` | Section « texte et visuel côte à côte », en alternant les côtés ; le visuel est une vraie commande (noter, trancher, ajouter), annulable | Shared Quicklinks (raycast.com) |
+| `SectionHeading` | Titre 20 px en Bricolage 600, précision 14 px en Ash dessous, action à droite | « Featured » du Store |
 | `Toolbar` | Onglets à gauche ; filtres et recherche ⌘K à droite | Barre du Store |
 | `FeaturedRow` | 3 cartes centrées | « Featured » |
 | `MediaGrid` | Grille d'affiches (FlipGrid) | Liste du Store |
@@ -287,7 +304,7 @@ déjà compatible avec shadcn et Bklit). Les pages n'emploient plus de classe `b
 | `CatalogLayout` | Store | Bibliothèque, Recommandations, Classement |
 | `DetailLayout` | Page d'extension | Fiche d'un titre (`DetailPanel`), fiche d'une personne |
 | `TimelineLayout` | Changelog | Sorties |
-| `CommandLayout` | Palette de commandes | Duels, Tri rapide, Ajouter un titre, palette ⌘K (D4) |
+| `HeroLayout stage` | Fenêtre de Raycast sur son héros (auparavant `CommandLayout`, retiré le 2026-09-28) | Duels, Tri rapide ; la question en grand sur le décor, la fenêtre de commande posée dessus |
 
 Correspondance détaillée :
 
@@ -543,4 +560,59 @@ affichées dans les duels et le tri rapide. Elle aura sa propre spec.
 - `npm run test:motion` : AC-1.2, AC-1.3 (duel simulé), règle 3 et AC-1.4 passent.
 - Audit : courbes à dépassement 7 → 0, tweens hors préréglages 6 → 0.
 - Graphiques Bklit : pas encore employés. Ils recevront `enterTransition` en phase 5.
+
+**Alignement sur raycast.com : fait le 2026-09-28** (décision D5).
+- Relevé des styles calculés sur raycast.com (Store, page d'extension, Changelog), consigné par
+  composant dans `docs/design-reference/raycast/composants/` avec la capture de référence et la
+  liste de contrôle de QA.
+- Jetons : `--surface` passe à Onyx `#0c0d0f` ; `--card-edge`, `--field-edge`, `--shadow-card`,
+  `--shadow-key-hover`, `--shadow-key-active` ; `--shadow-button` et `--accent-foreground`
+  (Slate) relevés ; rayon de carte 16 → 12.
+- Recettes : cartes et tuiles à arête (plus d'anneau « touche »), bouton secondaire en touche
+  sombre, bouton moyen 32 → 36, onglets en rail et pastille relief (28 → 42 de haut), recherche
+  du Store sans loupe, touches 20 × 20, badges en lavis.
+- `PageHeader` : titre seul en grand (56, 600), précision dessous ; `SectionHeading` et
+  `MediaRow` : titre 20 px.
+- Barre de navigation : verre en dégradé, flou 5 px (48), arête blanc 6 % (`#363739`), rayon
+  16 (8), 76 de haut dès 1 024 px (48), liens en 14 px (13) ; éléments collants et ancres calés
+  en conséquence.
+- Puces et menus de filtre : arête `#363739` et anneau à 25 % remplacés par l'arête de la
+  recherche (8 %, 14 % au survol) et le voile de l'onglet choisi (demande de l'utilisateur).
+- Notes et scores en couleur (D6) : `StarIcon`, `StarCount`, `StarRow` ; les « ★ » et « ⭐️ »
+  des paliers, des onglets de Duels, des moyennes et du filtre de note passent par eux ; anneau
+  du score TMDB en vert, jaune, gris ; section « Notes et scores » dans `/design` ;
+  interrupteur allumé en vert, pastille sombre (demande de l'utilisateur).
+- Titres en Bricolage Grotesque 600 (D2) : `--font-heading`, règle de base sur `h1` à `h4`,
+  graisses retirées des titres ; le héros de l'accueil passe de 400 à 600.
+- Adoucissements demandés par l'utilisateur : arête de la recherche en blanc 8 % (Slate sur le
+  site), anneau du bouton secondaire à 12 % (25 %) ; focus clavier en anneau blanc à 40 %
+  décalé de 2 px, sans halo, qui ne remplace plus le relief du contrôle ; champs sans filet à la
+  saisie (arête plus claire, halo de 3 px à 6 %). Pas de lueurs : pastille d'onglet en voile
+  blanc de 7 à 4 % (dégradé radial à point lumineux sur le site), second rang en aplat, halo du
+  bouton plein à 8 % sur 10 px (19 % sur 14), reflets du rail et de la barre à 6 et 8 % (10, 15).
+- Accueil en vitrine des fonctions clés (demande de l'utilisateur, 2026-09-28) : une section
+  par fonction, en alternant aperçus pleine largeur et sections « texte et visuel » : Ce soir
+  (carrousel), Notation, Recommandations et À découvrir (mur), Duels, Bibliothèque (liste),
+  Sorties. Chaque aperçu est une commande réelle, au clavier quand il a le focus, et annulable :
+  noter un titre vu (0 à 5), trancher un duel (1, 2, 3), ajouter une sortie ; « Je regarde ça »
+  et « Pas ce soir » sur les cartes du carrousel ; fenêtre de ta pile (filtre, ↑ ↓, ↵, « Ne plus
+  me proposer »), tri à découvrir (1, 2, 3), genres de « Tes goûts » qui filtrent la fenêtre ;
+  recherche de la bibliothèque pendant la frappe, étoiles et « Marquer vu » sur les cartes.
+  La grille « Tout Catalog » et la fenêtre dessinée d'« À la une » sont retirées.
+- Sorties : la frise s'ouvre sous les filtres, les semaines passées repliées derrière un bouton
+  (le défilement automatique vers la semaine en cours masquait les filtres).
+- Accueil, retours de l'utilisateur (2026-09-29) : cartes du carrousel en affiche plein cadre,
+  bloc qui monte au survol avec un bandeau qui défile ; « À la une » : fenêtre de ta pile, paquet
+  « À découvrir » en éventail qui se glisse, radar Bklit de tes goûts (tes notes contre ta pile) ;
+  « Ta bibliothèque » : panneau de chiffres qui filtre (types, histogramme des notes) et cartes
+  teintées ; sections explicatives et cartes d'« À la une » côte à côte dès 768 px ; surtitres
+  réservés aux sections explicatives. Libellés du radar Bklit en tween (plus de ressort).
+- Playlists (specs/playlists-v1.md, 2026-10-06) : `CatalogLayout` pour la liste et pour une
+  playlist ; couverture en mosaïque des quatre premières affiches au format 2:3 ; lignes
+  réordonnables (poignée, Alt+↑ et Alt+↓), « À suivre » dans la scène des sections de
+  fonctionnalité ; page ajoutée aux relevés axe (`tests/visual/ecrans.ts`).
+- Playlists v2 (specs/playlists-v2.md, 2026-10-06) : section Playlists dans la vitrine (après
+  « Ta bibliothèque ») ; fenêtre « Ajouter à une playlist » commune à toutes les cartes ; Tailwind
+  et ESLint ignorent `.claude/` (la documentation des agents donnait des classes invalides et
+  des erreurs de lint).
 

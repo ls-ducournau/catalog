@@ -12,16 +12,18 @@ import {
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
-import { CommandLayout } from "@/components/layouts";
+import { HeroLayout } from "@/components/layouts";
 import { CommandWindow, EmptyState } from "@/components/sections";
-import { Button, Card, Divider, Keycap, Skeleton, Tabs, Toast } from "@/components/ui";
+import { Button, Card, Divider, Keycap, Skeleton, StarCount, Tabs, Toast } from "@/components/ui";
 import { TierFlow, usePressedKey } from "@/components/TierFlow";
 import type { Category } from "@/lib/libraryItem";
+import { genreLine } from "@/lib/genres";
 
 type TitleDuelItem = {
   id: number;
   name: string;
   year: string | null;
+  genres: string[];
   posterUrl: string | null;
   eloScore: number;
 };
@@ -89,17 +91,19 @@ const CATEGORIES: { value: DuelCategory; label: string; plural: string; icon: Lu
   { value: "Documentary", label: "Documentaires", plural: "les documentaires", icon: Camera },
 ];
 
-const TIERS: { value: TierValue; label: string; title: string }[] = (
+/** Nom d'un palier dans une phrase : « 4 étoiles », « 1 étoile », « 💩 ». */
+function starsOf(value: string): string {
+  return value === "0" ? "💩" : `${value} étoile${value === "1" ? "" : "s"}`;
+}
+
+const TIERS: { value: TierValue; label: string; title: string; display?: ReactNode }[] = (
   ["5", "4", "3", "2", "1", "0"] as TierValue[]
 ).map((value) => ({
   value,
-  label: value === "0" ? "💩" : `${value} ★`,
-  title: value === "0" ? "Titres notés 💩" : `Titres notés ${value} étoile${value === "1" ? "" : "s"}`,
+  label: starsOf(value),
+  title: value === "0" ? "Titres notés 💩" : `Titres notés ${starsOf(value)}`,
+  display: value === "0" ? undefined : <StarCount value={value} />,
 }));
-
-function starsOf(value: string): string {
-  return value === "0" ? "💩" : "★".repeat(Number(value));
-}
 
 const MODE_STORAGE_KEY = "watchlist:duelMode";
 const CATEGORY_STORAGE_KEY = "watchlist:duelCategory";
@@ -199,17 +203,27 @@ export default function DuelsPage() {
   );
 
   return (
-    <CommandLayout>
-      <header className="flex flex-col items-center gap-1 text-center">
-        <h1 className="text-heading-sm font-medium text-foreground">
-          {mode === "people"
-            ? "Quel acteur préfères-tu ?"
-            : mode === "tier"
-              ? `Départager les ${starsOf(tier)}`
-              : "Lequel préfères-tu ?"}
-        </h1>
-        {mode === "tier" && <p className="text-sm text-muted">Des titres de même note, rangés entre eux</p>}
-      </header>
+    <HeroLayout
+      stage
+      hero={
+        <>
+          <h1 className="text-balance text-heading text-foreground">
+            {mode === "people"
+              ? "Quel acteur préfères-tu ?"
+              : mode === "tier"
+                ? `Départager les ${starsOf(tier)}`
+                : "Lequel préfères-tu ?"}
+          </h1>
+          <p className="text-base text-muted">
+            {mode === "people"
+              ? "Deux acteurs de tes titres vus, tu gardes ton préféré."
+              : mode === "tier"
+                ? "Des titres de même note, rangés entre eux."
+                : "Deux titres vus, tu gardes ton préféré : ton classement s'affine."}
+          </p>
+        </>
+      }
+    >
 
       {!ready && (
         <CommandWindow head={head} className={WINDOW}>
@@ -234,7 +248,7 @@ export default function DuelsPage() {
       {ready && mode !== "tier" && (
         <PairDuels key={mode} head={head} mode={mode} category={category} categoryLabel={currentCategory} />
       )}
-    </CommandLayout>
+    </HeroLayout>
   );
 }
 
@@ -308,7 +322,8 @@ function PairDuels({
           name: t.name,
           imageUrl: t.posterUrl,
           scoreLabel: `Elo ${Math.round(t.eloScore)}`,
-          meta: t.year,
+          // Un seul genre : la ligne tient sous l'affiche, avec l'Elo.
+          meta: [t.year, genreLine(t.genres, 1)].filter(Boolean).join(" · ") || null,
           note: null,
         });
         setNotEnough(null);
@@ -501,10 +516,11 @@ function PairDuels({
           >
             <DuelCard card={pair.a} shortcut="1" pressed={pressed === "1"} onClick={() => choose("A")} disabled={submitting} />
 
-            {/* Entre les deux : passer, avec sa touche. */}
+            {/* Entre les deux : passer, avec sa touche. En colonne, les traits verticaux sont centrés
+                (`self-center`) : sinon l'étirement du trait le colle au bord gauche. */}
             <div className="flex items-center gap-3 sm:flex-col">
               <Divider className="flex-1 sm:hidden" />
-              <Divider vertical className="hidden flex-1 sm:block" />
+              <Divider vertical className="hidden flex-1 self-center sm:block" />
               <Button
                 variant="ghost"
                 onClick={() => choose("skip")}
@@ -518,7 +534,7 @@ function PairDuels({
                 Passer
               </Button>
               <Divider className="flex-1 sm:hidden" />
-              <Divider vertical className="hidden flex-1 sm:block" />
+              <Divider vertical className="hidden flex-1 self-center sm:block" />
             </div>
 
             <DuelCard card={pair.b} shortcut="2" pressed={pressed === "2"} onClick={() => choose("B")} disabled={submitting} />
@@ -624,10 +640,9 @@ function DuelCard({
       <div className="flex min-w-0 flex-1 items-center gap-3 sm:px-1 sm:pb-1 sm:pt-3">
         <div className="min-w-0 flex-1">
           <p className="line-clamp-2 text-sm font-medium text-foreground sm:line-clamp-1">{card.name}</p>
-          <p className="text-xs text-muted">
-            {card.meta && `${card.meta} · `}
-            {card.scoreLabel}
-          </p>
+          {/* Année et genre sur une ligne, l'Elo sur la suivante : rien ne se coupe au milieu. */}
+          {card.meta && <p className="truncate text-xs text-muted">{card.meta}</p>}
+          <p className="text-xs text-muted">{card.scoreLabel}</p>
           {card.note && <p className="mt-1 line-clamp-2 text-xs text-muted">{card.note}</p>}
         </div>
         <Keycap pressed={pressed} aria-hidden="true" className="hidden sm:inline-flex">

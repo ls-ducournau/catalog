@@ -26,6 +26,7 @@ export async function GET(request: Request) {
   const q = searchParams.get("q") ?? undefined;
   const genre = searchParams.get("genre") ?? undefined;
   const minRating = searchParams.get("minRating");
+  const rating = searchParams.get("rating");
   const sortBy = searchParams.get("sortBy");
   const sortDir = searchParams.get("sortDir");
   const page = searchParams.get("page");
@@ -41,6 +42,7 @@ export async function GET(request: Request) {
     q,
     genre,
     minRating: minRating ? Number(minRating) : undefined,
+    rating: rating !== null && rating !== "" ? Number(rating) : undefined,
     sortBy: SORT_BY_VALUES.includes(sortBy as SortBy) ? (sortBy as SortBy) : undefined,
     sortDir: sortDir === "asc" || sortDir === "desc" ? (sortDir as SortDir) : undefined,
     page: page ? Number(page) : undefined,
