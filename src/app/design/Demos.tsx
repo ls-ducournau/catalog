@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Heart, Laugh, Rocket, Zap } from "lucide-react";
-import { Button, Chip, MonoMeta, SearchField, Select, Switch, Tabs } from "@/components/ui";
+import { Button, Chip, MonoMeta, SearchField, Select, Switch, Tabs, TextField } from "@/components/ui";
 import { StarRating } from "@/components/StarRating";
 import { DURATION, preset, prefersReducedMotion, useGSAP } from "@/lib/motion";
 
@@ -97,6 +97,16 @@ export function FieldDemo() {
       <SearchField placeholder="Recherche en cours" searching defaultValue="Dune" aria-label="Recherche en cours (démonstration)" />
       <SearchField placeholder="Survol" className="is-hover" aria-label="Survol (démonstration)" />
       <SearchField placeholder="Erreur" className="is-error" aria-invalid aria-label="Erreur (démonstration)" />
+      <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+        <TextField label="Saisie (démonstration)" placeholder="Saga Alien, films de Noël…" className="w-full sm:w-80" />
+        <Button variant="primary">Créer</Button>
+        <Button variant="ghost">Annuler</Button>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+        <TextField label="Saisie, petite taille (démonstration)" size="sm" defaultValue="Soirée à deux" className="w-full sm:w-80" />
+        <Button size="sm" variant="primary">Enregistrer</Button>
+      </div>
+      <TextField label="Saisie en erreur (démonstration)" placeholder="Erreur" className="is-error" aria-invalid />
     </div>
   );
 }

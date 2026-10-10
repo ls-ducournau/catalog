@@ -19,7 +19,7 @@ import { TrailerButton } from "@/components/TrailerButton";
 import { WhereToWatch } from "@/components/playlists/WhereToWatch";
 import { useNow } from "@/components/useNow";
 import { EmptyState } from "@/components/sections";
-import { Badge, Button, MetaRow, MonoMeta, SearchField, Skeleton } from "@/components/ui";
+import { Badge, Button, Kbd, MetaRow, MonoMeta, SearchField, Skeleton } from "@/components/ui";
 import { genreLine } from "@/lib/genres";
 import type { LibraryItem } from "@/lib/libraryItem";
 import {
@@ -56,6 +56,11 @@ function kindOf(item: LibraryItem): string {
 
 // ---------- En-tête : nom et description modifiables sur place (FR-2) ----------
 
+/**
+ * Modifier sur place (FR-2) : le texte garde sa taille, sa police et sa place, dans un puits
+ * discret. Il arrive sélectionné : on le remplace en tapant, ou on le corrige. ↵ enregistre,
+ * Échap annule ; deux petits boutons font de même au doigt. Un texte inchangé n'écrit rien.
+ */
 function InlineEdit({
   value,
   label,
@@ -72,33 +77,62 @@ function InlineEdit({
   onCancel: () => void;
 }) {
   const [draft, setDraft] = useState(value);
+  const input = useRef<HTMLInputElement>(null);
+  const length = draft.trim().length;
+  // Un nom ne peut pas être vide ; une description, si : elle s'efface.
+  const valid = length <= max && (multiline || length > 0);
+
+  useEffect(() => {
+    input.current?.select();
+  }, []);
+
   function submit(e?: FormEvent) {
     e?.preventDefault();
-    onSave(draft);
+    if (!valid) return;
+    if (draft.trim() === value.trim()) onCancel();
+    else onSave(draft.trim());
   }
+
   return (
-    <form onSubmit={submit} className="flex w-full max-w-xl flex-wrap items-center gap-2">
-      <label className="field flex min-w-0 flex-1 items-center gap-2">
+    <form onSubmit={submit} className={cn("flex w-full flex-col gap-3", multiline ? "max-w-2xl" : "max-w-4xl")}>
+      <label className={cn("field inline-edit", !multiline && "inline-edit-title", !valid && "is-error")}>
         <span className="sr-only">{label}</span>
         <input
+          ref={input}
           autoFocus
           value={draft}
           maxLength={max}
           onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => e.key === "Escape" && onCancel()}
+          onKeyDown={(e) => {
+            if (e.key !== "Escape") return;
+            e.preventDefault();
+            onCancel();
+          }}
+          placeholder={multiline ? "Pour quoi, pour qui, dans quel ordre…" : "Nom de la playlist"}
+          aria-invalid={!valid || undefined}
           className={cn(
-            "h-full min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted",
-            multiline ? "text-base sm:text-sm" : "text-base"
+            "w-full min-w-0 bg-transparent text-foreground outline-none placeholder:text-muted",
+            multiline ? "text-base" : "text-heading sm:text-heading-lg"
           )}
-          placeholder={multiline ? "Pour quoi, pour qui, dans quel ordre…" : undefined}
         />
       </label>
-      <Button type="submit" size="sm" variant="primary">
-        Enregistrer
-      </Button>
-      <Button type="button" size="sm" variant="ghost" onClick={onCancel}>
-        Annuler
-      </Button>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <span aria-hidden="true" className="hidden items-center gap-1.5 text-xs text-muted sm:flex">
+          <Kbd>↵</Kbd> enregistrer
+          <Kbd className="ml-2">Échap</Kbd> annuler
+        </span>
+        <MonoMeta className="sm:ml-auto">
+          {length}/{max}
+        </MonoMeta>
+        <div className="ml-auto flex items-center gap-2 sm:ml-0">
+          <Button type="button" size="sm" variant="ghost" onClick={onCancel}>
+            Annuler
+          </Button>
+          <Button type="submit" size="sm" variant="primary" disabled={!valid}>
+            Enregistrer
+          </Button>
+        </div>
+      </div>
     </form>
   );
 }

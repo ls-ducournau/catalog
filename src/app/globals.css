@@ -613,6 +613,46 @@ html {
     box-shadow: inset 0 0 0 1px var(--field-edge);
   }
 
+  /* Saisie (DESIGN.md, Inset Input Field) : puits blanc 5 %, rayon 8, marges de 12, à la
+     hauteur des boutons qu'il côtoie (36, ou 28 en petit ; 40 et 32 au doigt). */
+  .field-text {
+    height: 2.25rem;
+    padding-inline: 0.75rem;
+  }
+
+  .field-text.field-sm {
+    height: 1.75rem;
+    padding-inline: 0.625rem;
+  }
+
+  @media (pointer: coarse) {
+    .field-text {
+      height: 2.5rem;
+    }
+
+    .field-text.field-sm {
+      height: 2rem;
+    }
+  }
+
+  /* Modifier sur place (nom et description d'une playlist) : le texte garde sa taille, sa police
+     et sa place ; un puits discret apparaît autour, en débordant de 8 px pour ne rien décaler. */
+  .inline-edit {
+    display: flex;
+    align-items: center;
+    margin: -0.25rem -0.5rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .inline-edit-title {
+    border-radius: var(--r-frame);
+  }
+
+  .inline-edit-title input {
+    font-family: var(--font-heading);
+    font-weight: 600;
+  }
+
   .field::placeholder,
   .field ::placeholder {
     color: var(--muted);

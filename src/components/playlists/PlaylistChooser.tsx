@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { Check, Plus } from "lucide-react";
-import { MonoMeta } from "@/components/ui";
+import { MonoMeta, TextField } from "@/components/ui";
 import { NAME_MAX } from "@/lib/playlistFormat";
 import type { PlaylistSource, PlaylistSummary } from "@/lib/playlistService";
 
@@ -223,23 +223,20 @@ export function PlaylistChooser({
       {showForm ? (
         <form onSubmit={create} className="flex flex-col gap-1.5 p-1">
           {empty && <p className="px-1 text-xs text-muted">Aucune playlist pour l&apos;instant : crée la première.</p>}
-          <label className="field flex items-center gap-2">
-            <span className="sr-only">Nom de la nouvelle playlist</span>
-            <input
-              autoFocus={autoFocus || creating}
-              value={name}
-              maxLength={NAME_MAX}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Escape" && !empty) {
-                  e.stopPropagation();
-                  setCreating(false);
-                }
-              }}
-              placeholder="Nom de la playlist, puis ↵"
-              className="h-full min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted sm:text-sm"
-            />
-          </label>
+          <TextField
+            label="Nom de la nouvelle playlist"
+            autoFocus={autoFocus || creating}
+            value={name}
+            maxLength={NAME_MAX}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape" && !empty) {
+                e.stopPropagation();
+                setCreating(false);
+              }
+            }}
+            placeholder="Nom de la playlist, puis ↵"
+          />
         </form>
       ) : (
         <button type="button" className="menu-item" onClick={() => setCreating(true)}>

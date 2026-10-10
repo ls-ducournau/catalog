@@ -57,6 +57,44 @@ export function SearchField({
   );
 }
 
+/**
+ * Saisie d'un texte (DESIGN.md, Inset Input Field) : puits à arête, rayon 8, marges de 12, à la
+ * hauteur des boutons qu'il côtoie (`size`). `label` nomme le champ pour les lecteurs d'écran.
+ */
+export function TextField({
+  label,
+  size = "md",
+  className,
+  inputClassName,
+  ref,
+  ...rest
+}: Omit<ComponentPropsWithoutRef<"input">, "size"> & {
+  label: string;
+  size?: "sm" | "md";
+  inputClassName?: string;
+  ref?: Ref<HTMLInputElement>;
+}) {
+  return (
+    <label
+      className={cn(
+        "field field-text flex items-center gap-2",
+        size === "sm" && "field-sm",
+        // L'erreur se lit sur le cadre, pas sur la saisie.
+        rest["aria-invalid"] && rest["aria-invalid"] !== "false" && "is-error",
+        className
+      )}
+    >
+      <span className="sr-only">{label}</span>
+      <input
+        ref={ref}
+        type="text"
+        className={cn("h-full min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted sm:text-sm", inputClassName)}
+        {...rest}
+      />
+    </label>
+  );
+}
+
 /** Puce en lien (navigation dans la page, « Aller au palier ») : même aspect qu'une puce. */
 export function ChipLink({ className, ...rest }: ComponentPropsWithoutRef<"a">) {
   return <a className={cn("chip", className)} {...rest} />;

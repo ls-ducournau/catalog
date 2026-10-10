@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { CloudOff, ListVideo, Plus } from "lucide-react";
 import { PlaylistCover } from "@/components/playlists/PlaylistCover";
 import { EmptyState, PageHeader } from "@/components/sections";
-import { Button, MetaRow, Skeleton, Toast } from "@/components/ui";
+import { Button, MetaRow, Skeleton, TextField, Toast } from "@/components/ui";
 import { countLine, DELETED_PLAYLIST_KEY, NAME_MAX, totalDuration, watchedLine } from "@/lib/playlistFormat";
 import type { PlaylistSnapshot, PlaylistSummary } from "@/lib/playlistService";
 
@@ -69,20 +69,18 @@ function NewPlaylistForm({ onCancel }: { onCancel: () => void }) {
   return (
     <form onSubmit={submit} className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <label className="field flex w-full items-center gap-2 sm:w-80">
-          <span className="sr-only">Nom de la playlist</span>
-          <input
-            autoFocus
-            value={name}
-            maxLength={NAME_MAX}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === "Escape" && onCancel()}
-            placeholder="Saga Alien, films de Noël…"
-            aria-invalid={Boolean(error) || undefined}
-            aria-describedby={error ? "nouvelle-playlist-erreur" : undefined}
-            className="h-full min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted sm:text-sm"
-          />
-        </label>
+        <TextField
+          label="Nom de la playlist"
+          autoFocus
+          value={name}
+          maxLength={NAME_MAX}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === "Escape" && onCancel()}
+          placeholder="Saga Alien, films de Noël…"
+          aria-invalid={Boolean(error) || undefined}
+          aria-describedby={error ? "nouvelle-playlist-erreur" : undefined}
+          className="w-full sm:w-80"
+        />
         <Button type="submit" variant="primary" loading={pending}>
           Créer
         </Button>
