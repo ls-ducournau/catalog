@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { test } from "@playwright/test";
+import { bloquerEcritures } from "../securite";
 import { attendreEcran, ECRANS } from "./ecrans";
 
 // Phase 0 du système de design v2 (spec § 10, AC-0.1) : capture de chaque écran à chaque largeur,
@@ -13,6 +14,8 @@ const DOSSIER = path.join(__dirname, "captures", SERIE);
 
 for (const ecran of ECRANS) {
   test(ecran.nom, async ({ page }, info) => {
+    // Lecture seule : les cartes vues (fraîcheur des recommandations) ne doivent rien écrire.
+    await bloquerEcritures(page);
     await page.goto(ecran.chemin);
     await attendreEcran(page);
     if (ecran.ouvrir) {

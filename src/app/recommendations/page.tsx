@@ -493,7 +493,7 @@ export default function RecommendationsPage() {
   const activeFilters = (category !== "" ? 1 : 0) + (genre !== "" ? 1 : 0) + (onMyServices ? 1 : 0);
 
   return (
-    <CatalogLayout>
+    <CatalogLayout surface={source === "library" ? "pile" : "discover"}>
       <PageHeader
         title="Recommandations"
         lead={source === "library" ? "Ta pile, dans le bon ordre." : "Ce que tu ne connais pas encore."}

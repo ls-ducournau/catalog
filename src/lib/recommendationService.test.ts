@@ -1,11 +1,13 @@
 import type Database from "better-sqlite3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createTestDb } from "./db";
+import { recordImpressions } from "./impressionService";
 import { updateItem } from "./itemService";
 import { diversify, getRecommendations } from "./recommendationService";
 import { getPreferenceModel, resetPreferenceModelCache } from "./preferenceService";
 
-// spec: specs/recommendations-v1.md — FR-12, amendements v1.3 (AC-19, AC-20)
+// spec: specs/recommendations-v1.md — FR-12, amendements v1.3 (AC-19, AC-20) ;
+// specs/recommandations-fraicheur-v1.md (AC-3, AC-5)
 
 vi.mock("./tmdb", () => ({
   getDetailsFr: vi.fn(),
@@ -105,6 +107,41 @@ describe("getRecommendations", () => {
     // AC-18 : l'explication cite des titres aimés, jamais les zombies notés ⭐.
     expect(result.items[0].neighbours.length).toBeGreaterThan(0);
     expect(result.items[0].neighbours.every((n) => n.name.startsWith("Espace"))).toBe(true);
+  });
+});
+
+describe("getRecommendations — lassitude (fraîcheur)", () => {
+  let db: Database.Database;
+  let space: number;
+
+  beforeEach(() => {
+    db = createTestDb();
+    resetPreferenceModelCache();
+    for (let i = 0; i < 8; i++) {
+      seed(db, { name: `Espace ${i}`, status: "Watched", stars: 5, keywords: ["space", "astronaut"] });
+      seed(db, { name: `Zombie ${i}`, status: "Watched", stars: 1, keywords: ["zombie", "undead"] });
+    }
+    seed(db, { name: "Candidat zombie", status: "Unwatched", keywords: ["zombie", "undead"] });
+    space = seed(db, { name: "Candidat espace", status: "Unwatched", keywords: ["space", "astronaut"] });
+  });
+
+  const ranking = () => {
+    const result = getRecommendations(db);
+    if ("error" in result) throw new Error("démarrage à froid inattendu");
+    return result.items;
+  };
+
+  it("un titre montré hier sans geste cède sa place, sa compatibilité intacte (AC-5)", () => {
+    const before = ranking();
+    recordImpressions(db, "home", [`item:${space}`], new Date(Date.now() - 24 * 60 * 60 * 1000));
+    const after = ranking();
+    expect(after.map((i) => i.name)).toEqual(["Candidat zombie", "Candidat espace"]);
+    expect(after[1].compatibility).toBe(before[0].compatibility);
+  });
+
+  it("les impressions du jour ne changent rien avant demain (AC-3)", () => {
+    recordImpressions(db, "pile", [`item:${space}`]);
+    expect(ranking().map((i) => i.name)).toEqual(["Candidat espace", "Candidat zombie"]);
   });
 });
 

@@ -36,6 +36,7 @@ import { openPlaylistDialog } from "@/components/playlists/PlaylistDialog";
 import { useMyServices } from "@/components/useMyServices";
 import { cn } from "@/lib/utils";
 import { includedIn } from "@/lib/availability";
+import { tmdbExposureKey } from "@/lib/impressionKeys";
 import type { Category } from "@/lib/libraryItem";
 import type {
   TriageAnswer,
@@ -500,6 +501,7 @@ export default function TriPage() {
 
   return (
     <HeroLayout
+      surface="triage"
       stage
       hero={
         <>
@@ -559,6 +561,8 @@ export default function TriPage() {
                   // La carte du dessous est un décor : hors de l'arbre d'accessibilité et du focus.
                   aria-hidden={!top}
                   inert={!top}
+                  // Seule une découverte au premier plan est une proposition (fraîcheur FR-1).
+                  data-impression={top && card.family === "unseen" ? tmdbExposureKey(card.mediaType, card.tmdbId) : undefined}
                   className={cn(
                     "absolute inset-0 select-none",
                     !instant && "transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none",

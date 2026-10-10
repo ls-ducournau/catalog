@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyFatigue,
   buildRows,
   CALIBRATION_BLOCK,
   calibrate,
@@ -143,5 +144,51 @@ describe("buildRows (AC-23)", () => {
     const shaped = Array.from({ length: 14 }, (_, i) => candidate(i, { onMyServices: true }));
     const rows = buildRows(shaped, { currentYear: 2026, hasSubscriptions: false });
     expect(rows.map((r) => r.key)).toEqual(["best"]);
+  });
+});
+
+// spec: specs/recommandations-fraicheur-v1.md (AC-4, AC-5)
+describe("applyFatigue (lassitude)", () => {
+  const lot = Array.from({ length: 20 }, (_, i) => ({ id: i + 1, compatibility: 0.9 - i / 40 }));
+  const ids = (list: { id: number }[]) => list.map((t) => t.id);
+  const shown = (days: Record<number, number>) => (t: { id: number }) => days[t.id] ?? 0;
+
+  it("un pas de 0 rend l'ordre d'entrée (NFR-3)", () => {
+    expect(applyFatigue(lot, shown({ 1: 9 }), { step: 0 })).toEqual(lot);
+  });
+
+  it("sans exposition, l'ordre ne bouge pas", () => {
+    expect(applyFatigue(lot, () => 0)).toEqual(lot);
+  });
+
+  it("chaque jour montré sans geste fait reculer le titre de `step` places", () => {
+    expect(ids(applyFatigue(lot, shown({ 1: 1 }), { step: 3 })).slice(0, 5)).toEqual([2, 3, 4, 1, 5]);
+    expect(ids(applyFatigue(lot, shown({ 1: 2 }), { step: 3 })).slice(0, 8)).toEqual([2, 3, 4, 5, 6, 7, 1, 8]);
+  });
+
+  it("un jour ancien, à moitié effacé, fait reculer à moitié", () => {
+    expect(ids(applyFatigue(lot, shown({ 1: 0.5 }), { step: 4 })).slice(0, 4)).toEqual([2, 3, 1, 4]);
+  });
+
+  it("le recul est plafonné à une rangée : un titre montré longtemps reste dans la course", () => {
+    const result = ids(applyFatigue(lot, shown({ 1: 30 }), { step: 3, maxShift: 12 }));
+    expect(result.indexOf(1)).toBe(12);
+  });
+
+  it("à place égale, le moins montré passe devant, puis l'ordre d'entrée", () => {
+    // Le 1 recule de 3 places, sur la place du 4 : le 4 garde la sienne.
+    expect(ids(applyFatigue(lot, shown({ 1: 1 }), { step: 3 })).slice(2, 4)).toEqual([4, 1]);
+    // Deux titres montrés autant de jours gardent leur ordre entre eux.
+    expect(ids(applyFatigue(lot, shown({ 1: 1, 2: 1 }), { step: 3 })).slice(0, 6)).toEqual([3, 4, 1, 5, 2, 6]);
+  });
+
+  it("si tout le lot est autant montré, l'ordre ne bouge pas (EC-1)", () => {
+    expect(ids(applyFatigue(lot, () => 3))).toEqual(ids(lot));
+  });
+
+  it("ne retire ni ne modifie rien : seule la place change (AC-5)", () => {
+    const result = applyFatigue(lot, shown({ 1: 2, 4: 1 }));
+    expect([...result].sort((a, b) => a.id - b.id)).toEqual(lot);
+    expect(result.find((t) => t.id === 1)).toBe(lot[0]);
   });
 });

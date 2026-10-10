@@ -18,6 +18,7 @@ import { Badge, MetaRow, MonoMeta } from "@/components/ui/primitives";
 import { SegmentedControl as Tabs } from "@/components/SegmentedControl";
 import { includedIn } from "@/lib/availability";
 import { genreLine } from "@/lib/genres";
+import { itemExposureKey } from "@/lib/impressionKeys";
 import type { Category, LibraryItem, WatchStatus } from "@/lib/libraryItem";
 import { prefersReducedMotion } from "@/lib/motion";
 import type { LibraryStats, ShowcaseTab, ShowcaseTitle } from "@/lib/showcase";
@@ -196,6 +197,7 @@ export function ShowcaseCard({
   ];
   return (
     <article
+      data-impression={itemExposureKey(title.id)}
       className={cn("showcase-card showcase-card-poster", actions?.watching && "is-open")}
       style={title.tint ? ({ "--tint": title.tint } as CSSProperties) : undefined}
     >

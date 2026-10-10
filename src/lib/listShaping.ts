@@ -207,6 +207,59 @@ export function interleaveExploration<T extends { id: number }>(
   return result;
 }
 
+// ---------- lassitude (recommandations-fraicheur-v1 FR-5 à FR-8) ----------
+
+/**
+ * Places perdues par jour où un titre a été montré sans geste (FR-5), et recul maximal : une
+ * rangée. 0 désactive la lassitude (NFR-3). Mesuré sur le banc (FR-10), 42 jours sans geste,
+ * 12 titres en tête chaque jour : 19 titres différents la première semaine (12 sans
+ * lassitude), 22 sur les quatre suivantes, jamais plus de 3 nouveaux en un jour une fois la
+ * rotation établie, et une note réelle des titres montrés inchangée (+0,03).
+ *
+ * Pourquoi des places plutôt qu'une part du score : les scores sont épars en tête et serrés plus
+ * bas, si bien qu'une même pénalité en écarts types déplace un titre de plus en plus loin. À
+ * 0,05 écart type par jour, 4 titres nouveaux par jour la première semaine, 7 la suivante.
+ *
+ * Pourquoi un plafond plutôt qu'un repos : un titre « au repos » (renvoyé en fin de liste après
+ * 5 jours) partait en même temps que ceux entrés avec lui, puis revenait avec eux à la sortie de
+ * la fenêtre : toute la rangée changeait d'un coup, tous les 14 jours. Avec une mémoire qui
+ * s'efface mais sans plafond, la rotation s'emballait jusqu'à renouveler toute la rangée chaque
+ * jour. Détail des mesures : specs/recommandations-fraicheur-v1.md § 7.
+ */
+export const FATIGUE_STEP = 3;
+export const FATIGUE_MAX_SHIFT = 12;
+
+/** Un jour montré compte 1 la veille, puis s'efface de moitié chaque semaine (FR-5). */
+export const FATIGUE_HALF_LIFE_DAYS = 7;
+
+/** Poids d'un jour où le titre a été montré, il y a `daysAgo` jours (1 : hier). */
+export function fatigueWeight(daysAgo: number): number {
+  return 0.5 ** ((daysAgo - 1) / FATIGUE_HALF_LIFE_DAYS);
+}
+
+/**
+ * FR-5 : sur la liste finale (après diversité, calibration et exploration), un titre recule de
+ * `step` places par jour où il a été montré sans geste, au plus de `maxShift` places. `fatigueOf`
+ * rend ce nombre de jours, pondéré par leur ancienneté (cf. `getExposure`). Rien n'est retiré ni
+ * modifié : seule la place change.
+ */
+export function applyFatigue<T>(
+  shaped: T[],
+  fatigueOf: (item: T) => number,
+  { step = FATIGUE_STEP, maxShift = FATIGUE_MAX_SHIFT }: { step?: number; maxShift?: number } = {}
+): T[] {
+  if (step === 0) return [...shaped];
+
+  const placed = shaped.map((item, index) => {
+    const fatigue = fatigueOf(item);
+    return { item, index, fatigue, place: index + Math.min(step * fatigue, maxShift) };
+  });
+  // À place égale, le moins montré passe devant : reculer de 3 places, c'est finir derrière le
+  // titre qui était 3 places plus bas.
+  placed.sort((a, b) => a.place - b.place || a.fatigue - b.fatigue || a.index - b.index);
+  return placed.map((p) => p.item);
+}
+
 // ---------- rangées expliquées (FR-32) ----------
 
 export type RowCandidate = {

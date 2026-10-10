@@ -32,6 +32,7 @@ import { Chip } from "@/components/ui/form";
 import { Kbd, MetaRow, MonoMeta, Skeleton } from "@/components/ui/primitives";
 import { includedIn } from "@/lib/availability";
 import { genreLabel, genreLine } from "@/lib/genres";
+import { itemExposureKey, tmdbExposureKey } from "@/lib/impressionKeys";
 import { prefersReducedMotion } from "@/lib/motion";
 import type { Category } from "@/lib/libraryItem";
 import type { RecommendationProfile, RecommendedItem } from "@/lib/recommendationService";
@@ -300,6 +301,7 @@ function PileWindow({ picks, genre, onClearGenre }: { picks: ShowcaseTitle[]; ge
                 <li
                   key={t.id}
                   id={`${listId}-${t.id}`}
+                  data-impression={itemExposureKey(t.id)}
                   role="option"
                   aria-selected={i === selectedIndex}
                   onClick={() => setIndex(i)}
@@ -511,6 +513,8 @@ function DiscoverDeck() {
           .map((card, i) => (
             <div
               key={card.key}
+              // Seule la carte de devant est vue ; les autres dépassent à peine derrière elle.
+              data-impression={i === 0 ? tmdbExposureKey(card.mediaType, card.tmdbId) : undefined}
               className={cn("deck-card", i === 0 ? "is-front" : `is-back-${i}`, i === 0 && dragging && "is-dragging")}
               style={
                 i === 0

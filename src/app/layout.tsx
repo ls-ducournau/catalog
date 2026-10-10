@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Bricolage_Grotesque, Geist_Mono, Work_Sans } from "next/font/google";
 import NavBar from "./NavBar";
 import { PlaylistDialogHost } from "@/components/playlists/PlaylistDialog";
+import { ImpressionTracker } from "@/components/ImpressionTracker";
 import { MotionRoot } from "@/components/MotionRoot";
 import { BackToTop } from "@/components/BackToTop";
 import "./globals.css";
@@ -42,6 +43,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {children}
         {/* playlists-v2 FR-1 : la fenêtre « Ajouter à une playlist », ouverte depuis n'importe quelle carte. */}
         <PlaylistDialogHost />
+        {/* Fraîcheur des recommandations : relève les cartes de proposition vues à l'écran. */}
+        <ImpressionTracker />
         <BackToTop />
       </body>
     </html>

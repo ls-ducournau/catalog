@@ -5,7 +5,15 @@ import {
   trainCompatibility,
   trainPreferenceModel,
 } from "../src/lib/preferenceModel.ts";
-import { calibrate, genreDistribution, miscalibration } from "../src/lib/listShaping.ts";
+import {
+  applyFatigue,
+  calibrate,
+  FATIGUE_MAX_SHIFT,
+  FATIGUE_STEP,
+  fatigueWeight,
+  genreDistribution,
+  miscalibration,
+} from "../src/lib/listShaping.ts";
 import { centeredOpinions, personBonus } from "../src/lib/personPreference.ts";
 
 /**
@@ -21,6 +29,9 @@ import { centeredOpinions, personBonus } from "../src/lib/personPreference.ts";
 const RATING = { "💩": 0, "⭐️": 1, "⭐️⭐️": 2, "⭐️⭐️⭐️": 3, "⭐️⭐️⭐️⭐️": 4, "⭐️⭐️⭐️⭐️⭐️": 5 };
 const FOLDS = 5;
 const REPEATS = 3;
+
+const mean = (v) => v.reduce((a, b) => a + b, 0) / v.length;
+const sd = (v) => Math.sqrt(mean(v.map((x) => (x - mean(v)) ** 2)));
 
 const dbPath = new URL("../data/watchlist.db", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const db = new Database(dbPath, { readonly: true });
@@ -139,10 +150,25 @@ const firstPick = { service: [], raw: [], model: [] };
 /** Portée de la calibration (λ en service) : fenêtre de candidats à chaque rang. */
 const WINDOWS = [Infinity, 48, 24, 16];
 const windows = Object.fromEntries(WINDOWS.map((w) => [w, { stars: [], gap: [], rankGap: [] }]));
+
+/**
+ * Fraîcheur (recommandations-fraicheur-v1 FR-10) : chaque titre noté reçoit le score d'un modèle
+ * qui ne l'a jamais vu (scores hors pli, regroupés), puis on simule 6 semaines sans aucun geste,
+ * 12 titres montrés en tête chaque jour : calibration, puis lassitude, comme en service. Six
+ * semaines, parce que les défauts d'une rotation (toute une rangée qui change d'un coup, ou qui
+ * s'emballe) n'apparaissent qu'une fois les premiers jours montrés effacés.
+ */
+const SIM_DAYS = 42;
+const SIM_SHOWN = 12;
+/** Variantes comparées : [places par jour, recul maximal] ; la première est sans lassitude. */
+const VARIANTS = [[0, 0], [2, 12], [3, 12], [3, 18], [4, 12]];
+const exposure = VARIANTS.map(() => ({ firstWeek: [], settledPool: [], early: [], settled: [], worst: [], stars: [] }));
 const started = performance.now();
 
 for (let repeat = 0; repeat < REPEATS; repeat++) {
   const shuffled = seededShuffle(titles, 1000 + repeat);
+  /** Score de chaque titre par le modèle du pli où il était en test. */
+  const outOfFold = new Map();
   for (let fold = 0; fold < FOLDS; fold++) {
     const testIds = new Set(shuffled.filter((_, i) => i % FOLDS === fold).map((t) => t.id));
     const train = titles.filter((t) => !testIds.has(t.id));
@@ -160,6 +186,7 @@ for (let repeat = 0; repeat < REPEATS; repeat++) {
     const components = unseen.map((t) => model.components(t));
     const serviceScores = components.map((c) => compatibility.score(c));
     results[REFERENCE].push(spearman(serviceScores, truth));
+    test.forEach((t, i) => outOfFold.set(t.id, serviceScores[i]));
     test.forEach((t, i) => {
       predictions.push({
         p: compatibility.probability(components[i]),
@@ -224,10 +251,41 @@ for (let repeat = 0; repeat < REPEATS; repeat++) {
     const legacy = legacyEngine(train);
     results["Moteur v1 (Elo moyen)"].push(spearman(test.map(legacy), truth));
   }
+
+  simulateExposure(outOfFold);
 }
 
-const mean = (v) => v.reduce((a, b) => a + b, 0) / v.length;
-const sd = (v) => Math.sqrt(mean(v.map((x) => (x - mean(v)) ** 2)));
+function simulateExposure(outOfFold) {
+  const pool = titles
+    .map((t) => ({ id: t.id, score: outOfFold.get(t.id), genres: t.genres }))
+    .sort((a, b) => b.score - a.score);
+  const target = genreDistribution(titles.filter((t) => t.stars >= 3));
+  const starsOf = new Map(titles.map((t) => [t.id, t.stars]));
+  const meanStars = (ids) => ids.reduce((sum, id) => sum + starsOf.get(id), 0) / ids.length;
+
+  VARIANTS.forEach(([step, maxShift], v) => {
+    const shownOn = new Map();
+    const heads = [];
+    for (let day = 0; day < SIM_DAYS; day++) {
+      // Aujourd'hui exclu, aucun geste : le pire cas, celui du symptôme.
+      const fatigue = (t) => (shownOn.get(t.id) ?? []).reduce((sum, d) => sum + fatigueWeight(day - d), 0);
+      const head = applyFatigue(calibrate(pool, target, { size: 48 }), fatigue, { step, maxShift }).slice(0, SIM_SHOWN);
+      for (const t of head) shownOn.set(t.id, [...(shownOn.get(t.id) ?? []), day]);
+      heads.push(head.map((t) => t.id));
+    }
+    // Titres entrés en tête chaque jour, à partir du 2e jour ; la rotation est établie après
+    // deux semaines.
+    const entered = heads.slice(1).map((head, d) => head.filter((id) => !heads[d].includes(id)).length);
+    const e = exposure[v];
+    e.firstWeek.push(new Set(heads.slice(0, 7).flat()).size);
+    e.settledPool.push(new Set(heads.slice(14).flat()).size);
+    e.early.push(mean(entered.slice(0, 6)));
+    e.settled.push(mean(entered.slice(13)));
+    e.worst.push(Math.max(...entered.slice(13)));
+    e.stars.push(meanStars(heads.flat()));
+  });
+}
+
 const withFeatures = titles.filter((t) => t.keywords.length > 0).length;
 
 console.log(
@@ -292,6 +350,46 @@ console.log(
   `Note réelle du 1er titre : ${mean(firstPick.service).toFixed(2)} en service,` +
     ` ${mean(firstPick.raw).toFixed(2)} en glouton brut, ${mean(firstPick.model).toFixed(2)} sans calibration`
 );
+
+// ---------- fraîcheur (recommandations-fraicheur-v1 FR-10) ----------
+
+console.log(
+  `
+Fraîcheur (FR-10) : ${SIM_DAYS} jours sans geste, ${SIM_SHOWN} titres en tête par jour` +
+    " (* en service ; « établie » : à partir du 15e jour)"
+);
+console.log(
+  "Lassitude".padEnd(22),
+  "Titres différents 1re sem. / sem. 3 à 6".padEnd(41),
+  "Entrés/jour 1re sem. / établie".padEnd(32),
+  "Pire jour établi".padEnd(18),
+  "Note montrée"
+);
+const baseline = exposure[0];
+const costOf = (e) => mean(baseline.stars) - mean(e.stars);
+VARIANTS.forEach(([step, maxShift], v) => {
+  const e = exposure[v];
+  const cost = costOf(e);
+  const inService = step === FATIGUE_STEP && maxShift === FATIGUE_MAX_SHIFT;
+  console.log(
+    (step === 0 ? "aucune" : `${step} places, ${maxShift} au plus${inService ? " *" : ""}`).padEnd(22),
+    `${mean(e.firstWeek).toFixed(0)} / ${mean(e.settledPool).toFixed(0)}`.padEnd(41),
+    `${mean(e.early).toFixed(1)} / ${mean(e.settled).toFixed(1)}`.padEnd(32),
+    `${mean(e.worst).toFixed(0)}`.padEnd(18),
+    `${mean(e.stars).toFixed(2)} (${cost <= 0 ? "+" : "−"}${Math.abs(cost).toFixed(2)})`
+  );
+});
+// Critères de FR-10 pour le réglage en service.
+{
+  const e = exposure[VARIANTS.findIndex(([step, maxShift]) => step === FATIGUE_STEP && maxShift === FATIGUE_MAX_SHIFT)];
+  const holds =
+    costOf(e) <= 0.1 && mean(e.firstWeek) >= 1.5 * mean(baseline.firstWeek) && mean(e.worst) <= SIM_SHOWN / 2;
+  console.log(
+    holds
+      ? "* FR-10 tenu : 0,1 étoile au plus, 1,5 fois plus de titres dès la 1re semaine, au plus la moitié de la rangée renouvelée en un jour."
+      : "* FR-10 non tenu : réglage à ne pas livrer."
+  );
+}
 
 // ---------- compatibilité (score de recommandation affiché) ----------
 

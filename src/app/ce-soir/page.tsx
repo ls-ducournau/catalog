@@ -52,6 +52,7 @@ import {
 } from "@/lib/tonight";
 import type { PlaylistSummary } from "@/lib/playlistService";
 import type { TonightPick, TonightResult } from "@/lib/tonightService";
+import { itemExposureKey, tmdbExposureKey } from "@/lib/impressionKeys";
 import { genreLabel } from "@/lib/genres";
 import { HeroLayout } from "@/components/layouts";
 import { EmptyState as EmptyBlock } from "@/components/sections";
@@ -441,6 +442,7 @@ export default function CeSoirPage() {
 
   return (
     <HeroLayout
+      surface="tonight"
       compact
       hero={
         <div className="flex max-w-2xl flex-col items-center gap-3">
@@ -683,7 +685,7 @@ function HeroCard({
   const runtime = formatRuntime(pick.runtime, pick.type);
 
   return (
-    <article className="hero-in bezel">
+    <article data-impression={exposureKey(pick)} className="hero-in bezel">
       <div className="bezel-inner sm:flex">
         {/* Lumière de l'affiche : floutée derrière la proposition, comme la lumière d'un écran dans
             une salle ; un voile garde le texte lisible. */}
@@ -801,10 +803,16 @@ function Poster({ pick }: { pick: TonightPick }) {
   );
 }
 
+/** Clé d'impression d'une proposition (fraîcheur FR-1) : celle de ta pile si le titre y est. */
+function exposureKey(pick: TonightPick): string | undefined {
+  if (pick.libraryId) return itemExposureKey(pick.libraryId);
+  return pick.tmdbId ? tmdbExposureKey(pick.type, pick.tmdbId) : undefined;
+}
+
 function AlternativeCard({ pick, onChoose, onSkip }: { pick: TonightPick; onChoose: () => void; onSkip: () => void }) {
   const runtime = formatRuntime(pick.runtime, pick.type);
   return (
-    <div className="tile group items-start">
+    <div data-impression={exposureKey(pick)} className="tile group items-start">
       <button onClick={onChoose} className="flex min-w-0 flex-1 gap-3 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-focus" aria-label={`Plutôt ${pick.title}`}>
         <div className="poster h-24 w-16 shrink-0">
           {pick.posterUrl && (

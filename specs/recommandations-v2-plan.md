@@ -192,6 +192,10 @@ ou tout le catalogue, sur un seul écran ; propositions classées par compatibil
   duels.
 - **Sorties** (`sorties-v1.md`) : badges « Au cinéma » / « À venir », calendrier, « À découvrir »
   en rangées.
+- **Fraîcheur** (`recommandations-fraicheur-v1.md`, 2026-10-09) : les cartes vues à l'écran sont
+  relevées ; un titre montré sans geste recule de 3 places par jour, au plus d'une rangée, et
+  retrouve sa place à mesure que la mémoire s'efface. Banc : 19 titres différents en tête la
+  première semaine au lieu de 12, sans perte de note.
 
 ## 4. Ce qu'on ne fera pas, et pourquoi
 

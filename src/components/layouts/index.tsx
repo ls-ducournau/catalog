@@ -1,16 +1,30 @@
 import type { ReactNode } from "react";
+import type { Surface } from "@/lib/impressionKeys";
 import { cn } from "@/lib/utils";
 import { ShardsBackdrop } from "@/components/sections";
 
 // Archétypes de vues — spec: specs/design-system-v2-raycast.md § 7. Chaque page en importe un
 // seul (AC-4.2) : il pose la largeur (1 200 px, DESIGN.md), les marges, le rythme vertical et le
-// haut de page ; la page ne style plus son <main>.
+// haut de page ; la page ne style plus son <main>. `surface` déclare un écran qui propose des
+// titres : ses cartes vues comptent comme montrées (recommandations-fraicheur-v1 FR-1).
 
 const MAIN = "frame flex-1 px-4 pb-16 sm:px-6";
 
 /** Store : en-tête, barre d'outils, grilles et rangées. Bibliothèque, Recommandations, Classement. */
-export function CatalogLayout({ children, className }: { children: ReactNode; className?: string }) {
-  return <main className={cn(MAIN, className)}>{children}</main>;
+export function CatalogLayout({
+  children,
+  className,
+  surface,
+}: {
+  children: ReactNode;
+  className?: string;
+  surface?: Surface;
+}) {
+  return (
+    <main data-impression-surface={surface} className={cn(MAIN, className)}>
+      {children}
+    </main>
+  );
 }
 
 /** Changelog : en-tête, puis entrées datées (colonne collante à gauche). Sorties. */
@@ -29,6 +43,7 @@ export function HeroLayout({
   compact = false,
   stage = false,
   className,
+  surface,
 }: {
   hero: ReactNode;
   children?: ReactNode;
@@ -41,10 +56,11 @@ export function HeroLayout({
    */
   stage?: boolean;
   className?: string;
+  surface?: Surface;
 }) {
   if (stage) {
     return (
-      <main className={cn("flex flex-1 flex-col", className)}>
+      <main data-impression-surface={surface} className={cn("flex flex-1 flex-col", className)}>
         <section className="relative isolate flex flex-1 flex-col items-center gap-6 overflow-x-clip px-4 pb-16 pt-8 sm:px-6 sm:pt-10">
           {shards && <ShardsBackdrop />}
           <div className="flex flex-col items-center gap-2 text-center">{hero}</div>
@@ -54,7 +70,7 @@ export function HeroLayout({
     );
   }
   return (
-    <main className={cn("flex flex-1 flex-col", className)}>
+    <main data-impression-surface={surface} className={cn("flex flex-1 flex-col", className)}>
       <section
         className={cn(
           "relative isolate flex flex-col items-center justify-center px-4 text-center sm:px-6",

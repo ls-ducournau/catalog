@@ -2,7 +2,10 @@ import type Database from "better-sqlite3";
 import type { Availability } from "./availability";
 import { externalTitleData } from "./discoveryService";
 import { NOT_DISMISSED_ITEM, dismissedTmdbKeys, tmdbKey } from "./dismissalService";
+import { getExposure } from "./impressionService";
+import { itemExposureKey, tmdbExposureKey } from "./impressionKeys";
 import { getItemsByIds, getLibraryInfoByTmdbIds, onServicesCondition } from "./itemService";
+import { applyFatigue } from "./listShaping";
 import type { WatchStatus } from "./libraryItem";
 import type { ModelTitle } from "./preferenceModel";
 import { getOpinionWeights } from "./personOpinionService";
@@ -21,7 +24,8 @@ import {
   type TonightContext,
 } from "./tonight";
 
-// Ce soir v2 — spec: specs/ce-soir-v2.md (FR-5, NFR-1, EC-1 à EC-3)
+// Ce soir v2 — spec: specs/ce-soir-v2.md (FR-5, NFR-1, EC-1 à EC-3) ; lassitude :
+// specs/recommandations-fraicheur-v1.md (FR-9)
 
 export type TonightPick = {
   key: string;
@@ -101,8 +105,10 @@ function fromPile(db: Database.Database, context: TonightContext, covered: numbe
 
   const matching = titles.filter((t) => items.has(t.id) && matchesContext(candidateOf(t), context));
   const opinions = getOpinionWeights(db);
-  const ranked = rankTitles(db, matching, (title) => personBonus(title.people ?? [], opinions)).sort(
-    (a, b) => b.score - a.score
+  const exposure = getExposure(db);
+  const ranked = applyFatigue(
+    rankTitles(db, matching, (title) => personBonus(title.people ?? [], opinions)).sort((a, b) => b.score - a.score),
+    (s) => exposure.get(itemExposureKey(s.id)) ?? 0
   );
   const byId = new Map(matching.map((t) => [t.id, t]));
 
@@ -201,12 +207,21 @@ async function fromCatalog(db: Database.Database, context: TonightContext, cover
   }
 
   const opinions = getOpinionWeights(db);
-  const ranked = rankTitles(
-    db,
-    matching.map((m) => m.title),
-    (title) => personBonus(title.people ?? [], opinions)
-  ).sort((a, b) => b.score - a.score);
   const byTitleId = new Map(matching.map((m) => [m.title.id, m]));
+  // Un titre de ta pile est vu sous sa clé de bibliothèque, les autres sous leur clé TMDB.
+  const exposure = getExposure(db);
+  const exposureKey = (r: TmdbSearchResult) => {
+    const libraryId = library.get(r.tmdbId)?.id;
+    return libraryId ? itemExposureKey(libraryId) : tmdbExposureKey(r.type, r.tmdbId);
+  };
+  const ranked = applyFatigue(
+    rankTitles(
+      db,
+      matching.map((m) => m.title),
+      (title) => personBonus(title.people ?? [], opinions)
+    ).sort((a, b) => b.score - a.score),
+    (s) => exposure.get(exposureKey(byTitleId.get(s.id)!.result)) ?? 0
+  );
 
   return {
     picks: ranked.slice(0, MAX_PICKS).map((s) => {

@@ -16,7 +16,9 @@ export type EventKind =
   | "playlist_item_added"
   | "playlist_item_removed"
   | "playlist_watched"
-  | "playlist_rated";
+  | "playlist_rated"
+  // recommandations-fraicheur-v1 FR-4 : ouvrir la fiche d'un titre est un geste.
+  | "opened";
 export type SubjectType = "item" | "tmdb" | "person" | "playlist";
 
 /** D'où vient un ajout : seuls les ajouts issus d'une proposition comptent pour FR-8. */

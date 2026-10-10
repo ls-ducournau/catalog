@@ -6,7 +6,9 @@ import type { Trailer } from "./trailer";
 import type { Category } from "./libraryItem";
 import type { ModelTitle } from "./preferenceModel";
 import { featuresToTitle, rankTitles } from "./preferenceService";
-import { buildRows, type RowCandidate } from "./listShaping";
+import { applyFatigue, buildRows, type RowCandidate } from "./listShaping";
+import { getExposure } from "./impressionService";
+import { tmdbExposureKey } from "./impressionKeys";
 import { diversify } from "./recommendationService";
 import { dismissedTmdbKeys, tmdbKey } from "./dismissalService";
 import { getOpinionWeights } from "./personOpinionService";
@@ -19,7 +21,8 @@ import {
   type TmdbSearchResult,
 } from "./tmdb";
 
-// spec: specs/recommendations-v1.md — amendements v1.2 (FR-15 à FR-21)
+// spec: specs/recommendations-v1.md — amendements v1.2 (FR-15 à FR-21) ; lassitude :
+// specs/recommandations-fraicheur-v1.md (FR-9)
 
 /** Titres candidats parmi lesquels on tire les semences : tes mieux notés (FR-27). */
 const SEED_POOL_SIZE = 20;
@@ -213,7 +216,13 @@ export async function getDiscoveries(
   const rerankSize = Math.min(RERANK_MAX, Math.max(RERANK_POOL, limit));
   const head = merged.slice(0, rerankSize);
   const tail = merged.slice(rerankSize);
-  const reranked = await rerankWithModel(db, head);
+  // Lassitude (fraîcheur FR-5) sur les seuls titres reclassés : un recul ne doit pas faire
+  // remonter dans la liste visible un titre de la traîne, sans disponibilité ni compatibilité.
+  const exposure = getExposure(db);
+  const reranked = applyFatigue(
+    await rerankWithModel(db, head),
+    (item) => exposure.get(tmdbExposureKey(item.type, item.tmdbId)) ?? 0
+  );
 
   // FR-12 appliqué à la découverte : une semence prolifique (ses titres proches se ressemblent
   // tous) ne doit pas occuper tout le haut de liste. Au-delà de deux titres issus de la même

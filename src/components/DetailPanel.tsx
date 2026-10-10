@@ -9,6 +9,8 @@ import { StarRating } from "@/components/StarRating";
 import { ratingPatch, type ItemPatch, type LibraryItem } from "@/lib/libraryItem";
 import { includedIn, isStale } from "@/lib/availability";
 import { AvailabilitySection } from "@/components/AvailabilitySection";
+import { notifyOpened } from "@/components/ImpressionTracker";
+import { itemExposureKey } from "@/lib/impressionKeys";
 import { DetailLayout } from "@/components/layouts";
 import { DetailHeader, InfoTable } from "@/components/sections";
 import { Button, Kbd, Tabs } from "@/components/ui";
@@ -53,6 +55,12 @@ export function DetailPanel({
   useEffect(() => {
     if (item.overview === null || isStale(item.availability)) onLoadOverview(item.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.id]);
+
+  // Fraîcheur des recommandations (FR-4) : ouvrir la fiche est un geste, le titre ne cède plus sa
+  // place pour avoir été montré.
+  useEffect(() => {
+    notifyOpened(itemExposureKey(item.id));
   }, [item.id]);
 
   // Échap referme la fiche : c'est le réflexe attendu d'une modale, et elle s'ouvre des dizaines

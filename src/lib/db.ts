@@ -177,6 +177,17 @@ CREATE TABLE IF NOT EXISTS playlist_suggestion_dismissals (
   item_id INTEGER NOT NULL REFERENCES items(id),
   PRIMARY KEY (playlist_id, item_id)
 );
+-- Titres montrés à l'écran (spec recommandations-fraicheur-v1 FR-1 à FR-3) : un par jour au plus,
+-- avec la surface où le titre a été vu en premier.
+CREATE TABLE IF NOT EXISTS impressions (
+  subject_type TEXT NOT NULL,
+  subject_id TEXT NOT NULL,
+  day TEXT NOT NULL,
+  surface TEXT NOT NULL,
+  PRIMARY KEY (subject_type, subject_id, day)
+);
+CREATE INDEX IF NOT EXISTS idx_impressions_day ON impressions(day);
+CREATE INDEX IF NOT EXISTS idx_events_subject ON events(subject_type, subject_id);
 CREATE INDEX IF NOT EXISTS idx_items_watch_status ON items(watch_status);
 CREATE INDEX IF NOT EXISTS idx_duels_pair ON duels(item_a_id, item_b_id);
 `;

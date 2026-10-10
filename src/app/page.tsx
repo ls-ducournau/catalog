@@ -70,6 +70,7 @@ export default async function Home() {
 
   return (
     <HeroLayout
+      surface="home"
       hero={
         <div className="flex flex-col items-center gap-6">
           <Logo variant="mark" title={null} className="size-12" />

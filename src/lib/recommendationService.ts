@@ -3,9 +3,12 @@ import { DOCUMENTARY_TAG, getItemsByIds, onServicesCondition } from "./itemServi
 import type { Category, LibraryItem } from "./libraryItem";
 import { includedIn } from "./availability";
 import { NOT_DISMISSED_ITEM } from "./dismissalService";
+import { getExposure } from "./impressionService";
+import { itemExposureKey } from "./impressionKeys";
 import { getOpinionWeights } from "./personOpinionService";
 import { personBonus } from "./personPreference";
 import {
+  applyFatigue,
   buildRows,
   calibrate,
   explorationPool,
@@ -25,7 +28,8 @@ import {
   type AffinityEntry,
 } from "./preferenceService";
 
-// spec: specs/recommendations-v1.md (FR-6 à FR-14, amendements v1.3 FR-23 à FR-28, v1.4 FR-30 à FR-32)
+// spec: specs/recommendations-v1.md (FR-6 à FR-14, amendements v1.3 FR-23 à FR-28, v1.4 FR-30 à FR-32),
+// specs/recommandations-fraicheur-v1.md (FR-9)
 
 /**
  * Une recommandation est un item de bibliothèque complet (mêmes composants de carte et de fiche
@@ -118,8 +122,9 @@ type PileOptions = { category?: Category; genre?: string; onServices?: number[] 
 type ShapedTitle = ScoredTitle & ModelTitle & { exploration: boolean; compatibility: number | null };
 
 /**
- * Le classement de « Ma pile à voir », partagé par la grille et les rangées : modèle (v1.3),
- * diversité (FR-12), calibration (FR-30), puis exploration (FR-31).
+ * Le classement de « Ma pile à voir », partagé par la grille, les rangées et l'accueil : modèle
+ * (v1.3), diversité (FR-12), calibration (FR-30), exploration (FR-31), puis lassitude
+ * (fraîcheur FR-5) : un titre montré sans geste cède sa place.
  */
 function rankPile(
   db: Database.Database,
@@ -180,7 +185,11 @@ function rankPile(
   const varied = diversify(scored, (s) => neighbourGroup(s.neighbours));
   const target = genreDistribution(likedTitles(db));
   const calibrated = calibrate(varied, target);
-  const shaped = interleaveExploration(calibrated, explorationPool(calibrated, target));
+  const exposure = getExposure(db);
+  const shaped = applyFatigue(
+    interleaveExploration(calibrated, explorationPool(calibrated, target)),
+    (s) => exposure.get(itemExposureKey(s.id)) ?? 0
+  );
 
   return { shaped, total: candidates.length, profile };
 }

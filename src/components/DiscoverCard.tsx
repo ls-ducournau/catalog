@@ -17,6 +17,7 @@ import type { ReleaseInfo } from "@/lib/release";
 import type { Trailer } from "@/lib/trailer";
 import { TrailerButton } from "@/components/TrailerButton";
 import { openPlaylistDialog } from "@/components/playlists/PlaylistDialog";
+import { tmdbExposureKey } from "@/lib/impressionKeys";
 
 /** Titre venant de TMDB, pas encore (ou juste) entré en bibliothèque. */
 export type DiscoverCardItem = {
@@ -87,7 +88,7 @@ export function DiscoverCard({
   }, []);
 
   return (
-    <div className="group relative">
+    <div data-impression={tmdbExposureKey(item.type, item.tmdbId)} className="group relative">
       {showSynopsis && infoEl && item.overview && (
         <SynopsisTooltip anchor={infoEl} text={item.overview} onDismiss={closeSynopsis} />
       )}

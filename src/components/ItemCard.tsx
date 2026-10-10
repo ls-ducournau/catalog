@@ -12,6 +12,7 @@ import {
 } from "@/components/SynopsisTooltip";
 import { STATUS_META, ratingPatch, type ItemPatch, type LibraryItem } from "@/lib/libraryItem";
 import type { Provider } from "@/lib/availability";
+import { itemExposureKey } from "@/lib/impressionKeys";
 import { ProviderLogo } from "@/components/ProviderLogo";
 import { ReleaseBadge } from "@/components/ReleaseBadge";
 import { TrailerButton } from "@/components/TrailerButton";
@@ -89,7 +90,7 @@ export function ItemCard({
   // toute la carte (affiche comprise). Les autres contrôles (statut, synopsis, étoiles,
   // suppression, bande-annonce) sont posés au-dessus (z-10) : jamais un bouton dans un bouton.
   return (
-    <div data-flip-id={item.id} className="group relative @container">
+    <div data-flip-id={item.id} data-impression={itemExposureKey(item.id)} className="group relative @container">
       {/* Synopsis : rien si on ne l'a pas (encore), jamais une bulle vide. */}
       {showSynopsis && infoEl && item.overview && (
         <SynopsisTooltip anchor={infoEl} text={item.overview} onDismiss={closeSynopsis} />
