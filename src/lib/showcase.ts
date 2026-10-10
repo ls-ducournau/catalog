@@ -7,6 +7,7 @@ import { loadModelTitles } from "./preferenceService";
 import { getRecommendations, type RecommendationProfile, type RecommendedItem } from "./recommendationService";
 import { MOOD_GENRES, MOOD_LABELS, type Mood } from "./tonight";
 import type { Trailer } from "./trailer";
+import { closeTo } from "./format";
 
 // Aperçus de l'accueil (sections reprises de raycast.com : carrousel d'extensions, « Featured » et
 // liste du Store ; fiche docs/design-reference/raycast/composants/vitrine.md). Lecture seule.
@@ -90,7 +91,7 @@ function toTitle(item: LibraryItem | RecommendedItem): ShowcaseTitle {
     overview: item.overview ?? "",
     posterUrl: item.posterUrl,
     compatibility: recommended?.compatibility ?? null,
-    reason: neighbour ? `Proche de ${neighbour.name}` : null,
+    reason: neighbour ? closeTo(neighbour.name) : null,
     watchStatus: item.watchStatus,
     rating: item.rating,
     voteAverage: item.voteAverage,

@@ -7,18 +7,9 @@ import type { PlaylistRuntime } from "./playlistService";
 export const NAME_MAX = 60;
 export const DESCRIPTION_MAX = 200;
 
-/** « 3 h 30 », « 2 h », « 45 min ». */
-export function formatMinutes(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h === 0) return `${m} min`;
-  return m === 0 ? `${h} h` : `${h} h ${String(m).padStart(2, "0")}`;
-}
+import { clock, formatMinutes } from "./format";
 
-/** « 22 h 47 ». */
-export function clock(date: Date): string {
-  return `${date.getHours()} h ${String(date.getMinutes()).padStart(2, "0")}`;
-}
+export { clock, formatMinutes };
 
 /** v2 FR-6 : « 1 h 52, fin vers 22 h 47 » pour un film ; « 45 min par épisode » pour une série. */
 export function timingLine(runtime: number | null, isSeries: boolean, now: Date | null): string | null {

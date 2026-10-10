@@ -190,11 +190,14 @@ export default async function Home() {
           title="Tes listes, dans l'ordre."
           lead="Une saga à revoir, des films de Noël, une soirée à deux : range tes titres, Catalog te dit lequel vient ensuite et où le regarder."
           meta={keys.playlist.count > 0 ? plural(keys.playlist.count, "playlist", "playlists") : undefined}
+          // Sans playlist, l'invitation du visuel porte l'action : pas de second « Nouvelle playlist ».
           actions={
-            <>
-              <Button href="/playlists">Voir tes playlists</Button>
-              <ArrowLink href="/playlists?nouvelle=1">Nouvelle playlist</ArrowLink>
-            </>
+            keys.playlist.count > 0 ? (
+              <>
+                <Button href="/playlists">Voir tes playlists</Button>
+                <ArrowLink href="/playlists?nouvelle=1">Nouvelle playlist</ArrowLink>
+              </>
+            ) : undefined
           }
           visual={<PlaylistPreview initial={keys.playlist.current} />}
         />

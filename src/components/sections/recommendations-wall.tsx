@@ -40,6 +40,7 @@ import type { ShowcaseTitle } from "@/lib/showcase";
 import { EASING_TOKENS } from "@/lib/tokens";
 import type { TriageUndo, UnseenCard } from "@/lib/triageService";
 import { cn } from "@/lib/utils";
+import { closeTo } from "@/lib/format";
 
 // « À la une » de l'accueil (Recommandations et À découvrir) — fiche
 // docs/design-reference/raycast/composants/vitrine.md. La fenêtre de commande de ta pile (filtre,
@@ -71,7 +72,7 @@ function fromRecommended(item: RecommendedItem): ShowcaseTitle {
     overview: item.overview ?? "",
     posterUrl: item.posterUrl,
     compatibility: item.compatibility,
-    reason: item.neighbours[0] ? `Proche de ${item.neighbours[0].name}` : null,
+    reason: item.neighbours[0] ? closeTo(item.neighbours[0].name) : null,
     watchStatus: item.watchStatus,
     rating: item.rating,
     voteAverage: item.voteAverage,
@@ -556,7 +557,7 @@ function DiscoverDeck() {
                   <CompatibilityChip value={current.compatibility} />
                 </span>
               )}
-              {current.seeds[0] && <span className="min-w-0 truncate">Proche de {current.seeds[0]}</span>}
+              {current.seeds[0] && <span className="min-w-0"><span className="min-w-0 truncate">{closeTo(current.seeds[0])}</span></span>}
             </MetaRow>
             <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
               <Button size="sm" onClick={() => answer("dislike", true)} aria-keyshortcuts="1" disabled={Boolean(exit)}>

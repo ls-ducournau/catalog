@@ -36,6 +36,7 @@ import { Button, MonoMeta, Skeleton, Toast } from "@/components/ui";
 import { TasteProfile } from "@/components/TasteProfile";
 import { FlipGrid } from "@/components/motion/FlipGrid";
 import { genreLabel } from "@/lib/genres";
+import { ofTitle } from "@/lib/format";
 
 type AffinityEntry = { name: string; affinity: number; count: number };
 
@@ -65,7 +66,7 @@ type DiscoveryResponse =
       items: Omit<DiscoveredItem, "libraryStatus">[];
       seedsUsed: string[];
       /** sorties-v1 FR-7 : rangées expliquées, par clé « type:tmdbId ». */
-      rows?: { key: string; title: string; keys: string[] }[];
+      rows?: { key: string; title: string; keys: string[]; anchor?: string }[];
     }
   | { error: "not_enough_signal" };
 
@@ -103,7 +104,7 @@ type Feedback = {
 const DISMISS_UNDO_MS = 8000;
 
 type RowsResponse =
-  | { rows: { key: string; title: string; items: RecommendedItem[] }[]; total: number }
+  | { rows: { key: string; title: string; items: RecommendedItem[]; anchor?: string }[]; total: number }
   | { error: "not_enough_signal"; ratedCount: number };
 
 /** FR-32 : deux lectures de la même liste — des rangées expliquées, ou le classement complet. */
@@ -473,7 +474,8 @@ export default function RecommendationsPage() {
     if (pileView === "rows") loadRows();
   }
 
-  function renderDiscoverCard(item: DiscoveredItem) {
+  /** `anchor` : le titre aimé qui explique la rangée ; la carte ne le répète pas. */
+  function renderDiscoverCard(item: DiscoveredItem, anchor?: string) {
     return (
       <DiscoverCard
         item={item}
@@ -481,7 +483,8 @@ export default function RecommendationsPage() {
         onAdd={() => addDiscovered(item)}
         onRemove={() => removeDiscovered(item)}
         onDismiss={() => dismissDiscovered(item)}
-        footnote={<SeedTrail seeds={item.seeds} compatibility={item.compatibility} />}
+        footnote={<SeedTrail seeds={item.seeds} compatibility={item.compatibility} omit={anchor} />}
+        hideScore={item.compatibility !== null}
         includedOn={includedIn(item.availability, services.covered)}
       />
     );
@@ -722,6 +725,7 @@ export default function RecommendationsPage() {
               }
               includedOn={includedIn(item.availability, services.covered)}
               showTrailer
+              quietStatus
             />
           ))}
         </FlipGrid>
@@ -762,11 +766,13 @@ export default function RecommendationsPage() {
                             <NeighbourTrail
                               neighbours={item.neighbours}
                               compatibility={item.compatibility}
+                              omit={row.anchor}
                             />
                           )
                         }
                         includedOn={includedIn(item.availability, services.covered)}
                         showTrailer
+                        quietStatus
                       />
                     </div>
                   ))}
@@ -901,7 +907,7 @@ export default function RecommendationsPage() {
                   <RecommendationRow key={row.key} title={row.title}>
                     {rowItems.map((item) => (
                       <div key={`${item.type}-${item.tmdbId}`} className="w-[9.5rem] shrink-0 snap-start sm:w-[10.5rem]">
-                        {renderDiscoverCard(item)}
+                        {renderDiscoverCard(item, row.anchor)}
                       </div>
                     ))}
                   </RecommendationRow>
@@ -998,17 +1004,21 @@ function NeighbourTrail({
   neighbours,
   rank,
   compatibility,
+  omit,
 }: {
   neighbours: { id: number; name: string; stars: number }[];
   /** Position dans le classement ; absent dans les rangées, où il ne veut rien dire. */
   rank?: number;
   /** Score de recommandation ; quand il est là, il remplace le rang (l'ordre le montre déjà). */
   compatibility: number | null;
+  /** Le titre aimé que la rangée nomme déjà : la carte n'en parle pas. */
+  omit?: string;
 }) {
-  const [first, ...others] = neighbours;
+  const named = neighbours.filter((n) => n.name !== omit);
+  const [first, ...others] = named;
 
   return (
-    <div className="mt-1.5 flex min-w-0 items-center gap-1.5">
+    <div className="mt-1.5 flex min-w-0 flex-col items-start gap-1">
       <CompatibilityChip value={compatibility} />
       {compatibility === null && rank !== undefined && (
         <span
@@ -1019,30 +1029,29 @@ function NeighbourTrail({
         </span>
       )}
       {first ? (
-        <span
-          className="min-w-0 truncate text-xs text-muted"
-          title={`Proche de ${neighbours.map((n) => n.name).join(", ")}`}
-        >
-          Proche de <span className="text-foreground">{first.name}</span>
+        <span className="min-w-0 line-clamp-2 text-xs text-muted" title={`Proche de ${named.map((n) => n.name).join(", ")}`}>
+          Proche {ofTitle(first.name).article} <span className="text-foreground">{ofTitle(first.name).title}</span>
           {others.length > 0 && ` +${others.length}`}
         </span>
       ) : (
-        <span className="truncate text-xs text-muted">Très bien noté</span>
+        !omit && <span className="text-xs text-muted">Très bien noté</span>
       )}
     </div>
   );
 }
 
 /** FR-17 : d'où vient ce titre — l'intérêt de cette source est de pouvoir le nommer. */
-function SeedTrail({ seeds, compatibility }: { seeds: string[]; compatibility: number | null }) {
+function SeedTrail({ seeds: all, compatibility, omit }: { seeds: string[]; compatibility: number | null; omit?: string }) {
+  // La rangée qui nomme déjà la semence : la carte n'en parle pas.
+  const seeds = all.filter((s) => s !== omit);
   if (seeds.length === 0 && compatibility === null) return null;
 
   return (
-    <div className="mt-1.5 flex min-w-0 items-center gap-1.5">
+    <div className="mt-1.5 flex min-w-0 flex-col items-start gap-1">
       <CompatibilityChip value={compatibility} />
       {seeds.length > 0 && (
-        <span className="min-w-0 truncate text-xs text-muted" title={`Proche de ${seeds.join(", ")}`}>
-          Proche de <span className="text-foreground">{seeds[0]}</span>
+        <span className="min-w-0 line-clamp-2 text-xs text-muted" title={`Proche de ${seeds.join(", ")}`}>
+          Proche {ofTitle(seeds[0]).article} <span className="text-foreground">{ofTitle(seeds[0]).title}</span>
           {seeds.length > 1 && ` +${seeds.length - 1}`}
         </span>
       )}
@@ -1053,11 +1062,11 @@ function SeedTrail({ seeds, compatibility }: { seeds: string[]; compatibility: n
 /** FR-31 : un titre placé exprès hors de tes habitudes le dit, pour que l'écart soit lisible. */
 function ExplorationTag({ compatibility }: { compatibility: number | null }) {
   return (
-    <div className="mt-1.5 flex min-w-0 items-center gap-1.5">
+    <div className="mt-1.5 flex min-w-0 flex-col items-start gap-1">
       <CompatibilityChip value={compatibility} />
-      <p className="flex min-w-0 items-center gap-1 text-xs text-muted">
-        <Compass size={11} className="shrink-0" aria-hidden="true" />
-        <span className="truncate">Pour sortir de tes habitudes</span>
+      <p className="flex min-w-0 items-start gap-1 text-xs text-muted">
+        <Compass size={11} className="mt-0.5 shrink-0" aria-hidden="true" />
+        <span className="line-clamp-2">Pour sortir de tes habitudes</span>
       </p>
     </div>
   );

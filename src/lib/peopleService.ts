@@ -1,5 +1,6 @@
 import type Database from "better-sqlite3";
 import { RATING_RANK_SQL } from "./itemService";
+import { displayYear } from "./libraryItem";
 import { creditsOf, type PersonRole } from "./personCredits";
 import { posterUrl, type TmdbFeatures } from "./tmdb";
 
@@ -88,7 +89,7 @@ export function getPeopleWithOpinions(db: Database.Database): PersonView[] {
         if (row.watch_status === "Watched") {
           view.seen.push({ id: row.id, name: row.name, stars: row.stars });
         } else {
-          view.toWatch.push({ id: row.id, name: row.name, year: row.year, posterUrl: posterUrl(row.poster_path) });
+          view.toWatch.push({ id: row.id, name: row.name, year: displayYear(row.year), posterUrl: posterUrl(row.poster_path) });
         }
       }
     }

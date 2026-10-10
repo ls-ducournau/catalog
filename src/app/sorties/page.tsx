@@ -35,7 +35,7 @@ type Kind = "" | "Movie" | "TV Series";
 
 const SCOPES: { value: Scope; label: string; icon: LucideIcon }[] = [
   { value: "for-you", label: "Pour toi", icon: Sparkles },
-  { value: "all", label: "Tout", icon: LayoutGrid },
+  { value: "all", label: "Toutes les sorties", icon: LayoutGrid },
 ];
 
 const KINDS: { value: Kind; label: string; icon: LucideIcon }[] = [

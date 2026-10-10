@@ -32,6 +32,7 @@ import {
   type LucideIcon,
   ListPlus,
   ListVideo,
+  ArrowRight,
 } from "lucide-react";
 import { CompatibilityChip } from "@/components/CompatibilityChip";
 import { ProviderLogo } from "@/components/ProviderLogo";
@@ -39,6 +40,7 @@ import { ReleaseBadge } from "@/components/ReleaseBadge";
 import { TrailerButton } from "@/components/TrailerButton";
 import { openPlaylistDialog } from "@/components/playlists/PlaylistDialog";
 import { useMyServices } from "@/components/useMyServices";
+import { ServicesPicker } from "@/components/ServicesPicker";
 import { includedIn } from "@/lib/availability";
 import {
   DEFAULT_CONTEXT,
@@ -53,10 +55,11 @@ import {
 import type { PlaylistSummary } from "@/lib/playlistService";
 import type { TonightPick, TonightResult } from "@/lib/tonightService";
 import { itemExposureKey, tmdbExposureKey } from "@/lib/impressionKeys";
+import { formatMinutes } from "@/lib/format";
 import { genreLabel } from "@/lib/genres";
 import { HeroLayout } from "@/components/layouts";
 import { EmptyState as EmptyBlock } from "@/components/sections";
-import { Button, Eyebrow, IconCircle, Select, Skeleton, Toast } from "@/components/ui";
+import { Button, Eyebrow, IconCircle, MetaRow, Select, Skeleton, Toast } from "@/components/ui";
 
 // Ce soir v2 — spec: specs/ce-soir-v2.md
 
@@ -117,7 +120,7 @@ type UndoAction =
 
 function formatRuntime(minutes: number | null, type: "Movie" | "TV Series"): string | null {
   if (!minutes) return null;
-  const text = minutes >= 60 ? `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, "0")}` : `${minutes} min`;
+  const text = formatMinutes(minutes);
   return type === "TV Series" ? `${text} par épisode` : text;
 }
 
@@ -145,6 +148,7 @@ export default function CeSoirPage() {
     previous: "Watched" | "Unwatched";
   } | null>(null);
   const services = useMyServices();
+  const [showServicesPicker, setShowServicesPicker] = useState(false);
   const requestSeq = useRef(0);
   /** Mobile : réglages repliés en une ligne de résumé, pour voir les propositions d'emblée. */
   const [panelOpen, setPanelOpen] = useState(false);
@@ -424,6 +428,9 @@ export default function CeSoirPage() {
           : null;
 
   const noServices = services.loaded && services.subscriptionIds.length === 0;
+  // Sans abonnement déclaré, « Mes abonnements » ne filtre rien (le serveur l'ignore) : l'écran
+  // montre ce qui s'applique vraiment, « Partout » (audit UX 2026-10-09, W1-10).
+  const where = noServices ? "anywhere" : context.where;
   const summary = [
     MOODS.find((o) => o.value === context.mood)?.label,
     context.genre !== null ? genreLabel(context.genre) : null,
@@ -432,7 +439,7 @@ export default function CeSoirPage() {
       ? DURATIONS.find((o) => o.value === String(context.maxMinutes))?.label
       : null,
     COMPANIES.find((o) => o.value === context.company)?.label,
-    WHERES.find((o) => o.value === context.where)?.label,
+    WHERES.find((o) => o.value === where)?.label,
     context.source === "playlist"
       ? `« ${playlists.find((p) => p.id === context.playlistId)?.name ?? "Une playlist"} »`
       : SOURCES.find((o) => o.value === context.source)?.label,
@@ -501,14 +508,18 @@ export default function CeSoirPage() {
           )}
           <ChipGroup label="Avec qui" options={COMPANIES} value={context.company} onChange={(company) => update({ company })} />
           <div>
-            <ChipGroup label="Où" options={WHERES} value={context.where} onChange={(where) => update({ where })} />
-            {noServices && context.where === "services" && (
+            <ChipGroup
+              label="Où"
+              options={WHERES}
+              value={where}
+              onChange={(next) => (next === "services" && noServices ? setShowServicesPicker(true) : update({ where: next }))}
+            />
+            {noServices && (
               <p className="mt-1.5 text-xs text-muted">
-                Aucun abonnement déclaré : choisis-les depuis{" "}
-                <Link href="/recommendations" className="link">
-                  Recommandations
-                </Link>
-                .
+                Aucun abonnement déclaré.{" "}
+                <button type="button" className="link" onClick={() => setShowServicesPicker(true)}>
+                  Choisir mes abonnements
+                </button>
               </p>
             )}
           </div>
@@ -622,6 +633,18 @@ export default function CeSoirPage() {
           {undoLabel}
         </Toast>
       )}
+
+      {showServicesPicker && (
+        <ServicesPicker
+          catalog={services.catalog}
+          selected={services.subscriptionIds}
+          onSave={async (ids) => {
+            await services.save(ids);
+            if (ids.length > 0) update({ where: "services" });
+          }}
+          onClose={() => setShowServicesPicker(false)}
+        />
+      )}
     </HeroLayout>
   );
 }
@@ -711,7 +734,7 @@ function HeroCard({
           </div>
           <div className="flex min-w-0 flex-col gap-2">
             <h2 className="text-balance text-xl leading-tight text-foreground sm:text-2xl">{pick.title}</h2>
-            <p className="text-sm text-muted">{[pick.year, kindOf(pick), runtime].filter(Boolean).join(" · ")}</p>
+            <MetaRow className="text-sm" items={[pick.year, kindOf(pick), runtime]} />
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <CompatibilityChip value={pick.compatibility} size="md" countUp />
               {pick.reason && <span className="text-muted">{pick.reason}</span>}
@@ -814,20 +837,24 @@ function AlternativeCard({ pick, onChoose, onSkip }: { pick: TonightPick; onChoo
   return (
     <div data-impression={exposureKey(pick)} className="tile group items-start">
       <button onClick={onChoose} className="flex min-w-0 flex-1 gap-3 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-focus" aria-label={`Plutôt ${pick.title}`}>
-        <div className="poster h-24 w-16 shrink-0">
+        <span className="poster block h-24 w-16 shrink-0">
           {pick.posterUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={pick.posterUrl} alt="" loading="lazy" className="h-full w-full object-cover" />
           )}
-        </div>
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <p className="truncate text-sm font-medium text-foreground">{pick.title}</p>
-          <p className="text-xs text-muted">{[pick.year, kindOf(pick), runtime].filter(Boolean).join(" · ")}</p>
-          <div className="flex items-center gap-2">
+        </span>
+        <span className="flex min-w-0 flex-col gap-1.5">
+          <span className="truncate text-sm font-medium text-foreground">{pick.title}</span>
+          <MetaRow as="span" items={[pick.year, kindOf(pick), runtime]} />
+          <span className="flex items-center gap-2">
             <CompatibilityChip value={pick.compatibility} />
-            <span className="text-xs text-muted transition-colors duration-200 group-hover:text-foreground">Plutôt celui-ci</span>
-          </div>
-        </div>
+            {/* Toute la carte choisit ; le libellé le dit comme une action (audit UX W2-10). */}
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-muted transition-colors duration-200 group-hover:text-foreground">
+              Choisir celui-ci
+              <ArrowRight size={12} aria-hidden="true" />
+            </span>
+          </span>
+        </span>
       </button>
       <button
         onClick={onSkip}

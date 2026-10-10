@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowDown, ArrowLeft, ArrowRight, CheckCircle2, Film, Scale } from "lucide-react";
-import { Badge, Button, Card, Keycap, Skeleton, type Action } from "@/components/ui";
+import { Badge, Button, Card, Keycap, MetaRow, Skeleton, type Action } from "@/components/ui";
 import { CommandWindow, EmptyState } from "@/components/sections";
 import { cn } from "@/lib/utils";
 import type { Band, TierItem, TierStep } from "@/lib/tierDuelService";
@@ -514,7 +514,7 @@ function BandCard({
           <div>
             <h2 className="text-lg text-foreground">{item.name}</h2>
             {(item.year || item.genres.length > 0) && (
-              <p className="text-sm text-muted">{[item.year, genreLine(item.genres)].filter(Boolean).join(" · ")}</p>
+              <MetaRow className="text-sm" items={[item.year, genreLine(item.genres)]} />
             )}
             <p className="mt-2 text-sm text-muted">Où le places-tu parmi tes {starsLabel} ?</p>
           </div>
@@ -637,10 +637,7 @@ function QuadBoard({
               <span className="flex min-w-0 flex-1 items-center gap-2 sm:pt-2">
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="line-clamp-2 text-sm font-medium text-foreground sm:line-clamp-1">{item.name}</span>
-                  <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
-                    {[item.year, genreLine(item.genres, 1)].filter(Boolean).join(" · ")}
-                    {isBest && <Badge>Meilleur</Badge>}
-                  </span>
+                  <MetaRow as="span" className="text-xs" items={[item.year, genreLine(item.genres, 1), isBest && <Badge>Meilleur</Badge>]} />
                 </span>
                 <Keycap pressed={pressed === key} aria-hidden="true" className="hidden sm:inline-flex">
                   {key}

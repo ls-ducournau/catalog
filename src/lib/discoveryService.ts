@@ -340,7 +340,7 @@ export function discoveryKey(item: { type: "Movie" | "TV Series"; tmdbId: number
   return `${item.type}:${item.tmdbId}`;
 }
 
-export type DiscoveryRow = { key: string; title: string; keys: string[] };
+export type DiscoveryRow = { key: string; title: string; keys: string[]; anchor?: string };
 
 /**
  * sorties-v1 FR-7 : les rangées expliquées de la découverte, avec les mêmes règles que celles de
@@ -372,6 +372,6 @@ export function discoveryRows(
   });
 
   return buildRows(candidates, { currentYear: options.currentYear, hasSubscriptions: covered.size > 0 }).map(
-    (row) => ({ key: row.key, title: row.title, keys: row.ids.map((id) => discoveryKey(items[id])) })
+    (row) => ({ key: row.key, title: row.title, anchor: row.anchor, keys: row.ids.map((id) => discoveryKey(items[id])) })
   );
 }

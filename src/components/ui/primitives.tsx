@@ -56,8 +56,26 @@ export function IconCircle({ size = 40, className, style, ...rest }: ComponentPr
 }
 
 /** Ligne de métadonnées : éléments séparés par un filet vertical. */
-export function MetaRow({ className, ...rest }: ComponentPropsWithoutRef<"div">) {
-  return <div className={cn("meta-row", className)} {...rest} />;
+/**
+ * Ligne de métadonnées, séparées par un filet (audit UX 2026-10-09, W2-2 : le point médian est
+ * réservé aux phrases). `items` : les éléments, les vides sont ignorés ; sinon, `children`.
+ */
+export function MetaRow({
+  className,
+  items,
+  children,
+  as: Tag = "div",
+  ...rest
+}: ComponentPropsWithoutRef<"div"> & {
+  items?: (ReactNode | null | false | undefined)[];
+  /** `span` dans un bouton, où un `div` n'est pas permis. */
+  as?: "div" | "span";
+}) {
+  return (
+    <Tag className={cn("meta-row", className)} {...rest}>
+      {items ? items.filter(Boolean).map((item, i) => <span key={i}>{item}</span>) : children}
+    </Tag>
+  );
 }
 
 /** Mentions techniques en Geist Mono (versions, sources, compteurs). */

@@ -62,7 +62,8 @@ export function RatingKeys({
           <span aria-hidden="true" className="flex h-4 items-center">
             {n === 0 ? "💩" : <StarRow count={n} size={12} />}
           </span>
-          <span aria-hidden="true" className="text-balance text-center text-xs text-muted">
+          {/* Sur une ligne : « Chef-d'œuvre » ne se coupe pas au trait d'union (audit UX W3-7). */}
+          <span aria-hidden="true" className="whitespace-nowrap text-center text-xs text-muted">
             {STAR_LABELS[n]}
           </span>
         </Card>

@@ -503,7 +503,8 @@ function RankedPoster({
           #{rank}
         </span>
       </div>
-      <p className="mt-2 truncate text-xs font-medium text-foreground">{item.name}</p>
+      {/* Deux lignes réservées : le titre se lit en entier et les années restent alignées. */}
+      <p className="mt-2 line-clamp-2 min-h-[2lh] text-xs font-medium text-foreground">{item.name}</p>
       {item.year && <p className="text-xs text-muted">{item.year}</p>}
     </button>
   );
@@ -777,7 +778,6 @@ function PersonCard({
             moyenne <StarCount value={average} size={12} />
           </span>
         )}
-        {person.duelElo !== null && <span>Elo {Math.round(person.duelElo)}</span>}
       </MetaRow>
 
       {person.toWatch.length > 0 && (

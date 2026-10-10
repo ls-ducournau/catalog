@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { RefreshCw, Trash2, X } from "lucide-react";
-import { ScoreBadge } from "@/components/ScoreBadge";
 import { TrailerButton } from "@/components/TrailerButton";
 import { PlaylistPicker } from "@/components/playlists/PlaylistPicker";
 import { StarRating } from "@/components/StarRating";
@@ -129,7 +128,6 @@ export function DetailPanel({
                     ...(item.year ? [item.year] : []),
                     categoryLabel,
                     ...(item.genres.length > 0 ? [genreLine(item.genres)] : []),
-                    ...(tmdb ? [`TMDB ${tmdb}`] : []),
                     ...(mine.length > 0
                       ? [
                           <span key="mine" className="inline-flex items-center gap-1.5 text-foreground">
@@ -163,11 +161,10 @@ export function DetailPanel({
                 <div className="flex flex-col gap-6">
                   {item.overview !== "" && (
                     <div>
-                      <p className="eyebrow">Synopsis</p>
                       {item.overview === null ? (
-                        <p className="mt-2 text-sm text-muted">Chargement…</p>
+                        <p className="text-sm text-muted">Chargement…</p>
                       ) : (
-                        <p className="mt-2 text-base leading-7 text-foreground">{item.overview}</p>
+                        <p className="text-base leading-7 text-foreground">{item.overview}</p>
                       )}
                     </div>
                   )}
@@ -204,13 +201,10 @@ export function DetailPanel({
                       <PlaylistPicker key={item.id} itemId={item.id} name={item.name} className="mt-2" />
                     </div>
 
-                    {(item.trailer || item.voteCount) && (
+                    {item.trailer && (
                       <div>
-                        <p className="eyebrow">Bande-annonce et note TMDB</p>
-                        <div className="mt-2 flex items-center gap-2">
-                          <ScoreBadge voteAverage={item.voteAverage} voteCount={item.voteCount} size="md" />
-                          <TrailerButton trailer={item.trailer} title={item.name} />
-                        </div>
+                        <p className="eyebrow">Bande-annonce</p>
+                        <TrailerButton trailer={item.trailer} title={item.name} className="mt-2" />
                       </div>
                     )}
                   </div>

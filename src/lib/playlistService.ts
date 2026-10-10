@@ -485,6 +485,12 @@ export function rateFromPlaylist(
  * v2 FR-10 : la playlist en cours, celle qui a un titre non vu et le geste le plus récent ; null
  * si aucune n'a de titre à voir.
  */
+/** La dernière playlist modifiée, même vide ou finie (accueil, audit UX W2-8). */
+export function latestPlaylist(db: Database.Database): PlaylistDetail | null {
+  const row = db.prepare(`SELECT id FROM playlists ORDER BY updated_at DESC, id DESC LIMIT 1`).get() as { id: number } | undefined;
+  return row ? getPlaylist(db, row.id) : null;
+}
+
 export function currentPlaylist(db: Database.Database): PlaylistDetail | null {
   const rows = db.prepare(`SELECT id FROM playlists ORDER BY updated_at DESC, id DESC`).all() as { id: number }[];
   for (const { id } of rows) {

@@ -4,7 +4,7 @@ import { DEFAULT_ELO, computeElo } from "./elo";
 import { pickPair, pairKey, RECENT_PAIR_WINDOW, type EligibleItem } from "./pairSelection";
 import { categoryFilter } from "./itemService";
 import { posterUrl } from "./tmdb";
-import type { Category } from "./libraryItem";
+import { displayYear, type Category } from "./libraryItem";
 
 // Orchestration des duels — spec: specs/duels-elo-v1.md (FR-3, FR-5..FR-10, amendements v1.1)
 
@@ -37,7 +37,7 @@ function toDuelItem(row: {
     id: row.id,
     notionPageId: row.notion_page_id,
     name: row.name,
-    year: row.year,
+    year: displayYear(row.year),
     genres: parseGenres(row.genre),
     type: row.type as "Movie" | "TV Series",
     posterUrl: posterUrl(row.poster_path),

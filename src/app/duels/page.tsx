@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { HeroLayout } from "@/components/layouts";
 import { CommandWindow, EmptyState } from "@/components/sections";
-import { Button, Card, Divider, Keycap, Skeleton, StarCount, Tabs, Toast } from "@/components/ui";
+import { Button, Card, Divider, Keycap, MetaRow, Skeleton, StarCount, Tabs, Toast } from "@/components/ui";
 import { TierFlow, usePressedKey } from "@/components/TierFlow";
 import type { Category } from "@/lib/libraryItem";
 import { genreLine } from "@/lib/genres";
@@ -26,6 +26,7 @@ type TitleDuelItem = {
   genres: string[];
   posterUrl: string | null;
   eloScore: number;
+  duelsCount: number;
 };
 
 type PersonDuelItem = {
@@ -33,6 +34,7 @@ type PersonDuelItem = {
   name: string;
   photoUrl: string | null;
   eloScore: number;
+  duelsCount: number;
   seenIn: string[];
 };
 
@@ -62,7 +64,8 @@ type DuelCardData = {
   imageUrl: string | null;
   scoreLabel: string;
   /** Court, sur la ligne du score (l'année d'un titre). */
-  meta: string | null;
+  /** Année, genre… : une ligne de métadonnées ; null pour une personne. */
+  meta: (string | null)[] | null;
   /** Plus long, sur sa propre ligne (les titres où l'on a croisé un acteur). */
   note: string | null;
 };
@@ -118,6 +121,11 @@ function seenInLine(titles: string[]): string | null {
   if (titles.length === 0) return null;
   const [first, second, ...rest] = titles;
   return `Vu dans ${[first, second].filter(Boolean).join(", ")}${rest.length > 0 ? ` +${rest.length}` : ""}`;
+}
+
+/** Ce que la carte dit de son passé de duels, sans l'Elo (du jargon) : audit UX 2026-10-09, W2-5. */
+function duelsLine(count: number): string {
+  return count === 0 ? "Premier duel" : `${count} duel${count > 1 ? "s" : ""}`;
 }
 
 export default function DuelsPage() {
@@ -302,7 +310,7 @@ function PairDuels({
           id: p.id,
           name: p.name,
           imageUrl: p.photoUrl,
-          scoreLabel: `Elo ${Math.round(p.eloScore)}`,
+          scoreLabel: duelsLine(p.duelsCount),
           meta: null,
           note: seenInLine(p.seenIn),
         });
@@ -321,9 +329,9 @@ function PairDuels({
           id: t.id,
           name: t.name,
           imageUrl: t.posterUrl,
-          scoreLabel: `Elo ${Math.round(t.eloScore)}`,
-          // Un seul genre : la ligne tient sous l'affiche, avec l'Elo.
-          meta: [t.year, genreLine(t.genres, 1)].filter(Boolean).join(" · ") || null,
+          scoreLabel: duelsLine(t.duelsCount),
+          // Un seul genre : la ligne tient sous l'affiche.
+          meta: [t.year, genreLine(t.genres, 1)],
           note: null,
         });
         setNotEnough(null);
@@ -639,9 +647,10 @@ function DuelCard({
       </div>
       <div className="flex min-w-0 flex-1 items-center gap-3 sm:px-1 sm:pb-1 sm:pt-3">
         <div className="min-w-0 flex-1">
-          <p className="line-clamp-2 text-sm font-medium text-foreground sm:line-clamp-1">{card.name}</p>
+          {/* Deux lignes réservées : le titre est tout le choix, les deux cartes restent alignées. */}
+          <p className="line-clamp-2 text-sm font-medium text-foreground sm:min-h-[2lh]">{card.name}</p>
           {/* Année et genre sur une ligne, l'Elo sur la suivante : rien ne se coupe au milieu. */}
-          {card.meta && <p className="truncate text-xs text-muted">{card.meta}</p>}
+          {card.meta && <MetaRow as="span" className="flex-nowrap text-xs" items={card.meta} />}
           <p className="text-xs text-muted">{card.scoreLabel}</p>
           {card.note && <p className="mt-1 line-clamp-2 text-xs text-muted">{card.note}</p>}
         </div>

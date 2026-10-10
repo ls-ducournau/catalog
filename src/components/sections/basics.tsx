@@ -5,10 +5,19 @@ import { cn } from "@/lib/utils";
 // les sections client (vitrine) les importent sans dépendance circulaire.
 
 /** Barre d'outils d'une liste (Store) : onglets à gauche ; filtres et recherche à droite. */
+/**
+ * Barre d'outils : filtres au début, tri à la fin. Au téléphone, les filtres défilent sur une
+ * seule ligne jusqu'aux bords de l'écran au lieu de s'empiler (audit UX 2026-10-09, W3-1) ; la
+ * marge verticale garde les anneaux de focus visibles malgré le défilement.
+ */
 export function Toolbar({ start, end, className }: { start?: ReactNode; end?: ReactNode; className?: string }) {
   return (
     <div className={cn("flex flex-wrap items-center gap-3", className)}>
-      {start && <div className="flex min-w-0 flex-wrap items-center gap-2">{start}</div>}
+      {start && (
+        <div className="scroll-row -mx-4 -my-1 flex w-[calc(100%+2rem)] min-w-0 flex-nowrap items-center gap-2 overflow-x-auto px-4 py-1 *:shrink-0 sm:mx-0 sm:my-0 sm:w-auto sm:flex-wrap sm:overflow-visible sm:p-0">
+          {start}
+        </div>
+      )}
       {end && <div className="ml-auto flex min-w-0 flex-wrap items-center gap-2">{end}</div>}
     </div>
   );

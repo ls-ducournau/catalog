@@ -1,6 +1,6 @@
 import type Database from "better-sqlite3";
 import { getNextDuel, type DuelItem } from "./duelService";
-import { currentPlaylist, type PlaylistDetail } from "./playlistService";
+import { currentPlaylist, latestPlaylist, type PlaylistDetail } from "./playlistService";
 import { posterTint, tintVar } from "./posterTint";
 import { getRanking } from "./tierDuelService";
 import { getTriageBatch, type SeenCard } from "./triageService";
@@ -58,7 +58,8 @@ export async function getHomeFeatures(db: Database.Database): Promise<HomeFeatur
   };
 
   const playlist: PlaylistPreviewData = {
-    current: currentPlaylist(db),
+    // Sans playlist en cours, la dernière modifiée : jamais « aucune » quand il y en a.
+    current: currentPlaylist(db) ?? latestPlaylist(db),
     count: count(db, `SELECT COUNT(*) AS n FROM playlists`),
   };
 

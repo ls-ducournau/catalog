@@ -92,7 +92,7 @@ export function PlaylistPreview({ initial }: { initial: PlaylistDetail | null })
       <Link href={`/playlists/${playlist.id}`} className="playlist-card flex items-center gap-4">
         <PlaylistCover covers={playlist.covers} className="w-16 shrink-0" />
         <div className="flex min-w-0 flex-col gap-1">
-          <p className="text-xs font-medium text-muted">Ta playlist en cours</p>
+          <p className="text-xs font-medium text-muted">{next ? "Ta playlist en cours" : "Ta dernière playlist"}</p>
           <h3 className="truncate text-lg text-foreground">{playlist.name}</h3>
           <MonoMeta>{watchedLine(watched, playlist.items.length)}</MonoMeta>
         </div>
@@ -121,6 +121,15 @@ export function PlaylistPreview({ initial }: { initial: PlaylistDetail | null })
               <TrailerButton trailer={next.trailer} title={next.name} />
             </div>
           </div>
+        </div>
+      ) : playlist.items.length === 0 ? (
+        // Vide : l'accueil le dit et mène à la playlist, où l'on ajoute des titres (audit UX W2-8).
+        <div className="flex flex-col items-start gap-3">
+          <p className="text-base text-foreground">« {playlist.name} » attend ses premiers titres.</p>
+          <Button href={`/playlists/${playlist.id}`} size="sm" variant="primary">
+            <Plus size={14} aria-hidden="true" />
+            Ajouter des titres
+          </Button>
         </div>
       ) : (
         <p className="text-base text-foreground">Tout est vu dans « {playlist.name} ».</p>

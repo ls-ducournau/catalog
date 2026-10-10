@@ -27,7 +27,7 @@ import { PersonRatingFlow } from "@/components/PersonRatingFlow";
 import { RoleBadges } from "@/components/PersonRoles";
 import { RatingKeys, ratedAs } from "@/components/RatingKeys";
 import { CommandWindow, EmptyState } from "@/components/sections";
-import { Badge, Button, Card, Keycap, Skeleton, Tabs, Toast, buttonClass } from "@/components/ui";
+import { Badge, Button, buttonClass, Card, Keycap, MetaRow, Skeleton, Tabs, Toast } from "@/components/ui";
 import { CompatibilityChip } from "@/components/CompatibilityChip";
 import { ProviderLogo } from "@/components/ProviderLogo";
 import { ReleaseBadge } from "@/components/ReleaseBadge";
@@ -544,7 +544,8 @@ export default function TriPage() {
       >
         {/* La pile : carte du dessus, la suivante qui dépasse derrière, et celle qui s'en va. */}
         <div className="p-3 pb-7 sm:p-4 sm:pb-8">
-          <div className="relative h-[calc(min(40dvh,440px)+128px)] w-full sm:h-[330px]">
+          {/* Au téléphone, la pile tient au-dessus des boutons collés en bas (audit UX W1-6). */}
+          <div className="relative h-[calc(min(32dvh,440px)+112px)] w-full sm:h-[330px]">
             {queue.slice(0, 2).map((card, index) => {
               const top = index === 0;
               const style: CSSProperties = top
@@ -666,7 +667,7 @@ export default function TriPage() {
             onClick={() => answer("skip", 0)}
             disabled={!current}
             aria-keyshortcuts={KEY_OF.skip}
-            className="flex min-h-16 items-center justify-center gap-3 px-3 text-sm font-medium text-muted hover:text-foreground disabled:opacity-40 max-sm:bg-surface sm:px-4"
+            className="flex min-h-12 items-center justify-center gap-3 px-3 text-sm font-medium text-muted hover:text-foreground disabled:opacity-40 max-sm:bg-surface sm:min-h-16 sm:px-4"
           >
             <Keycap pressed={pressed === KEY_OF.skip} aria-hidden="true" className="hidden sm:inline-flex">
               {KEY_OF.skip}
@@ -737,7 +738,7 @@ function AnswerButton({
       aria-keyshortcuts={shortcut}
       // Fond opaque sur mobile : les boutons flottent au-dessus de la carte.
       className={cn(
-        "flex min-h-16 min-w-0 items-center justify-center gap-3 px-2 py-2.5 disabled:opacity-40 max-sm:bg-surface sm:px-3",
+        "flex min-h-12 min-w-0 items-center justify-center gap-3 px-2 py-2 disabled:opacity-40 max-sm:bg-surface sm:min-h-16 sm:px-3 sm:py-2.5",
         end ? "sm:flex-row-reverse sm:justify-start sm:text-right" : "sm:justify-start"
       )}
     >
@@ -749,7 +750,8 @@ function AnswerButton({
           <Icon size={16} aria-hidden="true" />
           {label}
         </span>
-        <span className="whitespace-nowrap text-xs text-muted">{effect}</span>
+        {/* Au téléphone, la barre reste basse pour ne pas couvrir la carte (audit UX W1-6). */}
+        <span className="hidden whitespace-nowrap text-xs text-muted sm:block">{effect}</span>
       </span>
     </Card>
   );
@@ -795,23 +797,22 @@ function CardFace({ card, covered, interactive }: { card: TriageCard; covered: S
           .join("")
       : "🎬";
 
-  let meta: string;
-  if (card.family === "person") {
-    meta = "";
-  } else if (card.family === "seen") {
+  let meta: (string | null)[] = [];
+  if (card.family === "seen") {
     const kind = card.category === "Movie" ? "Film" : card.category === "TV Series" ? "Série" : "Documentaire";
-    meta = [card.year, kind].filter(Boolean).join(" · ");
-  } else {
+    meta = [card.year, kind];
+  } else if (card.family === "unseen") {
     const kind = card.mediaType === "Movie" ? "Film" : "Série";
     const vote = card.voteAverage ? `${card.voteAverage.toFixed(1).replace(".", ",")} TMDB` : null;
-    meta = [card.year, kind, vote].filter(Boolean).join(" · ");
+    meta = [card.year, kind, vote];
   }
+  const hasMeta = meta.some(Boolean);
 
   const services = card.family === "unseen" ? includedIn(card.availability, covered) : [];
 
   return (
     <Card as="article" className="flex h-full flex-col overflow-hidden sm:flex-row">
-      <div className="relative h-[min(40dvh,440px)] w-full shrink-0 bg-surface-2 sm:h-full sm:w-[220px]">
+      <div className="relative h-[min(32dvh,440px)] w-full shrink-0 bg-surface-2 sm:h-full sm:w-[220px]">
         <CardImage src={image} alt={title} fallback={fallback} />
         {/* La bande-annonce sert à trancher « ça me tente ? » : en évidence, sur l'affiche. */}
         {interactive && card.family !== "person" && (
@@ -834,14 +835,14 @@ function CardFace({ card, covered, interactive }: { card: TriageCard; covered: S
         {/* Sur mobile, le titre vit sur l'affiche pour laisser la place au texte dessous. */}
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/90 via-background/60 to-transparent p-4 pt-12 sm:hidden">
           <h2 className="line-clamp-2 text-lg leading-tight text-foreground">{title}</h2>
-          {meta && <p className="mt-1 text-xs text-contrast-foreground">{meta}</p>}
+          {hasMeta && <MetaRow className="mt-1 text-xs text-contrast-foreground" items={meta} />}
         </div>
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden p-4 sm:p-5">
         <div className="hidden sm:block">
           <h2 className="line-clamp-2 text-subheading text-foreground">{title}</h2>
-          {meta && <p className="mt-1 text-sm text-muted">{meta}</p>}
+          {hasMeta && <MetaRow className="mt-1 text-sm" items={meta} />}
           {card.family === "person" && <RoleBadges roles={card.roles} className="mt-2" />}
         </div>
         {card.family === "person" && <RoleBadges roles={card.roles} className="sm:hidden" />}
@@ -877,7 +878,7 @@ function CardFace({ card, covered, interactive }: { card: TriageCard; covered: S
           </div>
         ) : (
           card.overview && (
-            <p className="line-clamp-3 text-sm leading-relaxed text-muted sm:line-clamp-6">{card.overview}</p>
+            <p className="line-clamp-2 text-sm leading-relaxed text-muted sm:line-clamp-6">{card.overview}</p>
           )
         )}
 
@@ -899,7 +900,7 @@ function CardFace({ card, covered, interactive }: { card: TriageCard; covered: S
 function SkeletonCard() {
   return (
     <Card aria-hidden="true" className="absolute inset-0 flex flex-col overflow-hidden sm:flex-row">
-      <Skeleton className="h-[min(40dvh,440px)] w-full shrink-0 rounded-none sm:h-full sm:w-[220px]" />
+      <Skeleton className="h-[min(32dvh,440px)] w-full shrink-0 rounded-none sm:h-full sm:w-[220px]" />
       <div className="flex flex-1 flex-col gap-3 p-5">
         <Skeleton className="h-5 w-2/3" />
         <Skeleton className="h-3 w-1/3" />

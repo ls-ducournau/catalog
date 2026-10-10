@@ -188,7 +188,7 @@ function DuelOption({
   disabled: boolean;
   onClick: () => void;
 }) {
-  const meta = [item.year, genreLine(item.genres, 1)].filter(Boolean).join(" · ");
+  const meta = [item.year, genreLine(item.genres, 1)];
   return (
     <Card
       as="button"
@@ -210,8 +210,8 @@ function DuelOption({
       </div>
       <div className="flex min-w-0 items-center gap-3 px-1 pb-1">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-foreground">{item.name}</p>
-          {meta && <p className="truncate text-xs text-muted">{meta}</p>}
+          <p className="line-clamp-2 min-h-[2lh] text-sm font-medium text-foreground">{item.name}</p>
+          {meta.some(Boolean) && <MetaRow as="span" className="flex-nowrap text-xs" items={meta} />}
         </div>
         <Keycap pressed={pressed} aria-hidden="true" className="hidden sm:inline-flex">
           {shortcut}
@@ -493,7 +493,7 @@ export function ReleasesPreview({ limit = 4 }: { limit?: number }) {
                           <span className="shrink-0">{eventLabel(entry)}</span>
                           {/* Sur téléphone, l'événement seul : le genre n'y tiendrait que tronqué. */}
                           <span className="hidden min-w-0 sm:inline-flex">
-                            <span className="min-w-0 truncate">{genre || kindLabel(entry)}</span>
+                            <span className="min-w-0"><span className="min-w-0 truncate">{genre || kindLabel(entry)}</span></span>
                           </span>
                         </MetaRow>
                       </div>

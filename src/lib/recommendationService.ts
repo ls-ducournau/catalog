@@ -46,7 +46,7 @@ export type RecommendedItem = LibraryItem & {
 };
 
 /** FR-32 : une rangée expliquée, prête à afficher. */
-export type RecommendationRow = { key: string; title: string; items: RecommendedItem[] };
+export type RecommendationRow = { key: string; title: string; items: RecommendedItem[]; anchor?: string };
 
 export type RecommendationRowsResult =
   | { rows: RecommendationRow[]; total: number; profile: RecommendationProfile }
@@ -267,6 +267,7 @@ export function getRecommendationRows(
     rows: rows.map((row) => ({
       key: row.key,
       title: row.title,
+      anchor: row.anchor,
       items: row.ids.map((id) => itemById.get(id)!),
     })),
     total: ranking.total,

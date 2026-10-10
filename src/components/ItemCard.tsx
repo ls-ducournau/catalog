@@ -37,6 +37,7 @@ export function ItemCard({
   footnote,
   includedOn,
   showTrailer = false,
+  quietStatus = false,
 }: {
   item: LibraryItem;
   /** Sélection par lot — bibliothèque uniquement. `range` : Maj+clic, toute la plage depuis le dernier clic. */
@@ -56,6 +57,12 @@ export function ItemCard({
   includedOn?: Provider[];
   /** ▶ au centre de l'affiche, comme dans Sorties (bandes-annonces FR-3) : là où l'on décide. */
   showTrailer?: boolean;
+  /**
+   * Statut discret (Ma pile, où tout est « à voir ») : à la souris, la pastille n'apparaît qu'au
+   * survol ou au focus, pour marquer vu d'un clic sans répéter « À voir » sur chaque carte (audit
+   * UX W2-6). Au doigt, elle reste visible : invisible, elle resterait cliquable.
+   */
+  quietStatus?: boolean;
 }) {
   const status = item.watchStatus ?? "Unwatched";
   // L'ancre vit dans l'état (pas dans une ref) : elle est lue au rendu pour positionner l'infobulle.
@@ -129,9 +136,12 @@ export function ItemCard({
             type="button"
             onClick={open}
             aria-pressed={selectionMode ? selected : undefined}
-            className="min-w-0 flex-1 truncate rounded-sm text-left text-sm font-medium text-foreground outline-none after:absolute after:inset-0 after:rounded-frame after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-focus focus-visible:after:ring-offset-4 focus-visible:after:ring-offset-background"
+            // Deux lignes réservées : titre lisible, étoiles alignées d'une carte à l'autre, et une
+            // cible d'au moins 24 px de haut (WCAG 2.5.8).
+            className="flex min-h-[2lh] min-w-0 flex-1 items-start rounded-sm text-left text-sm font-medium text-foreground outline-none after:absolute after:inset-0 after:rounded-frame after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-focus focus-visible:after:ring-offset-4 focus-visible:after:ring-offset-background"
           >
-            {item.name}
+            {/* Un bouton centre son contenu : le titre, tronqué à part, reste calé en haut. */}
+            <span className="line-clamp-2">{item.name}</span>
           </button>
 
           {/* Cible volontaire du synopsis : on n'ouvre pas d'infobulle en balayant la grille.
@@ -207,7 +217,7 @@ export function ItemCard({
         title={status === "Watched" ? "Marquer « à voir »" : "Marquer « vu »"}
         className={`overlay-pill absolute right-2 top-2 z-10 gap-1.5 transition active:scale-[0.97] hover:bg-black/70 ${
           selectionMode ? "pointer-events-none opacity-40" : ""
-        }`}
+        } ${quietStatus ? "pointer-fine:opacity-0 pointer-fine:focus-visible:opacity-100 pointer-fine:group-hover:opacity-100" : ""}`}
       >
         <span className={`h-1.5 w-1.5 rounded-full ${STATUS_META[status].dot}`} />
         <RollText text={STATUS_META[status].label} />

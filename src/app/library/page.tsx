@@ -31,10 +31,11 @@ import {
 import { PageHeader } from "@/components/PageHeader";
 import { CatalogLayout } from "@/components/layouts";
 import { EmptyState, Toolbar } from "@/components/sections";
-import { Button, Chip, Kbd, MonoMeta, SearchField, Skeleton, Toast } from "@/components/ui";
+import { Button, Chip, Kbd, MetaRow, MonoMeta, SearchField, Skeleton, Toast } from "@/components/ui";
 import { Logo } from "@/components/brand/Logo";
 import { ADD_TITLE_EVENT } from "@/app/NavBar";
 import { FlipGrid } from "@/components/motion/FlipGrid";
+import { closeTo } from "@/lib/format";
 
 type ItemsResponse = {
   items: LibraryItem[];
@@ -1198,7 +1199,7 @@ function AddItemModal({
         aria-modal="true"
         aria-label="Ajouter un titre"
         onClick={(e) => e.stopPropagation()}
-        className="dialog-in bezel flex max-h-[calc(100vh-3rem)] w-full max-w-2xl flex-col sm:max-h-[calc(100vh-5rem)]"
+        className="dialog-in bezel flex max-h-[calc(100dvh-3rem)] w-full max-w-2xl flex-col sm:max-h-[calc(100dvh-5rem)]"
       >
         {/* Fenêtre de commande (DESIGN.md « App Window ») : en-tête, contenu qui défile, barre
             d'actions au pied. */}
@@ -1501,9 +1502,7 @@ function SearchResultRow({
             {r.title}
           </p>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p className="truncate text-xs text-muted">
-              {[r.year, r.isDocumentary ? "Documentaire" : r.type === "Movie" ? "Film" : "Série"].filter(Boolean).join(" · ")}
-            </p>
+            <MetaRow items={[r.year, r.isDocumentary ? "Documentaire" : r.type === "Movie" ? "Film" : "Série"]} />
             {r.libraryStatus && (
               <span className="badge gap-1.5 text-foreground">
                 <span
@@ -1623,8 +1622,8 @@ function SuggestionsGrid({
                 onDismiss={() => onDismiss(sug)}
                 footnote={
                   sug.seeds.length > 0 && (
-                    <p className="mt-1 truncate text-xs text-muted" title={`Proche de ${sug.seeds.join(", ")}`}>
-                      Proche de {sug.seeds[0]}
+                    <p className="mt-1 line-clamp-2 text-xs text-muted" title={`Proche de ${sug.seeds.join(", ")}`}>
+                      {closeTo(sug.seeds[0])}
                     </p>
                   )
                 }

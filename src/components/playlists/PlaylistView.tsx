@@ -917,7 +917,7 @@ export function PlaylistView({ id }: { id: number }) {
                         {item.runtime && <span className="shrink-0">{formatMinutes(item.runtime)}</span>}
                         {item.genres.length > 0 && (
                           <span className="hidden min-w-0 sm:inline-flex">
-                            <span className="min-w-0 truncate">{genreLine(item.genres)}</span>
+                            <span className="min-w-0"><span className="min-w-0 truncate">{genreLine(item.genres)}</span></span>
                           </span>
                         )}
                       </MetaRow>

@@ -2,7 +2,8 @@
 
 import { buttonClass } from "@/components/ui/Button";
 import { useEffect, useMemo, useState } from "react";
-import { Check, Search } from "lucide-react";
+import { Check } from "lucide-react";
+import { SearchField } from "@/components/ui";
 import { serviceFamily, type Provider } from "@/lib/availability";
 import { ProviderLogo } from "@/components/ProviderLogo";
 
@@ -80,7 +81,7 @@ export function ServicesPicker({
         aria-modal="true"
         aria-label="Mes abonnements"
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[calc(100vh-3rem)] w-full max-w-xl flex-col card p-4 sm:max-h-[calc(100vh-8rem)] sm:p-6"
+        className="flex max-h-[calc(100dvh-3rem)] w-full max-w-xl flex-col card p-4 sm:max-h-[calc(100dvh-8rem)] sm:p-6"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -99,21 +100,16 @@ export function ServicesPicker({
           </button>
         </div>
 
-        <div className="relative mt-4">
-          <Search
-            size={15}
-            aria-hidden="true"
-            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted"
-          />
-          <input
-            autoFocus
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Chercher un service…"
-            aria-label="Chercher un service"
-            className="w-full rounded-full border border-field-edge bg-background py-2 pl-11 pr-4 text-sm text-foreground outline-none transition placeholder:text-muted hover:border-field-edge-hover focus:border-field-edge-focus"
-          />
-        </div>
+        {/* Le champ de recherche de l'app, comme partout ailleurs (audit UX W2-7). */}
+        <SearchField
+          autoFocus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onClear={() => setQuery("")}
+          placeholder="Chercher un service…"
+          aria-label="Chercher un service"
+          className="mt-4"
+        />
 
         <div className="mt-4 grid min-h-0 flex-1 grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-2 overflow-y-auto pb-1">
           {visible.map((provider) => {

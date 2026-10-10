@@ -2,7 +2,7 @@ import type Database from "better-sqlite3";
 import { parseGenres } from "./genres";
 import { DEFAULT_ELO, K_FACTOR } from "./elo";
 import { categoryFilter, RATING_SCALE } from "./itemService";
-import type { Category } from "./libraryItem";
+import { displayYear, type Category } from "./libraryItem";
 import { posterUrl } from "./tmdb";
 
 // Classement par étoiles et départage — spec: specs/classement-v1.md (FR-2 à FR-11)
@@ -129,7 +129,7 @@ function toItems(db: Database.Database, members: Member[]): TierItem[] {
     return {
       id: m.id,
       name: row.name,
-      year: row.year,
+      year: displayYear(row.year),
       genres: parseGenres(row.genre),
       posterUrl: posterUrl(row.poster_path),
       tierScore: m.comparisons > 0 ? m.score : null,
@@ -482,7 +482,7 @@ export function getRanking(db: Database.Database, category?: Category): Ranking 
       items: inTier.map((r) => ({
         id: r.id,
         name: r.name,
-        year: r.year,
+        year: displayYear(r.year),
         posterUrl: posterUrl(r.poster_path),
         tierScore: r.tier_score,
         tierDuels: r.tier_duels,

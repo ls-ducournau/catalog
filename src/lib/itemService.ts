@@ -2,7 +2,7 @@ import type Database from "better-sqlite3";
 import { isStale, type Availability } from "./availability";
 import { isReleaseStale, type ReleaseInfo } from "./release";
 import type { TrailerInfo } from "./trailer";
-import type { Category, LibraryItem, WatchStatus } from "./libraryItem";
+import { displayYear, type Category, type LibraryItem, type WatchStatus } from "./libraryItem";
 import { parseGenres } from "./genres";
 import {
   getDetails,
@@ -56,7 +56,7 @@ function toLibraryItem(row: ItemRow): LibraryItem {
   return {
     id: row.id,
     name: row.name,
-    year: row.year,
+    year: displayYear(row.year),
     type: row.type as "Movie" | "TV Series",
     category: isDocumentaryGenre(row.genre) ? "Documentary" : (row.type as "Movie" | "TV Series"),
     genres: parseGenres(row.genre),

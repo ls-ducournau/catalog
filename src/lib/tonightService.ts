@@ -23,6 +23,7 @@ import {
   type TonightCandidate,
   type TonightContext,
 } from "./tonight";
+import { closeTo } from "./format";
 
 // Ce soir v2 — spec: specs/ce-soir-v2.md (FR-5, NFR-1, EC-1 à EC-3) ; lassitude :
 // specs/recommandations-fraicheur-v1.md (FR-9)
@@ -77,7 +78,7 @@ async function inParallel<T>(items: T[], work: (item: T) => Promise<void>): Prom
 }
 
 function reasonOf(neighbours: { name: string }[]): string | null {
-  return neighbours[0] ? `Proche de ${neighbours[0].name}` : null;
+  return neighbours[0] ? closeTo(neighbours[0].name) : null;
 }
 
 // ---------- ma pile (local, NFR-1) ----------

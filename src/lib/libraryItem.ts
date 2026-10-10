@@ -46,6 +46,21 @@ export type LibraryItem = {
 /** Modification applicable depuis une carte ou une fiche. */
 export type ItemPatch = Partial<Pick<LibraryItem, "watchStatus" | "rating">>;
 
+/**
+ * Année telle qu'on la lit (audit UX 2026-10-09, W1-4). La base garde la forme de Notion
+ * (« 2013 - 2022 », « 2022 - » pour une série en cours, « 2001 - 2001 ») ; l'interface montre
+ * « 2013–2022 », « depuis 2022 », « 2001 ».
+ */
+export function displayYear(raw: string | null): string | null {
+  const year = raw?.trim();
+  if (!year) return null;
+  const range = year.match(/^(\d{4})\s*[-–]\s*(\d{4})?$/);
+  if (!range) return year;
+  const [, start, end] = range;
+  if (!end) return `depuis ${start}`;
+  return end === start ? start : `${start}–${end}`;
+}
+
 export const STATUS_META: Record<WatchStatus, { label: string; dot: string }> = {
   Watched: { label: "Vu", dot: "bg-success" },
   Unwatched: { label: "À voir", dot: "bg-subtle" },

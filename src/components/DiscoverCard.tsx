@@ -18,6 +18,7 @@ import type { Trailer } from "@/lib/trailer";
 import { TrailerButton } from "@/components/TrailerButton";
 import { openPlaylistDialog } from "@/components/playlists/PlaylistDialog";
 import { tmdbExposureKey } from "@/lib/impressionKeys";
+import { MetaRow } from "@/components/ui";
 
 /** Titre venant de TMDB, pas encore (ou juste) entré en bibliothèque. */
 export type DiscoverCardItem = {
@@ -51,6 +52,7 @@ export function DiscoverCard({
   onDismiss,
   footnote,
   includedOn,
+  hideScore = false,
 }: {
   item: DiscoverCardItem;
   pending?: boolean;
@@ -65,6 +67,8 @@ export function DiscoverCard({
   footnote?: ReactNode;
   /** Services de tes abonnements où le titre est inclus. */
   includedOn?: Provider[];
+  /** La compatibilité est déjà dite en dessous : un seul pourcentage par carte (audit UX W2-3). */
+  hideScore?: boolean;
 }) {
   const [infoEl, setInfoEl] = useState<HTMLButtonElement | null>(null);
   const [showSynopsis, setShowSynopsis] = useState(false);
@@ -170,9 +174,11 @@ export function DiscoverCard({
             )}
           </div>
 
-          <div className="pointer-events-none absolute right-2 top-2">
-            <ScoreBadge voteAverage={item.voteAverage} voteCount={item.voteCount} />
-          </div>
+          {!hideScore && (
+            <div className="pointer-events-none absolute right-2 top-2">
+              <ScoreBadge voteAverage={item.voteAverage} voteCount={item.voteCount} />
+            </div>
+          )}
 
           {pending && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 text-xs text-foreground">
@@ -192,9 +198,7 @@ export function DiscoverCard({
           ) : (
             <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
           )}
-          <p className="text-xs text-muted">
-            {[item.year, item.isDocumentary ? "Documentaire" : item.type === "Movie" ? "Film" : "Série"].filter(Boolean).join(" · ")}
-          </p>
+          <MetaRow items={[item.year, item.isDocumentary ? "Documentaire" : item.type === "Movie" ? "Film" : "Série"]} />
           {footnote && <div className="relative z-10">{footnote}</div>}
         </div>
       </div>

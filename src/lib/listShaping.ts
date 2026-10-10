@@ -278,7 +278,8 @@ export type RowCandidate = {
   exploration: boolean;
 };
 
-export type Row = { key: string; title: string; ids: number[] };
+/** `anchor` : le titre aimé qui explique toute la rangée (« Parce que tu as adoré X »). */
+export type Row = { key: string; title: string; ids: number[]; anchor?: string };
 
 const ROW_SIZE = 12;
 /** Une rangée de moins de trois titres a l'air cassée : on ne l'affiche pas. */
@@ -304,14 +305,14 @@ export function buildRows(
   best.forEach((id) => claimed.add(id));
   if (best.length >= ROW_MIN) rows.push({ key: "best", title: "Le meilleur pour toi", ids: best });
 
-  const add = (key: string, title: string, pick: (c: RowCandidate) => boolean) => {
+  const add = (key: string, title: string, pick: (c: RowCandidate) => boolean, anchor?: string) => {
     const ids = shaped
       .filter((c) => !claimed.has(c.id) && pick(c))
       .slice(0, ROW_SIZE)
       .map((c) => c.id);
     if (ids.length < ROW_MIN) return;
     ids.forEach((id) => claimed.add(id));
-    rows.push({ key, title, ids });
+    rows.push(anchor ? { key, title, ids, anchor } : { key, title, ids });
   };
 
   if (options.hasSubscriptions) {
@@ -333,7 +334,7 @@ export function buildRows(
 
   if (anchors[0]) {
     const [anchorId, anchor] = anchors[0];
-    add(`because-${anchorId}`, `Parce que tu as adoré ${anchor.name}`, (c) => c.anchor?.id === anchorId);
+    add(`because-${anchorId}`, `Parce que tu as adoré ${anchor.name}`, (c) => c.anchor?.id === anchorId, anchor.name);
   }
 
   add(
@@ -352,7 +353,7 @@ export function buildRows(
 
   if (anchors[1]) {
     const [anchorId, anchor] = anchors[1];
-    add(`because-${anchorId}`, `Parce que tu as adoré ${anchor.name}`, (c) => c.anchor?.id === anchorId);
+    add(`because-${anchorId}`, `Parce que tu as adoré ${anchor.name}`, (c) => c.anchor?.id === anchorId, anchor.name);
   }
 
   add(

@@ -17,13 +17,13 @@ import { Chip, SearchField } from "@/components/ui/form";
 import { Badge, MetaRow, MonoMeta } from "@/components/ui/primitives";
 import { SegmentedControl as Tabs } from "@/components/SegmentedControl";
 import { includedIn } from "@/lib/availability";
+import { clock, formatMinutes } from "@/lib/format";
 import { genreLine } from "@/lib/genres";
 import { itemExposureKey } from "@/lib/impressionKeys";
 import type { Category, LibraryItem, WatchStatus } from "@/lib/libraryItem";
 import { prefersReducedMotion } from "@/lib/motion";
 import type { LibraryStats, ShowcaseTab, ShowcaseTitle } from "@/lib/showcase";
 import { cn } from "@/lib/utils";
-import { SectionHeading } from "./basics";
 
 // Vitrine de l'accueil — fiche docs/design-reference/raycast/composants/vitrine.md. Trois aperçus
 // repris de raycast.com : le carrousel d'extensions de l'accueil (ShowcaseCarousel), le mur de
@@ -55,48 +55,37 @@ function StretchedLink({ title, className }: { title: ShowcaseTitle; className: 
 }
 
 /**
- * Titre d'aperçu (carrousel de l'accueil de Raycast) : titre et précision de même taille, la
- * précision en gris ; au-dessus, le surtitre de la fonction (`FeatureEyebrow`).
+ * Titre de section de l'accueil : la même hiérarchie que les sections de fonctionnalité
+ * (`FeatureSection`), calée à gauche, pour que l'accueil n'ait qu'une voix (audit UX 2026-10-09,
+ * W2-1). Au-dessus, le surtitre éventuel de la fonction (`FeatureEyebrow`).
  */
 function ShowcaseHeading({
   id,
   title,
   lead,
   eyebrow,
-  center = false,
 }: {
   id: string;
   title: string;
   lead?: string;
   eyebrow?: ReactNode;
-  center?: boolean;
 }) {
   return (
-    <div className={cn("flex flex-col gap-4", center ? "mx-auto max-w-xl items-center text-balance text-center" : "max-w-md items-start")}>
-      {/* Enveloppé : le badge se cale à gauche de lui-même (align-self), le bloc le centre. */}
-      {eyebrow && <div>{eyebrow}</div>}
-      <div>
-        <h2 id={id} className="text-subheading text-foreground">
+    <div className="flex max-w-xl flex-col items-start gap-6">
+      {eyebrow}
+      <div className="flex flex-col gap-3">
+        <h2 id={id} className="text-balance text-heading-sm text-foreground lg:text-heading">
           {title}
         </h2>
-        {lead && <p className="text-subheading font-medium text-muted">{lead}</p>}
+        {lead && <p className="text-base text-muted">{lead}</p>}
       </div>
     </div>
   );
 }
 
 /** « 1 h 52 », « 2 h », « 45 min ». */
-function duration(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h === 0) return `${m} min`;
-  return m === 0 ? `${h} h` : `${h} h ${String(m).padStart(2, "0")}`;
-}
 
 /** « 22 h 47 ». */
-function clock(date: Date): string {
-  return `${date.getHours()} h ${String(date.getMinutes()).padStart(2, "0")}`;
-}
 
 /**
  * L'heure qu'il est, côté navigateur seulement (rien au rendu serveur, donc pas d'écart
@@ -180,10 +169,10 @@ export function ShowcaseCard({
   const end = title.runtime && !series && now ? clock(new Date(now.getTime() + title.runtime * 60_000)) : null;
   const timing = title.runtime
     ? series
-      ? `${duration(title.runtime)} par épisode`
+      ? `${formatMinutes(title.runtime)} par épisode`
       : end
-        ? `${duration(title.runtime)}, fin vers ${end}`
-        : duration(title.runtime)
+        ? `${formatMinutes(title.runtime)}, fin vers ${end}`
+        : formatMinutes(title.runtime)
     : null;
   const cast = title.cast.slice(0, 2);
   const ticker: TickerItem[] = [
@@ -214,7 +203,7 @@ export function ShowcaseCard({
             </span>
           )}
           <span className="min-w-0 text-foreground">
-            <span className="min-w-0 truncate">{timing ?? genreLine(title.genres)}</span>
+            <span className="min-w-0"><span className="min-w-0 truncate">{timing ?? genreLine(title.genres)}</span></span>
           </span>
           {mine.length > 0 && (
             <span className="shrink-0" title={`Sur ${mine[0].name}`}>
@@ -387,12 +376,16 @@ export function ShowcaseCarousel({
       <div className="flex flex-wrap items-end justify-between gap-6">
         <ShowcaseHeading id={headingId} title={title} lead={lead} eyebrow={eyebrow} />
         {tabs.length > 1 && (
-          <Tabs
-            label={`${title} : envie`}
-            options={tabs.map((tab) => ({ value: tab.value, label: tab.label }))}
-            value={current.value}
-            onChange={setActive}
-          />
+          // Au téléphone, les envies défilent sur une ligne au lieu d'en laisser une seule à la
+          // ligne suivante (audit UX 2026-10-09, W3-3).
+          <div className="scroll-row -mx-4 -my-1 w-[calc(100%+2rem)] overflow-x-auto px-4 py-1 sm:mx-0 sm:my-0 sm:w-auto sm:overflow-visible sm:p-0 [&_.segmented]:flex-nowrap">
+            <Tabs
+              label={`${title} : envie`}
+              options={tabs.map((tab) => ({ value: tab.value, label: tab.label }))}
+              value={current.value}
+              onChange={setActive}
+            />
+          </div>
         )}
       </div>
 
@@ -475,9 +468,9 @@ export function FeatureWall({
   const headingId = `${id}-titre`;
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-10 lg:gap-16">
-      <ShowcaseHeading id={headingId} title={title} lead={lead} eyebrow={eyebrow} center />
+      <ShowcaseHeading id={headingId} title={title} lead={lead} eyebrow={eyebrow} />
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 lg:gap-8">{children}</div>
-      {footer && <div className="-mt-2 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 lg:-mt-8">{footer}</div>}
+      {footer && <div className="-mt-2 flex flex-wrap items-center gap-x-8 gap-y-3 lg:-mt-8">{footer}</div>}
     </section>
   );
 }
@@ -819,10 +812,7 @@ export function TitleListSection({
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-8">
-      <div className="flex flex-col items-start gap-4">
-        {eyebrow}
-        <SectionHeading id={headingId} title={title} lead={lead} />
-      </div>
+      <ShowcaseHeading id={headingId} title={title} lead={lead} eyebrow={eyebrow} />
 
       <div className={cn("grid gap-6 lg:gap-8", stats && "lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]")}>
         {stats && (
@@ -847,7 +837,7 @@ export function TitleListSection({
                 onClear={() => setQuery("")}
                 searching={loading}
                 shortcut={["↵"]}
-                placeholder="Rechercher dans ta bibliothèque…"
+                placeholder="Rechercher un titre…"
                 aria-label="Rechercher dans ta bibliothèque"
               />
             </form>
