@@ -852,7 +852,16 @@ export function PlaylistView({ id }: { id: number }) {
           <AddTitleField members={members} onAdd={add} />
 
           <div className="flex min-h-8 flex-wrap items-center gap-3 text-sm text-muted">
-            <span aria-live="polite">{message ?? (items.length > 1 ? "Glisse la poignée pour changer l'ordre, ou Alt+↑ et Alt+↓." : "")}</span>
+            <span aria-live="polite">
+              {message ??
+                (items.length > 1 ? (
+                  <>
+                    Glisse la poignée pour changer l&apos;ordre<span className="hidden pointer-fine:inline">, ou Alt+↑ et Alt+↓</span>.
+                  </>
+                ) : (
+                  ""
+                ))}
+            </span>
             {undo && (
               <Button
                 size="sm"
@@ -908,7 +917,7 @@ export function PlaylistView({ id }: { id: number }) {
                       <Poster url={item.posterUrl} className="h-full w-full object-cover" />
                     </span>
                     <div className="flex min-w-0 flex-1 flex-col gap-1">
-                      <Link href={`/library?fiche=${item.id}`} className="row-title truncate text-base text-foreground">
+                      <Link href={`/library?fiche=${item.id}`} className="row-title line-clamp-2 text-base text-foreground sm:line-clamp-1">
                         {item.name}
                       </Link>
                       <MetaRow className="flex-nowrap">
@@ -923,11 +932,26 @@ export function PlaylistView({ id }: { id: number }) {
                       </MetaRow>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
-                      {isNext && <Badge>À suivre</Badge>}
+                      {/* Téléphone : pas de pastille de statut, qui mange le titre ; la ligne à suivre est
+                          éclairée et un titre vu porte une coche. */}
+                      {isNext && (
+                        <>
+                          <Badge className="hidden sm:inline-flex">À suivre</Badge>
+                          <span className="sr-only sm:hidden">À suivre</span>
+                        </>
+                      )}
                       {item.watchStatus === "Watched" ? (
-                        <Badge variant="success">Vu</Badge>
+                        <>
+                          <Badge variant="success" className="hidden sm:inline-flex">
+                            Vu
+                          </Badge>
+                          <span className="inline-flex text-muted sm:hidden" title="Vu">
+                            <Check size={14} aria-hidden="true" />
+                            <span className="sr-only">Vu</span>
+                          </span>
+                        </>
                       ) : (
-                        !isNext && <Badge>À voir</Badge>
+                        !isNext && <Badge className="hidden sm:inline-flex">À voir</Badge>
                       )}
                       {item.rating === "💩" ? (
                         <span className="hidden text-sm sm:inline">💩</span>
