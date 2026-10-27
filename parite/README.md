@@ -48,6 +48,18 @@ Ces routes passent par l'ancien service de notes et ne peuvent pas être enregis
 
 Leur contrat est celui de la v2 : ajouter et retirer sans aucun service externe (FR-1, AC-1).
 
+Il est écrit à la main dans `ecritures-v2.mjs` (8 appels : ajout, doublon, erreurs, présence, retrait,
+absence après retrait, titre inconnu), d'après ce que rendait la v1 moins ce qui disparaît. Il
+se passe sur un **compte vierge** d'une copie jetable, avec accès à TMDB :
+
+```
+node parite/check-v2.mjs http://localhost:PORT
+```
+
+La v1 ne peut pas le passer (elle exige l'ancien service). Reste à écrire : la réponse « J'ai
+envie » du Tri rapide (qui ajoute), et le test à deux comptes (retirer chez l'un ne touche pas
+le catalogue de l'autre).
+
 ## Pas encore couvert
 
 `POST /api/duels/tier/quad`, `GET /api/items/:id?refresh=1` (rafraîchit depuis TMDB, réseau).
