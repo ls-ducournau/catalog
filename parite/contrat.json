@@ -1,0 +1,1477 @@
+{
+  "items": {
+    "method": "GET",
+    "path": "/api/items?pageSize=5",
+    "status": 200,
+    "shape": {
+      "items": [
+        "array",
+        {
+          "availability": {
+            "ads": [
+              "array",
+              "vide"
+            ],
+            "buy": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "fetchedAt": "string",
+            "flatrate": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "free": [
+              "array",
+              "vide"
+            ],
+            "link": "string",
+            "rent": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ]
+          },
+          "category": "string",
+          "duelsCount": "number",
+          "eloScore": "null",
+          "genres": [
+            "array",
+            "string"
+          ],
+          "id": "number",
+          "name": "string",
+          "overview": "string",
+          "posterUrl": "string",
+          "rating": "string",
+          "release": {
+            "digital": "string",
+            "fetchedAt": "string",
+            "firstAir": "string",
+            "kind": "string",
+            "nextEpisode": "null",
+            "status": "string",
+            "theatrical": "string"
+          },
+          "ressenti": "null",
+          "trailer": {
+            "channel": "string",
+            "embeddable": "boolean",
+            "key": "string",
+            "kind": "string",
+            "language": "string",
+            "name": "string"
+          },
+          "type": "string",
+          "voteAverage": "number",
+          "voteCount": "number",
+          "watchStatus": "string",
+          "year": "string"
+        }
+      ],
+      "page": "number",
+      "pageSize": "number",
+      "total": "number"
+    }
+  },
+  "items-filtres": {
+    "method": "GET",
+    "path": "/api/items?pageSize=5&type=Movie&watchStatus=Watched&sortBy=tmdbRating&sortDir=desc&q=a",
+    "status": 200,
+    "shape": {
+      "items": [
+        "array",
+        {
+          "availability": {
+            "ads": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "buy": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "fetchedAt": "string",
+            "flatrate": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "free": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "link": "string",
+            "rent": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ]
+          },
+          "category": "string",
+          "duelsCount": "number",
+          "eloScore": "number",
+          "genres": [
+            "array",
+            "string"
+          ],
+          "id": "number",
+          "name": "string",
+          "overview": "string",
+          "posterUrl": "string",
+          "rating": "string",
+          "release": {
+            "digital": "string",
+            "fetchedAt": "string",
+            "firstAir": "null",
+            "kind": "string",
+            "nextEpisode": "null",
+            "status": "string",
+            "theatrical": "string"
+          },
+          "ressenti": "null",
+          "trailer": {
+            "channel": "string",
+            "embeddable": "boolean",
+            "key": "string",
+            "kind": "string",
+            "language": "string",
+            "name": "string"
+          },
+          "type": "string",
+          "voteAverage": "number",
+          "voteCount": "number",
+          "watchStatus": "string",
+          "year": "string"
+        }
+      ],
+      "page": "number",
+      "pageSize": "number",
+      "total": "number"
+    }
+  },
+  "items-note": {
+    "method": "GET",
+    "path": "/api/items?pageSize=5&rating=5",
+    "status": 200,
+    "shape": {
+      "items": [
+        "array",
+        {
+          "availability": {
+            "ads": [
+              "array",
+              "vide"
+            ],
+            "buy": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "fetchedAt": "string",
+            "flatrate": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "free": [
+              "array",
+              "vide"
+            ],
+            "link": "string",
+            "rent": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ]
+          },
+          "category": "string",
+          "duelsCount": "number",
+          "eloScore": "number",
+          "genres": [
+            "array",
+            "string"
+          ],
+          "id": "number",
+          "name": "string",
+          "overview": "string",
+          "posterUrl": "string",
+          "rating": "string",
+          "release": {
+            "digital": "string",
+            "fetchedAt": "string",
+            "firstAir": "string",
+            "kind": "string",
+            "nextEpisode": "null",
+            "status": "string",
+            "theatrical": "string"
+          },
+          "ressenti": "null",
+          "trailer": {
+            "channel": "string",
+            "embeddable": "boolean",
+            "key": "string",
+            "kind": "string",
+            "language": "string",
+            "name": "string"
+          },
+          "type": "string",
+          "voteAverage": "number",
+          "voteCount": "number",
+          "watchStatus": "string",
+          "year": "string"
+        }
+      ],
+      "page": "number",
+      "pageSize": "number",
+      "total": "number"
+    }
+  },
+  "item": {
+    "method": "GET",
+    "path": "/api/items/842",
+    "status": 200,
+    "shape": {
+      "availability": {
+        "ads": [
+          "array",
+          "vide"
+        ],
+        "buy": [
+          "array",
+          {
+            "id": "number",
+            "logoPath": "string",
+            "name": "string"
+          }
+        ],
+        "fetchedAt": "string",
+        "flatrate": [
+          "array",
+          "vide"
+        ],
+        "free": [
+          "array",
+          "vide"
+        ],
+        "link": "string",
+        "rent": [
+          "array",
+          {
+            "id": "number",
+            "logoPath": "string",
+            "name": "string"
+          }
+        ]
+      },
+      "category": "string",
+      "duelsCount": "number",
+      "eloScore": "null",
+      "genres": [
+        "array",
+        "string"
+      ],
+      "id": "number",
+      "name": "string",
+      "overview": "string",
+      "posterUrl": "string",
+      "rating": "string",
+      "release": {
+        "digital": "string",
+        "fetchedAt": "string",
+        "firstAir": "null",
+        "kind": "string",
+        "nextEpisode": "null",
+        "status": "string",
+        "theatrical": "string"
+      },
+      "ressenti": "null",
+      "trailer": {
+        "channel": "string",
+        "embeddable": "boolean",
+        "key": "string",
+        "kind": "string",
+        "language": "string",
+        "name": "string"
+      },
+      "type": "string",
+      "voteAverage": "number",
+      "voteCount": "number",
+      "watchStatus": "string",
+      "year": "string"
+    }
+  },
+  "genres": {
+    "method": "GET",
+    "path": "/api/genres",
+    "status": 200,
+    "shape": {
+      "genres": [
+        "array",
+        "string"
+      ]
+    }
+  },
+  "providers": {
+    "method": "GET",
+    "path": "/api/providers",
+    "status": 200,
+    "shape": {
+      "providers": [
+        "array",
+        {
+          "id": "number",
+          "logoPath": "string",
+          "name": "string"
+        }
+      ]
+    }
+  },
+  "classement": {
+    "method": "GET",
+    "path": "/api/classement",
+    "status": 200,
+    "shape": {
+      "tiers": [
+        "array",
+        {
+          "banded": "boolean",
+          "compared": "number",
+          "items": [
+            "array",
+            {
+              "band": "number",
+              "id": "number",
+              "name": "string",
+              "posterUrl": "string",
+              "tierDuels": "number",
+              "tierScore": "number",
+              "year": "string"
+            }
+          ],
+          "placed": "number",
+          "rating": "string",
+          "settled": "number",
+          "stars": "number"
+        }
+      ],
+      "unrated": "number"
+    }
+  },
+  "classement-documentaires": {
+    "method": "GET",
+    "path": "/api/classement?category=Documentary",
+    "status": 200,
+    "shape": {
+      "tiers": [
+        "array",
+        {
+          "banded": "boolean",
+          "compared": "number",
+          "items": [
+            "array",
+            {
+              "band": "null",
+              "id": "number",
+              "name": "string",
+              "posterUrl": "string",
+              "tierDuels": "number",
+              "tierScore": "number",
+              "year": "string"
+            }
+          ],
+          "placed": "number",
+          "rating": "string",
+          "settled": "number",
+          "stars": "number"
+        }
+      ],
+      "unrated": "number"
+    }
+  },
+  "duels-next": {
+    "method": "GET",
+    "path": "/api/duels/next",
+    "status": 200,
+    "shape": {
+      "itemA": {
+        "duelsCount": "number",
+        "eloScore": "number",
+        "genres": [
+          "array",
+          "string"
+        ],
+        "id": "number",
+        "name": "string",
+        "notionPageId": "string",
+        "posterUrl": "string",
+        "type": "string",
+        "year": "string"
+      },
+      "itemB": {
+        "duelsCount": "number",
+        "eloScore": "number",
+        "genres": [
+          "array",
+          "string"
+        ],
+        "id": "number",
+        "name": "string",
+        "notionPageId": "string",
+        "posterUrl": "string",
+        "type": "string",
+        "year": "string"
+      }
+    }
+  },
+  "duels-scope": {
+    "method": "GET",
+    "path": "/api/duels/scope",
+    "status": 200,
+    "shape": {
+      "scored": "number",
+      "watched": "number"
+    }
+  },
+  "duels-people-next": {
+    "method": "GET",
+    "path": "/api/duels/people/next",
+    "status": 200,
+    "shape": {
+      "personA": {
+        "duelsCount": "number",
+        "eloScore": "number",
+        "id": "number",
+        "name": "string",
+        "photoUrl": "string",
+        "seenIn": [
+          "array",
+          "string"
+        ]
+      },
+      "personB": {
+        "duelsCount": "number",
+        "eloScore": "number",
+        "id": "number",
+        "name": "string",
+        "photoUrl": "string",
+        "seenIn": [
+          "array",
+          "string"
+        ]
+      }
+    }
+  },
+  "duels-people-scope": {
+    "method": "GET",
+    "path": "/api/duels/people/scope",
+    "status": 200,
+    "shape": {
+      "scored": "number",
+      "watched": "number"
+    }
+  },
+  "duels-tier-next": {
+    "method": "GET",
+    "path": "/api/duels/tier/next?stars=4",
+    "status": 200,
+    "shape": {
+      "item": {
+        "band": "null",
+        "comparisons": "number",
+        "genres": [
+          "array",
+          "string"
+        ],
+        "id": "number",
+        "name": "string",
+        "posterUrl": "string",
+        "tierScore": "null",
+        "year": "string"
+      },
+      "scope": {
+        "banded": "boolean",
+        "compared": "number",
+        "placed": "number",
+        "settled": "number",
+        "titles": "number"
+      },
+      "step": "string"
+    }
+  },
+  "duels-tier-sans-etoiles": {
+    "method": "GET",
+    "path": "/api/duels/tier/next",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    }
+  },
+  "recommandations": {
+    "method": "GET",
+    "path": "/api/recommendations?limit=10",
+    "status": 200,
+    "shape": {
+      "items": [
+        "array",
+        {
+          "availability": {
+            "ads": [
+              "array",
+              "vide"
+            ],
+            "buy": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "fetchedAt": "string",
+            "flatrate": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "free": [
+              "array",
+              "vide"
+            ],
+            "link": "string",
+            "rent": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ]
+          },
+          "category": "string",
+          "compatibility": "number",
+          "duelsCount": "number",
+          "eloScore": "null",
+          "exploration": "boolean",
+          "genres": [
+            "array",
+            "string"
+          ],
+          "id": "number",
+          "name": "string",
+          "neighbours": [
+            "array",
+            {
+              "id": "number",
+              "name": "string",
+              "stars": "number"
+            }
+          ],
+          "overview": "string",
+          "posterUrl": "string",
+          "rating": "null",
+          "recommendationScore": "number",
+          "release": {
+            "digital": "null",
+            "fetchedAt": "string",
+            "firstAir": "string",
+            "kind": "string",
+            "nextEpisode": "null",
+            "status": "string",
+            "theatrical": "string"
+          },
+          "ressenti": "null",
+          "trailer": {
+            "channel": "string",
+            "embeddable": "boolean",
+            "key": "string",
+            "kind": "string",
+            "language": "string",
+            "name": "string"
+          },
+          "type": "string",
+          "voteAverage": "number",
+          "voteCount": "number",
+          "watchStatus": "string",
+          "year": "string"
+        }
+      ],
+      "profile": {
+        "compatibilityBaseRate": "number",
+        "directors": [
+          "array",
+          {
+            "affinity": "number",
+            "count": "number",
+            "name": "string"
+          }
+        ],
+        "genres": [
+          "array",
+          {
+            "affinity": "number",
+            "count": "number",
+            "name": "string"
+          }
+        ],
+        "ratedCount": "number"
+      },
+      "total": "number"
+    }
+  },
+  "recommandations-rangees": {
+    "method": "GET",
+    "path": "/api/recommendations/rows",
+    "status": 200,
+    "shape": {
+      "profile": {
+        "compatibilityBaseRate": "number",
+        "directors": [
+          "array",
+          {
+            "affinity": "number",
+            "count": "number",
+            "name": "string"
+          }
+        ],
+        "genres": [
+          "array",
+          {
+            "affinity": "number",
+            "count": "number",
+            "name": "string"
+          }
+        ],
+        "ratedCount": "number"
+      },
+      "rows": [
+        "array",
+        {
+          "anchor": "string",
+          "items": [
+            "array",
+            {
+              "availability": {
+                "ads": [
+                  "array",
+                  {
+                    "id": "number",
+                    "logoPath": "string",
+                    "name": "string"
+                  }
+                ],
+                "buy": [
+                  "array",
+                  {
+                    "id": "number",
+                    "logoPath": "string",
+                    "name": "string"
+                  }
+                ],
+                "fetchedAt": "string",
+                "flatrate": [
+                  "array",
+                  {
+                    "id": "number",
+                    "logoPath": "string",
+                    "name": "string"
+                  }
+                ],
+                "free": [
+                  "array",
+                  {
+                    "id": "number",
+                    "logoPath": "string",
+                    "name": "string"
+                  }
+                ],
+                "link": "string",
+                "rent": [
+                  "array",
+                  {
+                    "id": "number",
+                    "logoPath": "string",
+                    "name": "string"
+                  }
+                ]
+              },
+              "category": "string",
+              "compatibility": "number",
+              "duelsCount": "number",
+              "eloScore": "null",
+              "exploration": "boolean",
+              "genres": [
+                "array",
+                "string"
+              ],
+              "id": "number",
+              "name": "string",
+              "neighbours": [
+                "array",
+                {
+                  "id": "number",
+                  "name": "string",
+                  "stars": "number"
+                }
+              ],
+              "overview": "string",
+              "posterUrl": "string",
+              "rating": "string",
+              "recommendationScore": "number",
+              "release": {
+                "digital": "string",
+                "fetchedAt": "string",
+                "firstAir": "string",
+                "kind": "string",
+                "nextEpisode": {
+                  "date": "string",
+                  "episode": "number",
+                  "season": "number"
+                },
+                "status": "string",
+                "theatrical": "string"
+              },
+              "ressenti": "null",
+              "trailer": {
+                "channel": "string",
+                "embeddable": "boolean",
+                "key": "string",
+                "kind": "string",
+                "language": "string",
+                "name": "string"
+              },
+              "type": "string",
+              "voteAverage": "number",
+              "voteCount": "number",
+              "watchStatus": "string",
+              "year": "string"
+            }
+          ],
+          "key": "string",
+          "title": "string"
+        }
+      ],
+      "total": "number"
+    }
+  },
+  "decouvrir": {
+    "method": "GET",
+    "path": "/api/recommendations/discover?limit=10",
+    "status": 200,
+    "shape": {
+      "items": [
+        "array",
+        {
+          "availability": {
+            "ads": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "buy": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "fetchedAt": "string",
+            "flatrate": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "free": [
+              "array",
+              "vide"
+            ],
+            "link": "string",
+            "rent": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ]
+          },
+          "compatibility": "number",
+          "isDocumentary": "boolean",
+          "overview": "string",
+          "posterUrl": "string",
+          "release": {
+            "digital": "string",
+            "fetchedAt": "string",
+            "firstAir": "string",
+            "kind": "string",
+            "nextEpisode": "null",
+            "status": "string",
+            "theatrical": "string"
+          },
+          "runtime": "number",
+          "seeds": [
+            "array",
+            "string"
+          ],
+          "title": "string",
+          "tmdbId": "number",
+          "trailer": {
+            "channel": "string",
+            "embeddable": "boolean",
+            "key": "string",
+            "kind": "string",
+            "language": "string",
+            "name": "string"
+          },
+          "type": "string",
+          "voteAverage": "number",
+          "voteCount": "number",
+          "year": "string"
+        }
+      ],
+      "seedsUsed": [
+        "array",
+        "string"
+      ]
+    }
+  },
+  "ce-soir": {
+    "method": "GET",
+    "path": "/api/tonight",
+    "status": 200,
+    "shape": {
+      "baseRate": "number",
+      "catalogUnavailable": "boolean",
+      "matched": "number",
+      "picks": [
+        "array",
+        {
+          "availability": {
+            "ads": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "buy": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "fetchedAt": "string",
+            "flatrate": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "free": [
+              "array",
+              "vide"
+            ],
+            "link": "string",
+            "rent": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ]
+          },
+          "compatibility": "number",
+          "genres": [
+            "array",
+            "string"
+          ],
+          "isDocumentary": "boolean",
+          "key": "string",
+          "libraryId": "number",
+          "libraryStatus": "string",
+          "overview": "string",
+          "posterUrl": "string",
+          "reason": "string",
+          "release": {
+            "digital": "string",
+            "fetchedAt": "string",
+            "firstAir": "string",
+            "kind": "string",
+            "nextEpisode": "null",
+            "status": "string",
+            "theatrical": "string"
+          },
+          "runtime": "number",
+          "title": "string",
+          "tmdbId": "null",
+          "trailer": {
+            "channel": "string",
+            "embeddable": "boolean",
+            "key": "string",
+            "kind": "string",
+            "language": "string",
+            "name": "string"
+          },
+          "type": "string",
+          "voteAverage": "number",
+          "voteCount": "number",
+          "year": "string"
+        }
+      ],
+      "relax": "null"
+    }
+  },
+  "ce-soir-duree": {
+    "method": "GET",
+    "path": "/api/tonight?maxMinutes=120",
+    "status": 200,
+    "shape": {
+      "baseRate": "number",
+      "catalogUnavailable": "boolean",
+      "matched": "number",
+      "picks": [
+        "array",
+        {
+          "availability": {
+            "ads": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "buy": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "fetchedAt": "string",
+            "flatrate": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "free": [
+              "array",
+              "vide"
+            ],
+            "link": "string",
+            "rent": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ]
+          },
+          "compatibility": "number",
+          "genres": [
+            "array",
+            "string"
+          ],
+          "isDocumentary": "boolean",
+          "key": "string",
+          "libraryId": "number",
+          "libraryStatus": "string",
+          "overview": "string",
+          "posterUrl": "string",
+          "reason": "string",
+          "release": {
+            "digital": "string",
+            "fetchedAt": "string",
+            "firstAir": "string",
+            "kind": "string",
+            "nextEpisode": "null",
+            "status": "string",
+            "theatrical": "string"
+          },
+          "runtime": "number",
+          "title": "string",
+          "tmdbId": "null",
+          "trailer": {
+            "channel": "string",
+            "embeddable": "boolean",
+            "key": "string",
+            "kind": "string",
+            "language": "string",
+            "name": "string"
+          },
+          "type": "string",
+          "voteAverage": "number",
+          "voteCount": "number",
+          "year": "string"
+        }
+      ],
+      "relax": "null"
+    }
+  },
+  "sorties": {
+    "method": "GET",
+    "path": "/api/calendar?from=2026-10-26&to=2026-11-09",
+    "status": 200,
+    "shape": {
+      "baseRate": "number",
+      "entries": [
+        "array",
+        {
+          "compatibility": "number",
+          "date": "string",
+          "event": "string",
+          "genres": [
+            "array",
+            "string"
+          ],
+          "isDocumentary": "boolean",
+          "key": "string",
+          "libraryId": "number",
+          "libraryStatus": "string",
+          "mediaType": "string",
+          "overview": "string",
+          "posterUrl": "string",
+          "season": "number",
+          "title": "string",
+          "tmdbId": "number",
+          "trailer": {
+            "channel": "string",
+            "embeddable": "boolean",
+            "key": "string",
+            "kind": "string",
+            "language": "string",
+            "name": "string"
+          }
+        }
+      ],
+      "externalUnavailable": "boolean",
+      "from": "string",
+      "to": "string"
+    }
+  },
+  "sorties-sans-fenetre": {
+    "method": "GET",
+    "path": "/api/calendar",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    }
+  },
+  "tri-decouvrir": {
+    "method": "GET",
+    "path": "/api/triage/batch?family=unseen&limit=5",
+    "status": 200,
+    "shape": {
+      "cards": [
+        "array",
+        {
+          "availability": {
+            "ads": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "buy": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "fetchedAt": "string",
+            "flatrate": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "free": [
+              "array",
+              "vide"
+            ],
+            "link": "string",
+            "rent": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ]
+          },
+          "compatibility": "number",
+          "family": "string",
+          "key": "string",
+          "mediaType": "string",
+          "overview": "string",
+          "posterUrl": "string",
+          "release": {
+            "digital": "null",
+            "fetchedAt": "string",
+            "firstAir": "string",
+            "kind": "string",
+            "nextEpisode": "null",
+            "status": "string",
+            "theatrical": "string"
+          },
+          "seeds": [
+            "array",
+            "string"
+          ],
+          "title": "string",
+          "tmdbId": "number",
+          "trailer": {
+            "channel": "string",
+            "embeddable": "boolean",
+            "key": "string",
+            "kind": "string",
+            "language": "string",
+            "name": "string"
+          },
+          "voteAverage": "number",
+          "voteCount": "number",
+          "year": "string"
+        }
+      ]
+    }
+  },
+  "tri-vus": {
+    "method": "GET",
+    "path": "/api/triage/batch?family=seen&limit=5",
+    "status": 200,
+    "shape": {
+      "cards": [
+        "array",
+        {
+          "category": "string",
+          "family": "string",
+          "id": "number",
+          "key": "string",
+          "overview": "string",
+          "posterUrl": "string",
+          "title": "string",
+          "trailer": {
+            "channel": "string",
+            "embeddable": "boolean",
+            "key": "string",
+            "kind": "string",
+            "language": "string",
+            "name": "string"
+          },
+          "year": "string"
+        }
+      ]
+    }
+  },
+  "tri-personnes": {
+    "method": "GET",
+    "path": "/api/triage/batch?family=person&limit=5",
+    "status": 200,
+    "shape": {
+      "cards": [
+        "array",
+        {
+          "family": "string",
+          "id": "number",
+          "key": "string",
+          "name": "string",
+          "photoUrl": "string",
+          "roles": [
+            "array",
+            "string"
+          ],
+          "seenIn": [
+            "array",
+            "string"
+          ]
+        }
+      ]
+    }
+  },
+  "profil": {
+    "method": "GET",
+    "path": "/api/profile/feedback",
+    "status": 200,
+    "shape": {
+      "acceptance": {
+        "decided": "number",
+        "keptRate": "number",
+        "lovedRate": "null",
+        "seen": "number"
+      },
+      "dismissed": "number"
+    }
+  },
+  "avis-personnes": {
+    "method": "GET",
+    "path": "/api/people/opinions",
+    "status": 200,
+    "shape": {
+      "people": [
+        "array",
+        {
+          "averageStars": "number",
+          "duelElo": "number",
+          "id": "number",
+          "name": "string",
+          "opinion": "number",
+          "photoUrl": "string",
+          "rating": "number",
+          "roles": [
+            "array",
+            "string"
+          ],
+          "seen": [
+            "array",
+            {
+              "id": "number",
+              "name": "string",
+              "stars": "number"
+            }
+          ],
+          "toWatch": [
+            "array",
+            {
+              "id": "number",
+              "name": "string",
+              "posterUrl": "string",
+              "year": "string"
+            }
+          ],
+          "updatedAt": "string"
+        }
+      ]
+    }
+  },
+  "ecartes": {
+    "method": "GET",
+    "path": "/api/dismissals",
+    "status": 200,
+    "shape": {
+      "count": "number"
+    }
+  },
+  "abonnements": {
+    "method": "GET",
+    "path": "/api/settings/subscriptions",
+    "status": 200,
+    "shape": {
+      "ids": [
+        "array",
+        "vide"
+      ]
+    }
+  },
+  "recherche-tmdb": {
+    "method": "GET",
+    "path": "/api/tmdb/search?q=alien",
+    "status": 200,
+    "shape": {
+      "page": "number",
+      "results": [
+        "array",
+        {
+          "genres": [
+            "array",
+            "string"
+          ],
+          "isDocumentary": "boolean",
+          "libraryId": "number",
+          "libraryStatus": "string",
+          "overview": "string",
+          "personCredit": "null",
+          "posterUrl": "string",
+          "title": "string",
+          "tmdbId": "number",
+          "type": "string",
+          "voteAverage": "number",
+          "voteCount": "number",
+          "year": "string"
+        }
+      ],
+      "totalPages": "number"
+    }
+  },
+  "playlists": {
+    "method": "GET",
+    "path": "/api/playlists",
+    "status": 200,
+    "shape": {
+      "playlists": [
+        "array",
+        {
+          "count": "number",
+          "covers": [
+            "array",
+            "vide"
+          ],
+          "createdAt": "string",
+          "description": "null",
+          "id": "number",
+          "name": "string",
+          "next": "null",
+          "runtime": {
+            "hasSeries": "boolean",
+            "known": "number",
+            "minutes": "number"
+          },
+          "updatedAt": "string",
+          "watched": "number"
+        }
+      ]
+    }
+  },
+  "playlist": {
+    "method": "GET",
+    "path": "/api/playlists/1",
+    "status": 200,
+    "shape": {
+      "playlist": {
+        "count": "number",
+        "covers": [
+          "array",
+          "vide"
+        ],
+        "createdAt": "string",
+        "description": "null",
+        "id": "number",
+        "items": [
+          "array",
+          "vide"
+        ],
+        "name": "string",
+        "next": "null",
+        "nextId": "null",
+        "runtime": {
+          "hasSeries": "boolean",
+          "known": "number",
+          "minutes": "number"
+        },
+        "updatedAt": "string",
+        "watched": "number"
+      }
+    }
+  },
+  "playlist-suggestions": {
+    "method": "GET",
+    "path": "/api/playlists/1/suggestions",
+    "status": 200,
+    "shape": {
+      "suggestions": [
+        "array",
+        "vide"
+      ]
+    }
+  },
+  "playlists-contient": {
+    "method": "GET",
+    "path": "/api/playlists?item=842",
+    "status": 200,
+    "shape": {
+      "playlists": [
+        "array",
+        {
+          "contains": "boolean",
+          "count": "number",
+          "covers": [
+            "array",
+            "vide"
+          ],
+          "createdAt": "string",
+          "description": "null",
+          "id": "number",
+          "name": "string",
+          "next": "null",
+          "runtime": {
+            "hasSeries": "boolean",
+            "known": "number",
+            "minutes": "number"
+          },
+          "updatedAt": "string",
+          "watched": "number"
+        }
+      ]
+    }
+  },
+  "item-inconnu": {
+    "method": "GET",
+    "path": "/api/items/99999999",
+    "status": 404,
+    "shape": {
+      "error": "string"
+    }
+  },
+  "playlist-inconnue": {
+    "method": "GET",
+    "path": "/api/playlists/99999999",
+    "status": 404,
+    "shape": {
+      "error": "string"
+    }
+  }
+}

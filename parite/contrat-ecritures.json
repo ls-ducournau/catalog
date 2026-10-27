@@ -1,0 +1,768 @@
+{
+  "note-poser": {
+    "method": "PATCH",
+    "path": "/api/items/:id",
+    "status": 200,
+    "shape": {
+      "availability": {
+        "ads": [
+          "array",
+          "vide"
+        ],
+        "buy": [
+          "array",
+          {
+            "id": "number",
+            "logoPath": "string",
+            "name": "string"
+          }
+        ],
+        "fetchedAt": "string",
+        "flatrate": [
+          "array",
+          "vide"
+        ],
+        "free": [
+          "array",
+          "vide"
+        ],
+        "link": "string",
+        "rent": [
+          "array",
+          {
+            "id": "number",
+            "logoPath": "string",
+            "name": "string"
+          }
+        ]
+      },
+      "category": "string",
+      "duelsCount": "number",
+      "eloScore": "null",
+      "genres": [
+        "array",
+        "string"
+      ],
+      "id": "number",
+      "name": "string",
+      "overview": "string",
+      "posterUrl": "string",
+      "rating": "string",
+      "release": {
+        "digital": "string",
+        "fetchedAt": "string",
+        "firstAir": "null",
+        "kind": "string",
+        "nextEpisode": "null",
+        "status": "string",
+        "theatrical": "string"
+      },
+      "ressenti": "null",
+      "trailer": {
+        "channel": "string",
+        "embeddable": "boolean",
+        "key": "string",
+        "kind": "string",
+        "language": "string",
+        "name": "string"
+      },
+      "type": "string",
+      "voteAverage": "number",
+      "voteCount": "number",
+      "watchStatus": "string",
+      "year": "string"
+    },
+    "problems": []
+  },
+  "statut-changer": {
+    "method": "PATCH",
+    "path": "/api/items/:id",
+    "status": 200,
+    "shape": {
+      "availability": {
+        "ads": [
+          "array",
+          "vide"
+        ],
+        "buy": [
+          "array",
+          {
+            "id": "number",
+            "logoPath": "string",
+            "name": "string"
+          }
+        ],
+        "fetchedAt": "string",
+        "flatrate": [
+          "array",
+          "vide"
+        ],
+        "free": [
+          "array",
+          "vide"
+        ],
+        "link": "string",
+        "rent": [
+          "array",
+          {
+            "id": "number",
+            "logoPath": "string",
+            "name": "string"
+          }
+        ]
+      },
+      "category": "string",
+      "duelsCount": "number",
+      "eloScore": "null",
+      "genres": [
+        "array",
+        "string"
+      ],
+      "id": "number",
+      "name": "string",
+      "overview": "string",
+      "posterUrl": "string",
+      "rating": "null",
+      "release": {
+        "digital": "string",
+        "fetchedAt": "string",
+        "firstAir": "null",
+        "kind": "string",
+        "nextEpisode": "null",
+        "status": "string",
+        "theatrical": "string"
+      },
+      "ressenti": "null",
+      "trailer": {
+        "channel": "string",
+        "embeddable": "boolean",
+        "key": "string",
+        "kind": "string",
+        "language": "string",
+        "name": "string"
+      },
+      "type": "string",
+      "voteAverage": "number",
+      "voteCount": "number",
+      "watchStatus": "string",
+      "year": "string"
+    },
+    "problems": []
+  },
+  "statut-rendre": {
+    "method": "PATCH",
+    "path": "/api/items/:id",
+    "status": 200,
+    "shape": {
+      "availability": {
+        "ads": [
+          "array",
+          "vide"
+        ],
+        "buy": [
+          "array",
+          {
+            "id": "number",
+            "logoPath": "string",
+            "name": "string"
+          }
+        ],
+        "fetchedAt": "string",
+        "flatrate": [
+          "array",
+          "vide"
+        ],
+        "free": [
+          "array",
+          "vide"
+        ],
+        "link": "string",
+        "rent": [
+          "array",
+          {
+            "id": "number",
+            "logoPath": "string",
+            "name": "string"
+          }
+        ]
+      },
+      "category": "string",
+      "duelsCount": "number",
+      "eloScore": "null",
+      "genres": [
+        "array",
+        "string"
+      ],
+      "id": "number",
+      "name": "string",
+      "overview": "string",
+      "posterUrl": "string",
+      "rating": "string",
+      "release": {
+        "digital": "string",
+        "fetchedAt": "string",
+        "firstAir": "null",
+        "kind": "string",
+        "nextEpisode": "null",
+        "status": "string",
+        "theatrical": "string"
+      },
+      "ressenti": "null",
+      "trailer": {
+        "channel": "string",
+        "embeddable": "boolean",
+        "key": "string",
+        "kind": "string",
+        "language": "string",
+        "name": "string"
+      },
+      "type": "string",
+      "voteAverage": "number",
+      "voteCount": "number",
+      "watchStatus": "string",
+      "year": "string"
+    },
+    "problems": []
+  },
+  "note-titre-inconnu": {
+    "method": "PATCH",
+    "path": "/api/items/:id",
+    "status": 404,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "ecarter": {
+    "method": "POST",
+    "path": "/api/dismissals",
+    "status": 200,
+    "shape": {
+      "count": "number"
+    },
+    "problems": []
+  },
+  "ecarter-tmdb": {
+    "method": "POST",
+    "path": "/api/dismissals",
+    "status": 200,
+    "shape": {
+      "count": "number"
+    },
+    "problems": []
+  },
+  "ecarter-invalide": {
+    "method": "POST",
+    "path": "/api/dismissals",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "reafficher": {
+    "method": "DELETE",
+    "path": "/api/dismissals",
+    "status": 200,
+    "shape": {
+      "count": "number"
+    },
+    "problems": []
+  },
+  "reafficher-tout": {
+    "method": "DELETE",
+    "path": "/api/dismissals",
+    "status": 200,
+    "shape": {
+      "cleared": "number",
+      "count": "number"
+    },
+    "problems": []
+  },
+  "abonnements-ecrire": {
+    "method": "PUT",
+    "path": "/api/settings/subscriptions",
+    "status": 200,
+    "shape": {
+      "ids": [
+        "array",
+        "number"
+      ]
+    },
+    "problems": []
+  },
+  "abonnements-invalide": {
+    "method": "PUT",
+    "path": "/api/settings/subscriptions",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "abonnements-rendre": {
+    "method": "PUT",
+    "path": "/api/settings/subscriptions",
+    "status": 200,
+    "shape": {
+      "ids": [
+        "array",
+        "vide"
+      ]
+    },
+    "problems": []
+  },
+  "affichages": {
+    "method": "POST",
+    "path": "/api/impressions",
+    "status": 200,
+    "shape": {
+      "recorded": "number"
+    },
+    "problems": []
+  },
+  "affichages-invalide": {
+    "method": "POST",
+    "path": "/api/impressions",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "ouverture": {
+    "method": "POST",
+    "path": "/api/opened",
+    "status": 200,
+    "shape": {
+      "ok": "boolean"
+    },
+    "problems": []
+  },
+  "ouverture-invalide": {
+    "method": "POST",
+    "path": "/api/opened",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "duel-resultat": {
+    "method": "POST",
+    "path": "/api/duels/result",
+    "status": 200,
+    "shape": {
+      "duelId": "number",
+      "itemA": {
+        "duelsCount": "number",
+        "eloScore": "number",
+        "genres": [
+          "array",
+          "string"
+        ],
+        "id": "number",
+        "name": "string",
+        "notionPageId": "string",
+        "posterUrl": "string",
+        "type": "string",
+        "year": "string"
+      },
+      "itemB": {
+        "duelsCount": "number",
+        "eloScore": "number",
+        "genres": [
+          "array",
+          "string"
+        ],
+        "id": "number",
+        "name": "string",
+        "notionPageId": "string",
+        "posterUrl": "string",
+        "type": "string",
+        "year": "string"
+      }
+    },
+    "problems": []
+  },
+  "duel-resultat-invalide": {
+    "method": "POST",
+    "path": "/api/duels/result",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "duel-annuler": {
+    "method": "POST",
+    "path": "/api/duels/undo",
+    "status": 200,
+    "shape": {
+      "ok": "boolean"
+    },
+    "problems": []
+  },
+  "duel-reinitialiser": {
+    "method": "POST",
+    "path": "/api/duels/reset",
+    "status": 200,
+    "shape": {
+      "reset": "number"
+    },
+    "problems": []
+  },
+  "duel-reinitialisation-annuler": {
+    "method": "POST",
+    "path": "/api/duels/restore",
+    "status": 200,
+    "shape": {
+      "restored": "number"
+    },
+    "problems": []
+  },
+  "personnes-resultat": {
+    "method": "POST",
+    "path": "/api/duels/people/result",
+    "status": 200,
+    "shape": {
+      "duelId": "number",
+      "ok": "boolean"
+    },
+    "problems": []
+  },
+  "personnes-reinitialiser": {
+    "method": "POST",
+    "path": "/api/duels/people/reset",
+    "status": 200,
+    "shape": {
+      "reset": "number"
+    },
+    "problems": []
+  },
+  "personnes-reinitialisation-annuler": {
+    "method": "POST",
+    "path": "/api/duels/people/restore",
+    "status": 200,
+    "shape": {
+      "restored": "number"
+    },
+    "problems": []
+  },
+  "avis-poser": {
+    "method": "PUT",
+    "path": "/api/people/opinions",
+    "status": 200,
+    "shape": {
+      "ok": "boolean"
+    },
+    "problems": []
+  },
+  "avis-invalide": {
+    "method": "PUT",
+    "path": "/api/people/opinions",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "avis-retirer": {
+    "method": "DELETE",
+    "path": "/api/people/opinions",
+    "status": 200,
+    "shape": {
+      "ok": "boolean"
+    },
+    "problems": []
+  },
+  "avis-poser-encore": {
+    "method": "PUT",
+    "path": "/api/people/opinions",
+    "status": 200,
+    "shape": {
+      "ok": "boolean"
+    },
+    "problems": []
+  },
+  "avis-reinitialiser": {
+    "method": "POST",
+    "path": "/api/people/opinions/reset",
+    "status": 200,
+    "shape": {
+      "removed": [
+        "array",
+        {
+          "name": "string",
+          "opinion": "number",
+          "personId": "number",
+          "rating": "number",
+          "updatedAt": "string"
+        }
+      ]
+    },
+    "problems": []
+  },
+  "avis-reinitialiser-invalide": {
+    "method": "POST",
+    "path": "/api/people/opinions/reset",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "avis-reinitialisation-annuler": {
+    "method": "POST",
+    "path": "/api/people/opinions/restore",
+    "status": 200,
+    "shape": {
+      "ok": "boolean"
+    },
+    "problems": []
+  },
+  "palier-tranche": {
+    "method": "POST",
+    "path": "/api/duels/tier/band",
+    "status": 200,
+    "shape": {
+      "roundId": "number"
+    },
+    "problems": []
+  },
+  "palier-conflit": {
+    "method": "POST",
+    "path": "/api/duels/tier/band",
+    "status": 409,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "palier-invalide": {
+    "method": "POST",
+    "path": "/api/duels/tier/band",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "tri-note": {
+    "method": "POST",
+    "path": "/api/triage/answer",
+    "status": 200,
+    "shape": {
+      "undo": {
+        "itemId": "number",
+        "kind": "string",
+        "previous": "null"
+      }
+    },
+    "problems": []
+  },
+  "tri-passer": {
+    "method": "POST",
+    "path": "/api/triage/answer",
+    "status": 200,
+    "shape": {
+      "undo": {
+        "kind": "string"
+      }
+    },
+    "problems": []
+  },
+  "tri-ecarter": {
+    "method": "POST",
+    "path": "/api/triage/answer",
+    "status": 200,
+    "shape": {
+      "undo": {
+        "kind": "string",
+        "mediaType": "string",
+        "tmdbId": "number"
+      }
+    },
+    "problems": []
+  },
+  "tri-invalide": {
+    "method": "POST",
+    "path": "/api/triage/answer",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "tri-annuler": {
+    "method": "POST",
+    "path": "/api/triage/undo",
+    "status": 200,
+    "shape": {
+      "ok": "boolean"
+    },
+    "problems": []
+  },
+  "playlist-creer": {
+    "method": "POST",
+    "path": "/api/playlists",
+    "status": 201,
+    "shape": {
+      "playlist": {
+        "createdAt": "string",
+        "description": "null",
+        "id": "number",
+        "name": "string",
+        "updatedAt": "string"
+      }
+    },
+    "problems": []
+  },
+  "playlist-creer-invalide": {
+    "method": "POST",
+    "path": "/api/playlists",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "playlist-ajouter": {
+    "method": "POST",
+    "path": "/api/playlists/:id/items",
+    "status": 200,
+    "shape": {
+      "added": "boolean"
+    },
+    "problems": []
+  },
+  "playlist-ajouter-plusieurs": {
+    "method": "POST",
+    "path": "/api/playlists/:id/items",
+    "status": 200,
+    "shape": {
+      "added": [
+        "array",
+        "number"
+      ],
+      "already": [
+        "array",
+        "vide"
+      ]
+    },
+    "problems": []
+  },
+  "playlist-ordre": {
+    "method": "PUT",
+    "path": "/api/playlists/:id/items",
+    "status": 200,
+    "shape": {
+      "ok": "boolean"
+    },
+    "problems": []
+  },
+  "playlist-ordre-invalide": {
+    "method": "PUT",
+    "path": "/api/playlists/:id/items",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "playlist-renommer": {
+    "method": "PATCH",
+    "path": "/api/playlists/:id",
+    "status": 200,
+    "shape": {
+      "playlist": {
+        "createdAt": "string",
+        "description": "string",
+        "id": "number",
+        "name": "string",
+        "updatedAt": "string"
+      }
+    },
+    "problems": []
+  },
+  "playlist-voir": {
+    "method": "POST",
+    "path": "/api/playlists/:id/watch",
+    "status": 200,
+    "shape": {
+      "previous": "string"
+    },
+    "problems": []
+  },
+  "playlist-noter": {
+    "method": "POST",
+    "path": "/api/playlists/:id/rate",
+    "status": 200,
+    "shape": {
+      "previous": "string",
+      "rating": "string"
+    },
+    "problems": []
+  },
+  "playlist-suggestion-ecarter": {
+    "method": "POST",
+    "path": "/api/playlists/:id/suggestions",
+    "status": 200,
+    "shape": {
+      "ok": "boolean"
+    },
+    "problems": []
+  },
+  "playlist-retirer": {
+    "method": "DELETE",
+    "path": "/api/playlists/:id/items",
+    "status": 200,
+    "shape": {
+      "position": "number",
+      "removed": "boolean"
+    },
+    "problems": []
+  },
+  "playlist-supprimer": {
+    "method": "DELETE",
+    "path": "/api/playlists/:id",
+    "status": 200,
+    "shape": {
+      "snapshot": {
+        "createdAt": "string",
+        "description": "string",
+        "id": "number",
+        "itemIds": [
+          "array",
+          "number"
+        ],
+        "name": "string"
+      }
+    },
+    "problems": []
+  },
+  "playlist-retablir": {
+    "method": "POST",
+    "path": "/api/playlists/restore",
+    "status": 200,
+    "shape": {
+      "playlist": {
+        "createdAt": "string",
+        "description": "string",
+        "id": "number",
+        "name": "string",
+        "updatedAt": "string"
+      }
+    },
+    "problems": []
+  },
+  "playlist-inconnue-ajout": {
+    "method": "POST",
+    "path": "/api/playlists/:id/items",
+    "status": 404,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  }
+}
