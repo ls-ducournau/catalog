@@ -78,7 +78,7 @@ fn choisir_paire(eligibles: &[(i64, i32)], recentes: &HashSet<String>) -> Option
 
 /// Ajoute au filtre la catégorie demandée (comme `categoryFilter` de la v1) : un documentaire est un
 /// documentaire, film ou série ; Film et Série excluent les documentaires.
-fn categorie<'a>(qb: &mut QueryBuilder<'a, Postgres>, categorie: Option<&'a str>) {
+pub(crate) fn categorie<'a>(qb: &mut QueryBuilder<'a, Postgres>, categorie: Option<&'a str>) {
     match categorie {
         Some("Documentary") => {
             qb.push(" and coalesce(genres, '[]'::jsonb) @> '[\"Documentary\"]'::jsonb");
@@ -90,7 +90,7 @@ fn categorie<'a>(qb: &mut QueryBuilder<'a, Postgres>, categorie: Option<&'a str>
     }
 }
 
-fn parse_categorie(p: &HashMap<String, String>) -> Option<&str> {
+pub(crate) fn parse_categorie(p: &HashMap<String, String>) -> Option<&str> {
     p.get("category").map(String::as_str).filter(|c| matches!(*c, "Movie" | "TV Series" | "Documentary"))
 }
 

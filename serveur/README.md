@@ -17,14 +17,14 @@ qui lit et écrit dans Supabase. Spec : `specs/catalog-v2-rust-supabase.md` ; do
 Lecture : `GET /api/sante`, `/api/genres`, `/api/items` (filtres, tri, pagination), `/api/items/{id}`,
 `/api/tmdb/search`. Écriture : `POST /api/items` (ajouter depuis TMDB), `PATCH /api/items/{id}` (statut,
 note, ressenti, avec les règles de la v1), `DELETE /api/items/{id}`. Duels de titres : `GET /api/duels/next`,
-`/api/duels/scope`, `POST /api/duels/result`, `/undo` (mode `titles`), `/reset`, `/restore`. 15 routes sur 41.
+`/api/duels/scope`, `POST /api/duels/result`, `/undo` (mode `titles`), `/reset`, `/restore`. Tri rapide : `GET /api/triage/batch`, `POST /api/triage/answer`, `/undo`. 18 routes sur 41.
 
 - La lecture passe le contrat de parité sur les vraies données de Louis (compte de démonstration) : les
   1 077 titres sortent dans le même ordre que la v1, champ par champ (sauf les 5 paires de doublons,
   fusionnées à l'import).
 - L'écriture passe le contrat v2 (`parite/check-v2.mjs`, 23 vérifications sur un compte vierge) et un test
   d'étanchéité à deux comptes (aucun accès croisé, le catalogue partagé survit au retrait d'un titre).
-- Pas encore porté : les duels de personnes et de manches (`undo` répond 501), les paliers ; le filtre `onMyServices`, `?refresh=1`, et, pour un titre ajouté, les
+- Pas encore porté : les cartes « à découvrir » du Tri rapide (lot vide, elles reposent sur le modèle de préférence), les duels de personnes et de manches (`undo` répond 501), les paliers ; le filtre `onMyServices`, `?refresh=1`, et, pour un titre ajouté, les
   caractéristiques du modèle de préférence, la disponibilité, les dates de sortie et la bande-annonce
   (un titre déjà connu du catalogue partagé les garde ; un titre neuf ne les a pas encore).
 

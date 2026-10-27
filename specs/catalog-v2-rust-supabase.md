@@ -245,3 +245,24 @@ affiches, « Passer », « Annuler le dernier duel »).
 - **Changements volontaires par rapport à la v1** : plus de sauvegarde de fichier avant une
   réinitialisation (l'instantané `elo_snapshot` suffit à l'annuler) ; un duel sur un titre inconnu répond 404
   au lieu de planter.
+
+### Tri rapide porté, sauf « à découvrir » (2026-10-27)
+
+Routes : `GET /api/triage/batch`, `POST /api/triage/answer`, `POST /api/triage/undo`. La page d'essai a une
+vue « Tri rapide » (titres vus à noter, personnes).
+
+- **Porté** : les cartes « titres vus sans note » et « personnes présentes dans au moins trois titres vus » ;
+  toutes les réponses (note, « Aimé » ⭐⭐⭐⭐ et « Pas aimé » ⭐⭐ comme la v1, avis sur une personne, passer, et sur
+  un titre à découvrir « ça me tente » qui l'ajoute et « pas envie » qui l'écarte) ; l'annulation de chaque sorte.
+- **Parité sur les données de Louis** (compte importé, jetable) : les lots de cartes sont identiques à la v1
+  (mêmes cartes, même ordre, mêmes champs) pour 5 requêtes (titres vus, par catégorie, personnes, avec exclusions) ;
+  les 5 scénarios de tri du contrat d'écriture passent ; 14 comportements plus fins vérifiés (note choisie, note
+  hors plage refusée, annulation qui rend l'état d'avant, la personne qui sort du lot puis y revient, journal
+  « dismissed », « undismissed » et « triage » conservé).
+- **Pas porté** : les cartes « à découvrir » (`family=unseen`) : le lot est vide. Elles reposent sur la découverte
+  et le modèle de préférence (recommandations), prochain gros bloc. Un compte vierge n'a donc pas encore
+  de quoi amorcer son goût par le tri : à traiter avec l'amorçage (FR-6).
+- **Défaut trouvé et corrigé** : un événement sans contexte était écrit avec un `null` JSON, refusé par la
+  contrainte de la table ; il faut un NULL SQL (`Option<Value>`).
+- **Défaut de la page corrigé** : deux éléments partageaient l'identifiant `tri` (le menu de tri de la
+  bibliothèque et la nouvelle vue) ; vérifié qu'il n'y a plus de doublon d'identifiant.

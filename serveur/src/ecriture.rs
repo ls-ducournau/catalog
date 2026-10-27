@@ -41,7 +41,7 @@ async fn lire(tx: &mut Tx, id: i64) -> Result<Option<Value>, Erreur> {
     ligne.as_ref().map(titre).transpose()
 }
 
-async fn journal(tx: &mut Tx, genre: &str, id: i64, contexte: Value) -> Result<(), Erreur> {
+pub(crate) async fn journal(tx: &mut Tx, genre: &str, id: i64, contexte: Value) -> Result<(), Erreur> {
     sqlx::query("insert into public.events (kind, subject_type, subject_id, context) values ($1, 'item', $2, $3)")
         .bind(genre)
         .bind(id.to_string())
@@ -137,37 +137,42 @@ pub async fn modifier(utilisateur: Utilisateur, Path(id): Path<String>, corps: B
     Ok(Json(item).into_response())
 }
 
-/// DELETE /api/items/{id} : retire le titre de la bibliothèque du compte. Ses duels, ses places dans les
-/// playlists et ses suggestions écartées partent avec lui (clés étrangères en cascade) ; la fiche
-/// partagée du catalogue reste, d'autres comptes peuvent l'utiliser.
-pub async fn retirer(utilisateur: Utilisateur, Path(id): Path<String>) -> Result<Response, Erreur> {
-    let Ok(id) = id.parse::<i64>() else { return Ok(introuvable()) };
-    let mut tx = bd::transaction(&utilisateur).await?;
+/// Retire un titre de la bibliothèque du compte. Ses duels, ses places dans les playlists et ses
+/// suggestions écartées partent avec lui (clés étrangères en cascade) ; la fiche partagée du catalogue
+/// reste, d'autres comptes peuvent l'utiliser. `false` si le titre n'était pas là.
+pub async fn retirer_titre(utilisateur: &Utilisateur, id: i64) -> Result<bool, Erreur> {
+    let mut tx = bd::transaction(utilisateur).await?;
     let retire: Option<(i64,)> = sqlx::query_as("delete from public.library_items where id = $1 returning id").bind(id).persistent(false).fetch_optional(&mut **tx).await?;
     if retire.is_none() {
-        return Ok(introuvable());
+        return Ok(false);
     }
     journal(&mut tx, "removed", id, json!({})).await?;
     tx.valider().await?;
-    Ok(Json(json!({ "ok": true })).into_response())
+    Ok(true)
 }
 
-/// POST /api/items : ajoute un titre TMDB à la bibliothèque (à voir). Déjà présent : rien ne change
-/// (200, `alreadyExists`). La fiche TMDB entre dans le catalogue partagé, écrit seulement par le serveur.
-pub async fn ajouter(utilisateur: Utilisateur, corps: Bytes) -> Result<Response, Erreur> {
-    let Ok(corps) = serde_json::from_slice::<Value>(&corps) else { return Ok(invalide()) };
-    let (Some(tmdb_id), Some(type_)) = (corps.get("tmdbId").and_then(Value::as_i64), corps.get("type").and_then(Value::as_str)) else { return Ok(invalide()) };
-    if type_ != "Movie" && type_ != "TV Series" {
-        return Ok(invalide());
-    }
-    let source = corps.get("source").and_then(Value::as_str).filter(|s| SOURCES_AJOUT.contains(s)).unwrap_or("search");
+/// DELETE /api/items/{id}
+pub async fn retirer(utilisateur: Utilisateur, Path(id): Path<String>) -> Result<Response, Erreur> {
+    let Ok(id) = id.parse::<i64>() else { return Ok(introuvable()) };
+    Ok(if retirer_titre(&utilisateur, id).await? { Json(json!({ "ok": true })).into_response() } else { introuvable() })
+}
 
+/// Le résultat d'un ajout.
+pub enum Ajout {
+    Cree(Value),
+    Existant(Value),
+    TmdbIntrouvable,
+}
+
+/// Ajoute un titre TMDB à la bibliothèque (à voir). Déjà présent : rien ne change. La fiche TMDB entre
+/// dans le catalogue partagé, écrit seulement par le serveur. `source` : d'où vient l'ajout (journal).
+pub async fn ajouter_titre(utilisateur: &Utilisateur, tmdb_id: i64, type_: &str, source: &str) -> Result<Ajout, Erreur> {
     // Déjà dans la bibliothèque ? Une courte transaction, avant tout appel réseau.
-    if let Some(item) = chercher_existant(&utilisateur, tmdb_id).await? {
-        return Ok(reponse(200, json!({ "item": item, "alreadyExists": true })));
+    if let Some(item) = chercher_existant(utilisateur, tmdb_id).await? {
+        return Ok(Ajout::Existant(item));
     }
 
-    let Some(fiche) = tmdb::fiche(tmdb_id, type_).await else { return Ok(reponse(404, json!({ "error": "tmdb_not_found" }))) };
+    let Some(fiche) = tmdb::fiche(tmdb_id, type_).await else { return Ok(Ajout::TmdbIntrouvable) };
 
     // Le catalogue partagé : écrit avec le rôle du serveur (hors règles par ligne), jamais avec celui de l'utilisateur.
     let titre_id: i64 = sqlx::query_scalar(
@@ -192,24 +197,39 @@ pub async fn ajouter(utilisateur: Utilisateur, corps: Bytes) -> Result<Response,
 
     // L'ajout dans la bibliothèque du compte. Un ajout simultané du même titre est refusé par l'index
     // d'unicité (23505) : on rend alors celui qui existe.
-    let mut tx = bd::transaction(&utilisateur).await?;
+    let mut tx = bd::transaction(utilisateur).await?;
     let insertion: Result<(i64,), sqlx::Error> =
         sqlx::query_as("insert into public.library_items (title_id, watch_status) values ($1, 'Unwatched') returning id").bind(titre_id).persistent(false).fetch_one(&mut **tx).await;
     let id = match insertion {
         Ok((id,)) => id,
         Err(sqlx::Error::Database(e)) if e.code().as_deref() == Some("23505") => {
             tx.annuler().await?;
-            return Ok(match chercher_existant(&utilisateur, tmdb_id).await? {
-                Some(item) => reponse(200, json!({ "item": item, "alreadyExists": true })),
-                None => reponse(500, json!({ "error": "internal_error" })),
+            return Ok(match chercher_existant(utilisateur, tmdb_id).await? {
+                Some(item) => Ajout::Existant(item),
+                None => return Err(Erreur::Interne("ajout simultané introuvable".into())),
             });
         }
         Err(e) => return Err(e.into()),
     };
     journal(&mut tx, "added", id, json!({ "source": source })).await?;
-    let Some(item) = lire(&mut tx, id).await? else { return Ok(reponse(500, json!({ "error": "internal_error" }))) };
+    let Some(item) = lire(&mut tx, id).await? else { return Err(Erreur::Interne("titre ajouté introuvable".into())) };
     tx.valider().await?;
-    Ok(reponse(201, json!({ "item": item, "alreadyExists": false })))
+    Ok(Ajout::Cree(item))
+}
+
+/// POST /api/items
+pub async fn ajouter(utilisateur: Utilisateur, corps: Bytes) -> Result<Response, Erreur> {
+    let Ok(corps) = serde_json::from_slice::<Value>(&corps) else { return Ok(invalide()) };
+    let (Some(tmdb_id), Some(type_)) = (corps.get("tmdbId").and_then(Value::as_i64), corps.get("type").and_then(Value::as_str)) else { return Ok(invalide()) };
+    if type_ != "Movie" && type_ != "TV Series" {
+        return Ok(invalide());
+    }
+    let source = corps.get("source").and_then(Value::as_str).filter(|s| SOURCES_AJOUT.contains(s)).unwrap_or("search");
+    Ok(match ajouter_titre(&utilisateur, tmdb_id, type_, source).await? {
+        Ajout::Cree(item) => reponse(201, json!({ "item": item, "alreadyExists": false })),
+        Ajout::Existant(item) => reponse(200, json!({ "item": item, "alreadyExists": true })),
+        Ajout::TmdbIntrouvable => reponse(404, json!({ "error": "tmdb_not_found" })),
+    })
 }
 
 /// GET /api/tmdb/search?q=&page= : résultats de TMDB, avec « déjà dans ta bibliothèque » (`libraryId`).

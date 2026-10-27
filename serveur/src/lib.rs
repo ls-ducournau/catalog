@@ -9,6 +9,7 @@ pub mod erreur;
 pub mod items;
 pub mod routes;
 pub mod tmdb;
+pub mod tri;
 
 use axum::{
     Router,
@@ -22,6 +23,9 @@ pub fn app() -> Router {
         .route("/api/items", get(items::liste).post(ecriture::ajouter))
         .route("/api/items/{id}", get(items::fiche).patch(ecriture::modifier).delete(ecriture::retirer))
         .route("/api/tmdb/search", get(ecriture::recherche))
+        .route("/api/triage/batch", get(tri::lot))
+        .route("/api/triage/answer", post(tri::repondre))
+        .route("/api/triage/undo", post(tri::annuler))
         .route("/api/duels/next", get(duels::suivant))
         .route("/api/duels/scope", get(duels::portee))
         .route("/api/duels/result", post(duels::resultat))

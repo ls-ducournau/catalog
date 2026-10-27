@@ -82,6 +82,7 @@
     <nav id="nav" class="row" hidden>
       <button id="nav-biblio" class="btn ghost" type="button">Bibliothèque</button>
       <button id="nav-duels" class="btn ghost" type="button">Duels</button>
+      <button id="nav-tri" class="btn ghost" type="button">Tri rapide</button>
     </nav>
     <span class="spacer"></span>
     <span id="qui" class="muted small"></span>
@@ -156,6 +157,22 @@
       <button id="duel-annuler" class="btn ghost" type="button" hidden>Annuler le dernier duel</button>
     </div>
   </section>
+  <section id="tri-rapide" hidden>
+    <div class="hero" style="padding:32px 0 8px">
+      <h1>Tri rapide</h1>
+      <p class="muted">Note vite ce que tu as déjà vu, ou dis ce que tu penses des gens que tu croises souvent. Chaque réponse précise tes goûts.</p>
+    </div>
+    <div class="row" role="group" aria-label="Que trier ?">
+      <button id="tri-vus" class="btn ghost" type="button">Titres vus à noter</button>
+      <button id="tri-gens" class="btn ghost" type="button">Personnes</button>
+    </div>
+    <p id="tri-etat" class="count" aria-live="polite"></p>
+    <div id="tri-carte"></div>
+    <div class="row" style="margin-top:16px">
+      <button id="tri-passer" class="btn" type="button" hidden>Passer</button>
+      <button id="tri-annuler" class="btn ghost" type="button" hidden>Annuler la dernière réponse</button>
+    </div>
+  </section>
 </main>
 
 <dialog id="fiche"><div id="fiche-contenu"></div></dialog>
@@ -221,10 +238,12 @@ function montrer(nom) {
   $("#accueil").hidden = nom !== "accueil";
   $("#biblio").hidden = nom !== "biblio";
   $("#duels").hidden = nom !== "duels";
+  $("#tri-rapide").hidden = nom !== "tri";
   $("#nav").hidden = !dedans;
   $("#sortir").hidden = !dedans;
   $("#nav-biblio").setAttribute("aria-current", String(nom === "biblio"));
   $("#nav-duels").setAttribute("aria-current", String(nom === "duels"));
+  $("#nav-tri").setAttribute("aria-current", String(nom === "tri"));
   $("#qui").textContent = dedans && session ? (session.user.is_anonymous ? "Invité" : session.user.email) : "";
   $("#garder").hidden = !(dedans && session?.user?.is_anonymous);
 }
@@ -404,6 +423,60 @@ $("#duel-annuler").onclick = async () => {
 };
 $("#nav-biblio").onclick = () => montrer("biblio");
 $("#nav-duels").onclick = () => { montrer("duels"); duelSuivant(); };
+
+/* ---------- Tri rapide ---------- */
+let triFamille = "seen", triLot = [], triVues = new Set(), dernierUndo = null;
+async function triCharger() {
+  $("#tri-vus").setAttribute("aria-current", String(triFamille === "seen"));
+  $("#tri-gens").setAttribute("aria-current", String(triFamille === "person"));
+  try {
+    const r = await api("/api/triage/batch?family=" + triFamille + "&limit=20&exclude=" + encodeURIComponent([...triVues].join(",")));
+    triLot = r.cards; triAfficher();
+  } catch (e) { if (e.message !== "session expirée") $("#tri-etat").textContent = "Impossible de charger le tri."; }
+}
+function triAfficher() {
+  const carte = triLot[0], zone = $("#tri-carte");
+  $("#tri-passer").hidden = !carte;
+  if (!carte) {
+    zone.replaceChildren();
+    $("#tri-etat").textContent = triFamille === "seen" ? "Rien à noter pour l'instant : tous tes titres vus ont une note." : "Pas encore de personne à juger : il en faut au moins trois titres vus en commun.";
+    return;
+  }
+  $("#tri-etat").textContent = triLot.length + (triLot.length > 1 ? " cartes dans ce lot" : " carte dans ce lot");
+  if (carte.family === "seen") {
+    zone.replaceChildren(el("div", { className: "fiche" }, affiche({ ...carte, rating: null, watchStatus: null, name: carte.title }),
+      el("div", {}, el("h2", { textContent: carte.title }), el("p", { className: "muted small", textContent: [carte.category === "Documentary" ? "Documentaire" : carte.category === "Movie" ? "Film" : "Série", carte.year].filter(Boolean).join(" · ") }),
+        el("p", { textContent: (carte.overview || "").slice(0, 280) + ((carte.overview || "").length > 280 ? "…" : "") }),
+        el("p", { className: "small muted", textContent: "Quelle note lui donnes-tu ?" }),
+        el("div", { className: "notes", role: "group" }, ...[["💩", "Nul"], ["⭐️", "Bof"], ["⭐️⭐️", "Correct"], ["⭐️⭐️⭐️", "Bien"], ["⭐️⭐️⭐️⭐️", "Très bien"], ["⭐️⭐️⭐️⭐️⭐️", "Chef-d'œuvre"]].map(([n, nom], i) =>
+          el("button", { className: "btn", type: "button", title: nom, textContent: n, onclick: () => triRepondre("like", i) }))))));
+  } else {
+    zone.replaceChildren(el("div", { className: "fiche" }, el("div", { className: "poster" }, carte.photoUrl ? el("img", { src: carte.photoUrl, alt: "", loading: "lazy" }) : el("span", { textContent: carte.name })),
+      el("div", {}, el("h2", { textContent: carte.name }), el("p", { className: "muted small", textContent: carte.roles.map((r) => ({ cast: "Acteur ou actrice", director: "Réalisation", producer: "Production" }[r])).join(", ") }),
+        el("p", { className: "small", textContent: "Dans tes titres vus : " + carte.seenIn.slice(0, 6).join(", ") + (carte.seenIn.length > 6 ? "…" : "") }),
+        el("div", { className: "row" }, el("button", { className: "btn primary", type: "button", textContent: "J'aime", onclick: () => triRepondre("like") }), el("button", { className: "btn", type: "button", textContent: "Je n'aime pas", onclick: () => triRepondre("dislike") })))));
+  }
+}
+async function triRepondre(reponse, note) {
+  const carte = triLot[0]; if (!carte) return;
+  try {
+    const corps = { card: carte.family === "seen" ? { family: "seen", id: carte.id } : { family: "person", id: carte.id, name: carte.name }, answer: reponse };
+    if (note !== undefined) corps.rating = note;
+    const r = await api("/api/triage/answer", "POST", corps);
+    triVues.add(carte.key); triLot.shift();
+    dernierUndo = reponse === "skip" ? null : r.undo; $("#tri-annuler").hidden = !dernierUndo || dernierUndo.kind === "none";
+    if (!triLot.length) await triCharger(); else triAfficher();
+  } catch {}
+}
+$("#tri-passer").onclick = () => triRepondre("skip");
+$("#tri-annuler").onclick = async () => {
+  if (!dernierUndo) return;
+  try { await api("/api/triage/undo", "POST", { undo: dernierUndo }); dernierUndo = null; $("#tri-annuler").hidden = true; triVues = new Set(); await triCharger(); }
+  catch { $("#tri-etat").textContent = "Impossible d'annuler cette réponse."; }
+};
+$("#tri-vus").onclick = () => { triFamille = "seen"; triVues = new Set(); triCharger(); };
+$("#tri-gens").onclick = () => { triFamille = "person"; triVues = new Set(); triCharger(); };
+$("#nav-tri").onclick = () => { montrer("tri"); triCharger(); };
 
 /* ---------- Démarrage ---------- */
 (async () => { if (await jeton()) await entrer(); else montrer("accueil"); })();
