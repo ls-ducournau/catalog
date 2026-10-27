@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Catalog POC</title>
+<style>
+  :root {
+    --bg: #040506; --surface: #0d0e10; --surface-2: #17181a; --border: #363739; --divider: rgb(255 255 255 / .1);
+    --fg: #fff; --muted: #9c9c9d; --accent: #e6e6e6; --accent-fg: #454647; --focus: #8ab4ff;
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: dark; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 400 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+  header { border-bottom: 1px solid var(--divider); }
+  header .wrap { display: flex; align-items: center; gap: 12px; min-height: 56px; flex-wrap: wrap; }
+  .logo { font-weight: 600; font-size: 18px; }
+  .badge { font-size: 12px; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 1px 8px; }
+  .spacer { flex: 1; }
+  .btn { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 14px; cursor: pointer; text-decoration: none; display: inline-block; }
+  a.btn { color: var(--fg); }
+  .btn:hover { background: #1f2023; }
+  .btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 500; }
+  .btn.primary:hover { background: #fff; }
+  .btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+  input, select { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; min-height: 38px; }
+  input::placeholder { color: var(--muted); }
+  h1 { font-size: 32px; line-height: 1.15; font-weight: 600; margin: 0 0 8px; }
+  h2 { font-size: 20px; margin: 0 0 8px; font-weight: 600; }
+  p { margin: 0 0 12px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  .hero { padding: 56px 0 24px; max-width: 640px; }
+  .cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin: 24px 0 48px; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+  form.stack { display: grid; gap: 10px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .error { color: #ffb4b4; min-height: 20px; font-size: 14px; margin: 8px 0 0; }
+  .notice { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin: 16px 0; font-size: 14px; color: var(--muted); }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0 4px; }
+  .toolbar input[type=search] { flex: 1 1 220px; }
+  .count { color: var(--muted); font-size: 13px; margin: 8px 0 16px; }
+  .grid { display: grid; gap: 18px 14px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .card { background: none; border: 0; padding: 0; text-align: left; cursor: pointer; display: block; }
+  .poster { aspect-ratio: 2 / 3; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 13px; padding: 8px; text-align: center; }
+  .poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .card:hover .poster { border-color: #66676a; }
+  .tag { position: absolute; left: 6px; bottom: 6px; font-size: 12px; background: rgb(0 0 0 / .7); border-radius: 6px; padding: 1px 7px; }
+  .card .name { margin-top: 8px; font-size: 14px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em; }
+  .card .meta { color: var(--muted); font-size: 13px; }
+  .more { display: flex; justify-content: center; padding: 28px 0 56px; }
+  .empty { text-align: center; padding: 56px 0; }
+  dialog { background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: 16px; padding: 0; width: min(760px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); }
+  dialog::backdrop { background: rgb(0 0 0 / .7); }
+  .fiche { display: grid; grid-template-columns: 220px 1fr; gap: 20px; padding: 20px; }
+  .fiche .poster { align-self: start; }
+  @media (max-width: 600px) { .fiche { grid-template-columns: 1fr; } .fiche .poster { max-width: 180px; } h1 { font-size: 26px; } }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 12px; }
+  .chip { font-size: 13px; border: 1px solid var(--border); border-radius: 6px; padding: 1px 8px; color: var(--muted); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <span class="logo">Catalog</span><span class="badge">POC</span>
+    <span class="spacer"></span>
+    <span id="qui" class="muted small"></span>
+    <button id="sortir" class="btn ghost" hidden>Se déconnecter</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="accueil" hidden>
+    <div class="hero">
+      <h1>Ta vidéothèque, à ton goût.</h1>
+      <p class="muted">Essaie Catalog sans rien installer : entre en un clic, ou retrouve ton compte.</p>
+    </div>
+    <div class="cards">
+      <div class="panel">
+        <h2>Essayer tout de suite</h2>
+        <p class="muted">Un clic, sans e-mail. Tu pourras garder ton compte plus tard.</p>
+        <button id="invite" class="btn primary">Entrer</button>
+        <p id="erreur-invite" class="error" role="alert"></p>
+      </div>
+      <div class="panel">
+        <h2>J'ai déjà un compte</h2>
+        <form id="connexion" class="stack">
+          <input id="c-email" type="email" autocomplete="email" placeholder="Ton e-mail" required aria-label="E-mail">
+          <input id="c-mdp" type="password" autocomplete="current-password" placeholder="Ton mot de passe" required aria-label="Mot de passe">
+          <div class="row"><button class="btn primary" type="submit">Se connecter</button><button id="creer" class="btn" type="button">Créer un compte</button></div>
+          <p id="erreur-connexion" class="error" role="alert"></p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section id="biblio" hidden>
+    <div id="garder" class="notice" hidden>
+      <strong>Tu es en accès invité.</strong> Pour retrouver ta bibliothèque depuis un autre appareil, garde ton compte avec une adresse e-mail et un mot de passe, sans code à recevoir.
+      <form id="form-garder" class="row" style="margin-top:10px">
+        <input id="g-email" type="email" autocomplete="email" placeholder="Ton e-mail" required aria-label="E-mail">
+        <input id="g-mdp" type="password" autocomplete="new-password" minlength="6" placeholder="Choisis un mot de passe" required aria-label="Mot de passe">
+        <button class="btn primary" type="submit">Garder mon compte</button>
+      </form>
+      <p id="erreur-garder" class="error" role="alert"></p>
+    </div>
+    <div class="toolbar">
+      <input id="q" type="search" placeholder="Rechercher un titre…" aria-label="Rechercher un titre">
+      <select id="type" aria-label="Type"><option value="">Tout type</option><option value="Movie">Films</option><option value="TV Series">Séries</option><option value="Documentary">Documentaires</option></select>
+      <select id="statut" aria-label="Statut"><option value="">Tout statut</option><option value="Watched">Vus</option><option value="Unwatched">À voir</option></select>
+      <select id="genre" aria-label="Genre"><option value="">Tout genre</option></select>
+      <select id="tri" aria-label="Trier par">
+        <option value="name">Trier par nom</option><option value="added">Ajoutés récemment</option><option value="year">Année</option>
+        <option value="tmdbRating">Note publique</option><option value="rating">Ta note</option><option value="elo">Classement duels</option>
+      </select>
+    </div>
+    <p id="compte" class="count" aria-live="polite"></p>
+    <div id="grille" class="grid"></div>
+    <div id="vide" class="empty" hidden>
+      <h2>Ta bibliothèque est vide.</h2>
+      <p class="muted">Cette version d'essai montre une bibliothèque en lecture seule. L'ajout de titres arrive dans la prochaine étape.</p>
+    </div>
+    <div class="more"><button id="plus" class="btn" hidden>Voir plus</button></div>
+  </section>
+</main>
+
+<dialog id="fiche"><div id="fiche-contenu"></div></dialog>
+
+<script>
+const SUPABASE_URL = "https://sexcywnkqgijptejpudj.supabase.co";
+const CLE_PUBLIQUE = "sb_publishable_diMzma_CLWCCYcOu2Psgjw_i7STwO20"; // clé publique, faite pour être dans une page
+const STOCK = "catalog-poc-session";
+const $ = (s) => document.querySelector(s);
+const GENRES_FR = { Action: "Action", "Action & Adventure": "Action et aventure", Adventure: "Aventure", Animation: "Animation", Comedy: "Comédie", Crime: "Policier", Documentary: "Documentaire", Drama: "Drame", Family: "Famille", Fantasy: "Fantastique", History: "Histoire", Horror: "Horreur", Kids: "Jeunesse", Music: "Musique", Mystery: "Mystère", News: "Actualités", Reality: "Télé-réalité", Romance: "Romance", "Science Fiction": "Science-fiction", "Sci-Fi & Fantasy": "Science-fiction et fantastique", Soap: "Feuilleton", Talk: "Talk-show", Thriller: "Thriller", "TV Movie": "Téléfilm", War: "Guerre", "War & Politics": "Guerre et politique", Western: "Western" };
+const genreFr = (g) => GENRES_FR[g] || g;
+const NOTES = { "💩": "Nul", "⭐️": "Bof", "⭐️⭐️": "Correct", "⭐️⭐️⭐️": "Bien", "⭐️⭐️⭐️⭐️": "Très bien", "⭐️⭐️⭐️⭐️⭐️": "Chef-d'œuvre" };
+
+/** Crée un élément : propriétés (textContent, className…), puis enfants. Aucune donnée n'est jamais interprétée comme du HTML. */
+function el(tag, props = {}, ...enfants) {
+  const e = Object.assign(document.createElement(tag), props);
+  e.append(...enfants.filter((c) => c !== null && c !== undefined && c !== false));
+  return e;
+}
+
+/* ---------- Session (jeton d'accès + renouvellement) ---------- */
+let session = null;
+try { session = JSON.parse(localStorage.getItem(STOCK)); } catch { session = null; }
+function garder(s) {
+  session = s ? { access_token: s.access_token, refresh_token: s.refresh_token, expires_at: s.expires_at || Math.floor(Date.now() / 1000) + (s.expires_in || 3600), user: s.user } : null;
+  try { session ? localStorage.setItem(STOCK, JSON.stringify(session)) : localStorage.removeItem(STOCK); } catch {}
+}
+async function auth(chemin, corps, methode = "POST", jeton) {
+  const r = await fetch(SUPABASE_URL + "/auth/v1" + chemin, { method: methode, headers: { apikey: CLE_PUBLIQUE, "Content-Type": "application/json", ...(jeton ? { Authorization: "Bearer " + jeton } : {}) }, body: corps === undefined ? undefined : JSON.stringify(corps) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.msg || j.error_description || j.error_code || "Erreur " + r.status);
+  return j;
+}
+async function jeton() {
+  if (!session) return null;
+  if (session.expires_at - 60 < Date.now() / 1000) {
+    try { garder(await auth("/token?grant_type=refresh_token", { refresh_token: session.refresh_token })); } catch { garder(null); return null; }
+  }
+  return session.access_token;
+}
+async function api(chemin) {
+  const t = await jeton();
+  if (!t) { montrer("accueil"); throw new Error("session expirée"); }
+  const r = await fetch(chemin, { headers: { Authorization: "Bearer " + t } });
+  if (r.status === 401) { garder(null); montrer("accueil"); throw new Error("session expirée"); }
+  if (!r.ok) throw new Error("Erreur " + r.status);
+  return r.json();
+}
+const traduire = (m) => ({ "Invalid login credentials": "E-mail ou mot de passe incorrect.", "User already registered": "Cette adresse a déjà un compte : connecte-toi.", "Anonymous sign-ins are disabled": "L'accès invité est désactivé." }[m] || m);
+
+/* ---------- Écrans ---------- */
+function montrer(nom) {
+  $("#accueil").hidden = nom !== "accueil";
+  $("#biblio").hidden = nom !== "biblio";
+  $("#sortir").hidden = nom !== "biblio";
+  $("#qui").textContent = nom === "biblio" && session ? (session.user.is_anonymous ? "Invité" : session.user.email) : "";
+  $("#garder").hidden = !(nom === "biblio" && session?.user?.is_anonymous);
+}
+async function entrer() { montrer("biblio"); await Promise.all([genres(), charger(true)]); }
+
+$("#invite").onclick = async () => {
+  $("#erreur-invite").textContent = "";
+  try { garder(await auth("/signup", {})); await entrer(); } catch (e) { $("#erreur-invite").textContent = traduire(e.message); }
+};
+$("#connexion").onsubmit = async (e) => {
+  e.preventDefault(); $("#erreur-connexion").textContent = "";
+  try { garder(await auth("/token?grant_type=password", { email: $("#c-email").value, password: $("#c-mdp").value })); await entrer(); } catch (err) { $("#erreur-connexion").textContent = traduire(err.message); }
+};
+$("#creer").onclick = async () => {
+  const email = $("#c-email").value, password = $("#c-mdp").value;
+  if (!email || password.length < 6) { $("#erreur-connexion").textContent = "Saisis une adresse e-mail et un mot de passe de 6 caractères au moins."; return; }
+  $("#erreur-connexion").textContent = "";
+  try { const s = await auth("/signup", { email, password }); if (!s.access_token) throw new Error("Compte créé : connecte-toi."); garder(s); await entrer(); } catch (err) { $("#erreur-connexion").textContent = traduire(err.message); }
+};
+$("#form-garder").onsubmit = async (e) => {
+  e.preventDefault(); $("#erreur-garder").textContent = "";
+  try {
+    const t = await jeton();
+    const u = await auth("/user", { email: $("#g-email").value, password: $("#g-mdp").value }, "PUT", t);
+    garder({ ...session, user: u });
+    montrer("biblio");
+  } catch (err) { $("#erreur-garder").textContent = traduire(err.message); }
+};
+$("#sortir").onclick = () => { garder(null); $("#grille").replaceChildren(); montrer("accueil"); };
+
+/* ---------- Bibliothèque ---------- */
+const TAILLE = 48;
+let page = 1, total = 0, enCours = 0, minuteur;
+function adresse(p) {
+  const u = new URLSearchParams({ page: p, pageSize: TAILLE, sortBy: $("#tri").value });
+  for (const [cle, id] of [["q", "#q"], ["type", "#type"], ["watchStatus", "#statut"], ["genre", "#genre"]]) if ($(id).value.trim()) u.set(cle, $(id).value.trim());
+  return "/api/items?" + u;
+}
+function affiche(t) {
+  return el("div", { className: "poster" },
+    t.posterUrl ? el("img", { src: t.posterUrl, alt: "", loading: "lazy" }) : el("span", { textContent: t.name }),
+    t.rating ? el("span", { className: "tag", textContent: t.rating }) : t.watchStatus === "Watched" ? el("span", { className: "tag", textContent: "Vu" }) : null);
+}
+function carte(t) {
+  const b = el("button", { className: "card", type: "button", onclick: () => fiche(t.id) },
+    affiche(t),
+    el("div", { className: "name", textContent: t.name }),
+    el("div", { className: "meta", textContent: [t.type === "Movie" ? "Film" : "Série", t.year].filter(Boolean).join(" · ") }));
+  b.setAttribute("aria-label", t.name + (t.year ? ", " + t.year : ""));
+  return b;
+}
+async function charger(depart) {
+  const moi = ++enCours;
+  if (depart) { page = 1; $("#grille").replaceChildren(); }
+  try {
+    const r = await api(adresse(page));
+    if (moi !== enCours) return;
+    total = r.total;
+    $("#grille").append(...r.items.map(carte));
+    $("#compte").textContent = total === 0 ? "" : total + (total > 1 ? " titres" : " titre");
+    $("#vide").hidden = total !== 0 || ["#q", "#type", "#statut", "#genre"].some((id) => $(id).value);
+    $("#plus").hidden = page * TAILLE >= total;
+  } catch (e) { if (e.message !== "session expirée") $("#compte").textContent = "Impossible de charger la bibliothèque."; }
+}
+async function genres() {
+  try {
+    const { genres: g } = await api("/api/genres");
+    $("#genre").replaceChildren(el("option", { value: "", textContent: "Tout genre" }), ...g.map((x) => el("option", { value: x, textContent: genreFr(x) })).sort((a, b) => a.textContent.localeCompare(b.textContent, "fr")));
+  } catch {}
+}
+for (const id of ["#type", "#statut", "#genre", "#tri"]) $(id).onchange = () => charger(true);
+$("#q").oninput = () => { clearTimeout(minuteur); minuteur = setTimeout(() => charger(true), 250); };
+$("#plus").onclick = () => { page++; charger(false); };
+
+/* ---------- Fiche ---------- */
+async function fiche(id) {
+  const d = $("#fiche"), c = $("#fiche-contenu");
+  c.replaceChildren(el("div", { className: "fiche" }, el("p", { className: "muted", textContent: "Chargement…" })));
+  d.showModal();
+  try {
+    const t = await api("/api/items/" + id);
+    const fournisseurs = [...new Set(["flatrate", "free", "ads"].flatMap((k) => (t.availability?.[k] || []).map((p) => p.name)))];
+    const nature = t.category === "Documentary" ? "Documentaire" : t.type === "Movie" ? "Film" : "Série";
+    const puces = t.genres.map((g) => el("span", { className: "chip", textContent: genreFr(g) }));
+    const etat = t.rating ? "Ta note : " + t.rating + " " + (NOTES[t.rating] || "") : t.watchStatus === "Watched" ? "Vu" : t.watchStatus ? "À voir" : null;
+    if (etat) puces.unshift(el("span", { className: "chip", textContent: etat }));
+    const actions = [];
+    if (t.trailer?.key) actions.push(el("a", { className: "btn", target: "_blank", rel: "noopener", href: "https://www.youtube.com/watch?v=" + encodeURIComponent(t.trailer.key), textContent: "Bande-annonce" }));
+    actions.push(el("button", { className: "btn", textContent: "Fermer", onclick: () => d.close() }));
+    c.replaceChildren(el("div", { className: "fiche" },
+      affiche({ ...t, rating: null, watchStatus: null }),
+      el("div", {},
+        el("h2", { textContent: t.name }),
+        el("div", { className: "chips" }, ...puces),
+        el("p", { className: "muted small", textContent: [nature, t.year, t.voteAverage ? "TMDB " + t.voteAverage.toFixed(1) : null].filter(Boolean).join(" · ") }),
+        el("p", { textContent: t.overview || "Pas de synopsis pour l'instant." }),
+        el("p", { className: "small", textContent: fournisseurs.length ? "Où le voir : " + fournisseurs.slice(0, 6).join(", ") : "" }),
+        el("div", { className: "row", style: "margin-top:12px" }, ...actions))));
+  } catch { c.replaceChildren(el("div", { className: "fiche" }, el("p", { textContent: "Impossible de charger la fiche." }))); }
+}
+$("#fiche").addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+
+/* ---------- Démarrage ---------- */
+(async () => { if (await jeton()) await entrer(); else montrer("accueil"); })();
+</script>
+</body>
+</html>

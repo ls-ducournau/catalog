@@ -43,9 +43,12 @@ Décisions de Louis (2026-10-26) :
 
 - **FR-1 (indépendance)** — La v2 NE DOIT dépendre d'aucun service de notes externe : ni clé, ni
   route, ni colonne, ni message à l'écran. Ajouter, retirer, noter un titre fonctionne seul.
-- **FR-2 (comptes)** — Une personne DOIT pouvoir entrer **sans e-mail** (accès invité), puis rattacher
-  un e-mail pour garder ses données. Les comptes durables se connectent par lien envoyé par e-mail.
-  Louis se connecte par Google ou par e-mail (à choisir).
+- **FR-2 (comptes)** — Une personne DOIT pouvoir entrer **sans rien saisir** (accès invité, un clic),
+  puis garder son compte avec une **adresse e-mail et un mot de passe**, **sans code de validation**
+  (décision de Louis, 2026-10-27 : la friction doit être minimale). Le compte invité devient durable
+  en gardant son identifiant (AC-4). Une personne revient de n'importe quel appareil avec son e-mail
+  et son mot de passe. Pas de connexion par e-mail seul : sans preuve, n'importe qui ouvrirait le
+  compte d'un autre. Google reste possible plus tard.
 - **FR-3 (isolation)** — Toute donnée personnelle DOIT porter l'identifiant de son propriétaire. Une
   personne ne lit ni n'écrit jamais les données d'une autre, ni par l'API, ni par la base (règles
   d'accès par ligne en seconde barrière).
@@ -116,6 +119,11 @@ Décisions de Louis (2026-10-26) :
 - **Taille de la réécriture** : 8 700 lignes plus 3 565 de tests. Parade : parité par domaine, v1
   intacte, aucun état intermédiaire livré.
 - **Fuite entre comptes** : le pire défaut possible. Parade : AC-2 testé en continu.
+- **E-mail non vérifié** (choix de Louis) : une faute de frappe rend la récupération du mot de passe
+  impossible, et rien n'empêche d'inscrire l'adresse de quelqu'un d'autre. Acceptable pour un essai
+  avec des films ; à revoir avant une ouverture large. Vérifié le 2026-10-27 sur le vrai projet : un invité devient un compte e-mail et mot de passe
+  sans confirmation et garde son identifiant ; la reconnexion par e-mail et mot de passe rend le même
+  compte (AC-4).
 - **Formules gratuites** : un projet Supabase gratuit peut se mettre en pause après une période
   d'inactivité, ce qui fausserait le signal « ils reviennent seuls ». À vérifier avant les testeurs.
 
@@ -161,3 +169,37 @@ Réserves, à ne pas oublier :
 
 **Critère de passage de la phase 0** : atteint pour la connexion, le pool, le changement de rôle et
 l'ordre de grandeur du calcul. Il reste le démarrage à froid.
+
+### Vérifications d'identification (2026-10-27, vrai projet Supabase)
+
+- L'accès invité (connexion anonyme) est activé ; il rend un jeton d'accès d'une heure (renouvelé par
+  un jeton de renouvellement), rôle `authenticated`, marqueur `is_anonymous`.
+- Les jetons sont signés en **ES256** ; les clés publiques sont servies par l'adresse JWKS du projet
+  (`/auth/v1/.well-known/jwks.json`) : le service Rust vérifie la signature **sans secret**, en les
+  gardant en cache.
+- Conversion d'un invité en compte e-mail et mot de passe, sans confirmation (« Confirm email »
+  désactivé) : même identifiant, e-mail considéré confirmé, reconnexion depuis un autre appareil
+  possible (AC-4 vérifié).
+
+## 11. Première tranche verticale déployée (2026-10-27)
+
+Dossier `serveur/` : un service Axum unique sur Vercel, relié à Supabase, avec une page d'essai
+(`serveur/public/index.html`).
+
+- **Identification** : accès invité d'un clic, e-mail et mot de passe sans code, conversion d'un invité
+  en compte durable avec le même identifiant, reconnexion depuis un autre navigateur : vérifiés dans un
+  vrai navigateur (AC-4).
+- **Import** : `supabase/import/importer.mjs` charge la base de Louis dans un compte (194 s, comptes
+  identiques table par table, classement Elo identique à la décimale) ; il refuse d'importer si un
+  contrôle échoue (transaction annulée) et part d'une sauvegarde cohérente de SQLite, jamais du
+  fichier vivant. Le compte de démonstration contient les données de Louis.
+- **Routes portées** : `/api/sante`, `/api/genres`, `/api/items`, `/api/items/{id}`. Elles passent le
+  contrat de parité (`parite/check.mjs --v2`) et, sur les 1 077 titres, rendent le même ordre et les
+  mêmes champs que la v1, sauf les 5 paires de doublons (version la plus fraîche). L'ordre des noms
+  reprend la règle de la v1 (repli ASCII, ordre des octets) ; la recherche aussi (la v2 ne trouve pas
+  « É » en cherchant « é », comme la v1 : à améliorer plus tard).
+- **Mesures sur Vercel** : liste de 48 titres (132 ko) en 0,57 s au premier appel puis 0,16 s.
+- **Limites connues** : l'ajout et le retrait d'un titre ne sont pas portés (il manque l'appel TMDB
+  côté Rust) ; la protection d'accès de Vercel reste active (le projet n'est ouvrable que connecté au
+  compte Vercel) ; les identifiants de la base et la clé secrète ont circulé dans la conversation et
+  sont à remplacer avant d'ouvrir à des testeurs.

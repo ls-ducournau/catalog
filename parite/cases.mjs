@@ -16,10 +16,17 @@ async function json(base, path) {
  * @returns {Promise<{ id: string, method: string, path: string, body?: unknown, write?: boolean, status?: number }[]>}
  */
 export async function cases(base) {
-  const { items } = await json(base, "/api/items?pageSize=1&watchStatus=Watched&sortBy=name");
-  const itemId = items[0].id;
-  const { playlists } = await json(base, "/api/playlists");
-  const playlistId = playlists[0]?.id;
+  // Un serveur en cours de portage n'a pas encore toutes les routes (ni, au début, de données) :
+  // les identifiants d'exemple retombent alors sur des valeurs par défaut.
+  const essayer = async (f, defaut) => {
+    try {
+      return await f();
+    } catch {
+      return defaut;
+    }
+  };
+  const itemId = await essayer(async () => (await json(base, "/api/items?pageSize=1&watchStatus=Watched&sortBy=name")).items[0].id, 1);
+  const playlistId = await essayer(async () => (await json(base, "/api/playlists")).playlists[0]?.id, undefined);
 
   const get = (id, path) => ({ id, method: "GET", path });
   return [

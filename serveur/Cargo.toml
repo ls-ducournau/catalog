@@ -1,0 +1,29 @@
+[package]
+name = "catalog-serveur"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+vercel_runtime = { version = "2.4", features = ["axum"] }
+axum = "0.8"
+tokio = { version = "1", features = ["full"] }
+tower = "0.5"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "json"] }
+jsonwebtoken = "9"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+
+[lib]
+name = "catalog"
+path = "src/lib.rs"
+
+# Un seul service pour toutes les routes (vercel.json réécrit tout vers /api/axum).
+[[bin]]
+name = "axum"
+path = "api/axum.rs"
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
+opt-level = 3
