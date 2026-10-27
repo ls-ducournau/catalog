@@ -1,5 +1,6 @@
 // Rejoue les scénarios d'écriture sur une COPIE JETABLE et compare au contrat.
 //   node parite/check-ecritures.mjs http://localhost:PORT [--v2]
+//   PARITE_JETON=<jeton> PARITE_SEULEMENT=duel- node parite/check-ecritures.mjs <url> --v2   (un serveur en cours de portage)
 import fs from "node:fs";
 import { makeRunner, scenarios } from "./ecritures.mjs";
 
@@ -8,6 +9,10 @@ if (!base) throw new Error("usage : node parite/check-ecritures.mjs <url de la c
 if (/:(3000|3001)\b/.test(base)) throw new Error("jamais sur le serveur de travail (3000/3001) : ces scénarios écrivent");
 const contract = JSON.parse(fs.readFileSync(new URL("./contrat-ecritures.json", import.meta.url), "utf8"));
 
+if (process.env.PARITE_JETON) {
+  const fetchNatif = globalThis.fetch;
+  globalThis.fetch = (url, init = {}) => fetchNatif(url, { ...init, headers: { ...init.headers, Authorization: `Bearer ${process.env.PARITE_JETON}` } });
+}
 const { call, results } = makeRunner(base, { contract, v2: process.argv.includes("--v2") });
 await scenarios(base, call);
 let failures = 0;

@@ -10,9 +10,16 @@
 // spec: specs/catalog-v2-rust-supabase.md (FR-7)
 import { diff, shape } from "./shape.mjs";
 
+/**
+ * PARITE_SEULEMENT=duel-,palier- : ne joue que les appels dont l'identifiant commence ainsi (un serveur
+ * en cours de portage). Un appel ignoré rend un statut 0 et aucune réponse.
+ */
+const SEULEMENT = process.env.PARITE_SEULEMENT?.split(",").filter(Boolean) ?? null;
+
 export function makeRunner(base, { contract = null, v2 = false } = {}) {
   const results = {};
   async function call(id, method, path, body, { status } = {}) {
+    if (SEULEMENT && !SEULEMENT.some((p) => id.startsWith(p))) return { status: 0, json: null };
     const res = await fetch(base + path, {
       method,
       headers: body === undefined ? undefined : { "Content-Type": "application/json" },
@@ -39,7 +46,14 @@ export function makeRunner(base, { contract = null, v2 = false } = {}) {
   return { call, results, controle };
 }
 
-const pick = async (base, path) => (await fetch(base + path)).json();
+/** Une lecture d'exemple ; `{}` si la route n'existe pas encore (un serveur en cours de portage). */
+const pick = async (base, path) => {
+  try {
+    return await (await fetch(base + path)).json();
+  } catch {
+    return {};
+  }
+};
 
 /** Les scénarios, dans l'ordre. */
 export async function scenarios(base, call) {
@@ -95,8 +109,8 @@ export async function scenarios(base, call) {
   }
 
   // --- Paliers
-  const fours = (await pick(base, "/api/items?pageSize=1&rating=4&watchStatus=Watched")).items[0];
-  await call("palier-tranche", "POST", "/api/duels/tier/band", { itemId: fours.id, stars: 4, band: 1 });
+  const fours = (await pick(base, "/api/items?pageSize=1&rating=4&watchStatus=Watched")).items?.[0];
+  await call("palier-tranche", "POST", "/api/duels/tier/band", { itemId: fours?.id, stars: 4, band: 1 });
   await call("palier-conflit", "POST", "/api/duels/tier/band", { itemId: a.id, stars: 1, band: 1 }, { status: 409 });
   await call("palier-invalide", "POST", "/api/duels/tier/band", { itemId: "x" }, { status: 400 });
 

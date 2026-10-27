@@ -27,6 +27,7 @@
   .btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 500; }
   .btn.primary:hover { background: #fff; }
   .btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+  .btn.ghost[aria-current=true] { color: var(--fg); background: var(--surface-2); }
   input, select { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; min-height: 38px; }
   input::placeholder { color: var(--muted); }
   h1 { font-size: 32px; line-height: 1.15; font-weight: 600; margin: 0 0 8px; }
@@ -69,6 +70,8 @@
   .notes { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 4px; }
   .notes .btn { padding: 4px 10px; font-size: 14px; }
   .notes .btn[aria-pressed=true] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  .duel-grille { display: grid; grid-template-columns: repeat(2, minmax(0, 260px)); gap: 20px; }
+  @media (max-width: 600px) { .duel-grille { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -76,6 +79,10 @@
 <header>
   <div class="wrap">
     <span class="logo">Catalog</span><span class="badge">POC</span>
+    <nav id="nav" class="row" hidden>
+      <button id="nav-biblio" class="btn ghost" type="button">Bibliothèque</button>
+      <button id="nav-duels" class="btn ghost" type="button">Duels</button>
+    </nav>
     <span class="spacer"></span>
     <span id="qui" class="muted small"></span>
     <button id="sortir" class="btn ghost" hidden>Se déconnecter</button>
@@ -136,6 +143,18 @@
       <button id="ajouter-vide" class="btn primary" type="button">Ajouter un titre</button>
     </div>
     <div class="more"><button id="plus" class="btn" hidden>Voir plus</button></div>
+  </section>
+  <section id="duels" hidden>
+    <div class="hero" style="padding:32px 0 8px">
+      <h1>Duels</h1>
+      <p class="muted">Deux titres que tu as vus : choisis ton préféré. Ton classement se précise à chaque duel.</p>
+    </div>
+    <p id="duel-etat" class="count" aria-live="polite"></p>
+    <div id="duel-zone" class="duel-grille"></div>
+    <div class="row" style="margin-top:16px">
+      <button id="duel-passer" class="btn" type="button" hidden>Passer</button>
+      <button id="duel-annuler" class="btn ghost" type="button" hidden>Annuler le dernier duel</button>
+    </div>
   </section>
 </main>
 
@@ -198,11 +217,16 @@ const traduire = (m) => ({ "Invalid login credentials": "E-mail ou mot de passe 
 
 /* ---------- Écrans ---------- */
 function montrer(nom) {
+  const dedans = nom !== "accueil";
   $("#accueil").hidden = nom !== "accueil";
   $("#biblio").hidden = nom !== "biblio";
-  $("#sortir").hidden = nom !== "biblio";
-  $("#qui").textContent = nom === "biblio" && session ? (session.user.is_anonymous ? "Invité" : session.user.email) : "";
-  $("#garder").hidden = !(nom === "biblio" && session?.user?.is_anonymous);
+  $("#duels").hidden = nom !== "duels";
+  $("#nav").hidden = !dedans;
+  $("#sortir").hidden = !dedans;
+  $("#nav-biblio").setAttribute("aria-current", String(nom === "biblio"));
+  $("#nav-duels").setAttribute("aria-current", String(nom === "duels"));
+  $("#qui").textContent = dedans && session ? (session.user.is_anonymous ? "Invité" : session.user.email) : "";
+  $("#garder").hidden = !(dedans && session?.user?.is_anonymous);
 }
 async function entrer() { montrer("biblio"); await Promise.all([genres(), charger(true)]); }
 
@@ -344,6 +368,42 @@ $("#ajouter").onclick = ouvrirAjout; $("#ajouter-vide").onclick = ouvrirAjout;
 $("#ajout-q").oninput = () => { clearTimeout(minuteurAjout); minuteurAjout = setTimeout(chercherAjout, 300); };
 $("#ajout-fermer").onclick = () => $("#ajout").close();
 $("#ajout").addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+
+/* ---------- Duels ---------- */
+let dernierDuel = null;
+function carteDuel(t, cote, paire) {
+  return el("button", { className: "card", type: "button", onclick: () => repondre(paire, cote), "aria-label": "Choisir " + t.name },
+    affiche({ ...t, rating: null, watchStatus: null }),
+    el("div", { className: "name", textContent: t.name }),
+    el("div", { className: "meta", textContent: [t.type === "Movie" ? "Film" : "Série", t.year].filter(Boolean).join(" · ") }));
+}
+async function duelSuivant() {
+  try {
+    const r = await api("/api/duels/next");
+    if (r.error) {
+      $("#duel-zone").replaceChildren(); $("#duel-passer").hidden = true;
+      $("#duel-etat").textContent = "Il te faut au moins deux titres vus pour faire un duel (tu en as " + r.eligibleCount + "). Marque des titres comme vus dans ta bibliothèque.";
+      return;
+    }
+    $("#duel-etat").textContent = "Lequel préfères-tu ?";
+    $("#duel-zone").replaceChildren(carteDuel(r.itemA, "A", r), carteDuel(r.itemB, "B", r));
+    $("#duel-passer").hidden = false; $("#duel-passer").onclick = () => repondre(r, "skip");
+  } catch (e) { if (e.message !== "session expirée") $("#duel-etat").textContent = "Impossible de charger un duel."; }
+}
+async function repondre(paire, choix) {
+  try {
+    const res = await api("/api/duels/result", "POST", { itemAId: paire.itemA.id, itemBId: paire.itemB.id, result: choix });
+    dernierDuel = res.duelId; $("#duel-annuler").hidden = false;
+    await duelSuivant();
+  } catch {}
+}
+$("#duel-annuler").onclick = async () => {
+  if (!dernierDuel) return;
+  try { await api("/api/duels/undo", "POST", { mode: "titles", duelId: dernierDuel }); dernierDuel = null; $("#duel-annuler").hidden = true; await duelSuivant(); }
+  catch { $("#duel-etat").textContent = "Impossible d'annuler : un titre de ce duel a changé depuis."; }
+};
+$("#nav-biblio").onclick = () => montrer("biblio");
+$("#nav-duels").onclick = () => { montrer("duels"); duelSuivant(); };
 
 /* ---------- Démarrage ---------- */
 (async () => { if (await jeton()) await entrer(); else montrer("accueil"); })();

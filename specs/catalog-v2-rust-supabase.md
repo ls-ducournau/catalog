@@ -223,3 +223,25 @@ Routes ajoutées : `POST /api/items` (ajout depuis TMDB, sans l'ancien service d
   sa disponibilité, ses dates de sortie ni sa bande-annonce ; il reçoit seulement ce que la fiche TMDB
   donne à l'ajout (titre français, synopsis, genres, réalisation, affiche). Un titre déjà connu du
   catalogue partagé les garde. À porter avec les recommandations et Ce soir.
+
+### Duels de titres portés (2026-10-27)
+
+Routes : `GET /api/duels/next`, `/api/duels/scope`, `POST /api/duels/result`, `/undo` (mode `titles` ;
+`people` et `round` répondent 501), `/reset`, `/restore`. La page d'essai a une vue « Duels » (deux
+affiches, « Passer », « Annuler le dernier duel »).
+
+- **Parité** (compte importé depuis la base de Louis, jetable) : les 5 scénarios de duel du contrat
+  d'écriture de la v1 passent ; la portée des duels est identique à la v1 (573 titres vus, 114 notés ;
+  504 / 84 pour les films, 49 / 30 pour les séries, 20 / 0 pour les documentaires) ; après un duel, son
+  annulation, une réinitialisation et son rétablissement, l'Elo et le nombre de duels des 1 077 titres
+  sont identiques bit à bit à l'état de départ.
+- **Tests unitaires Rust** : l'Elo conserve la somme et favorise l'outsider ; la paire est distincte et évite
+  les 50 dernières paires ; un petit lot (moins de 15 titres) assouplit la règle ; le tirage préfère les titres
+  peu disputés.
+- **Défaut du schéma trouvé et corrigé** : les tables `elo_snapshot` et `person_elo_snapshot` n'avaient pas
+  `auth.uid()` pour valeur par défaut de `user_id` (toutes les autres l'avaient) : une insertion qui ne le
+  nommait pas était refusée par les règles d'accès. Migration `0003_defaut_user_id.sql`, appliquée au
+  projet Supabase.
+- **Changements volontaires par rapport à la v1** : plus de sauvegarde de fichier avant une
+  réinitialisation (l'instantané `elo_snapshot` suffit à l'annuler) ; un duel sur un titre inconnu répond 404
+  au lieu de planter.

@@ -3,13 +3,17 @@
 
 pub mod auth;
 pub mod bd;
+pub mod duels;
 pub mod ecriture;
 pub mod erreur;
 pub mod items;
 pub mod routes;
 pub mod tmdb;
 
-use axum::{Router, routing::get};
+use axum::{
+    Router,
+    routing::{get, post},
+};
 
 pub fn app() -> Router {
     Router::new()
@@ -18,4 +22,10 @@ pub fn app() -> Router {
         .route("/api/items", get(items::liste).post(ecriture::ajouter))
         .route("/api/items/{id}", get(items::fiche).patch(ecriture::modifier).delete(ecriture::retirer))
         .route("/api/tmdb/search", get(ecriture::recherche))
+        .route("/api/duels/next", get(duels::suivant))
+        .route("/api/duels/scope", get(duels::portee))
+        .route("/api/duels/result", post(duels::resultat))
+        .route("/api/duels/undo", post(duels::annuler))
+        .route("/api/duels/reset", post(duels::reinitialiser))
+        .route("/api/duels/restore", post(duels::retablir))
 }
