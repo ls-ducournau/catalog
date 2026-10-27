@@ -157,7 +157,9 @@ begin
   begin
     delete from public.catalog_titles where id = matrix;
     raise exception 'ÉCHEC : fiche utilisée supprimée';
-  exception when restrict_violation then null;
+  -- Le code du refus dépend de la version de PostgreSQL : 23001 (restrict_violation) sur PGlite 18,
+  -- 23503 (foreign_key_violation) sur Supabase 17.11. La garantie testée est le refus.
+  exception when restrict_violation or foreign_key_violation then null;
   end;
   raise notice 'OK catalogue : une fiche utilisée est protégée';
 end $$;

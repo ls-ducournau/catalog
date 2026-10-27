@@ -93,7 +93,7 @@ Décisions de Louis (2026-10-26) :
 
 ## 6. Phases
 
-0. **Maquette** (avant tout engagement) : une fonction Rust déployée sur Vercel qui lit Supabase.
+0. **POC** (preuve de faisabilité, avant tout engagement) : une fonction Rust déployée sur Vercel qui lit Supabase.
    Trois mesures : temps de démarrage à froid, tenue du pool de connexions via le pooler de Supabase,
    durée du calcul des recommandations sur 1 077 titres. **Critère de passage** : cold start et durée
    acceptables pour 4 testeurs ; sinon on rediscute (retour en TypeScript pour l'API).
@@ -131,3 +131,33 @@ Décisions de Louis (2026-10-26) :
 2. L'application tourne-t-elle encore en local après la bascule, ou seule la version hébergée
    demeure ? (Recommandation : seule la version hébergée.)
 3. Quel niveau d'hébergement au départ (formules gratuites, à vérifier avec le point de pause) ?
+
+## 10. Résultats de la phase 0 (2026-10-27)
+
+POC dans `poc/` (Rust, `vercel_runtime` 2, `sqlx` 0.8), déployée sur Vercel (région `dub1`,
+Dublin, proche de la base Supabase d'Irlande `eu-west-1`), reliée à un vrai projet Supabase (PostgreSQL
+17.11). Le projet Vercel n'est relié à aucun dépôt Git : on déploie par `vercel deploy`.
+
+| Mesure | Résultat |
+|---|---|
+| Le runtime Rust de Vercel (bêta) compile et exécute les trois fonctions | oui, sans configuration particulière |
+| Connexion à Supabase par le pooler en mode transaction (`:6543`), TLS | oui ; ouverture du pool 30 ms |
+| Pool réutilisé par les appels suivants de la même instance | oui (`pool_neuf: false`, 0 ms) |
+| Requêtes simples sans requête préparée (`statement_cache_capacity(0)`, `persistent(false)`) | oui, 3 ms |
+| Schéma de sécurité prévu : `set_config('request.jwt.claims', …)` puis `set local role authenticated`, dans une transaction | **oui, validé sur le vrai Supabase** ; `auth.uid()` rend bien l'identifiant posé ; 7 à 9 ms |
+| Calcul de substitution (1 100 titres, 604 450 paires, similarité creuse) | 180 ms ; appel HTTP complet 0,29 à 0,41 s |
+| Appels HTTP complets (réseau compris), pool neuf puis réutilisé | 0,34 s puis 0,26 s |
+
+Réserves, à ne pas oublier :
+- Le calcul est un **substitut** (même famille de calcul, pas le vrai modèle). La durée du vrai modèle
+  reste à mesurer à la portage.
+- Le démarrage à froid n'est pas mesuré proprement : les appels de test ont suivi le déploiement.
+  À remesurer après plusieurs minutes d'inactivité.
+- Le runtime Rust reste en **bêta** (documentation du 2025-12-08).
+- Seule la région Dublin a été essayée ; le plan Hobby gratuit de Vercel n'est pas prévu pour un usage
+  commercial (à vérifier avant d'ouvrir à des testeurs).
+- Les migrations `supabase/migrations/` ne sont pas encore appliquées au projet Supabase : les
+  vérifications d'étanchéité sur le vrai Supabase restent à faire.
+
+**Critère de passage de la phase 0** : atteint pour la connexion, le pool, le changement de rôle et
+l'ordre de grandeur du calcul. Il reste le démarrage à froid.
