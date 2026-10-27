@@ -14,11 +14,25 @@ qui lit et écrit dans Supabase. Spec : `specs/catalog-v2-rust-supabase.md` ; do
 
 ## Routes portées
 
-`GET /api/sante`, `/api/genres`, `/api/items` (filtres, tri, pagination), `/api/items/{id}`.
-Elles passent le contrat de parité sur les vraies données de Louis (compte de démonstration) et rendent
-les 1 077 titres dans le même ordre que la v1, champ par champ (sauf les 5 paires de doublons, fusionnées
-à l'import). Pas encore porté : le filtre `onMyServices` et `?refresh=1`. Les 36 routes restantes sont à
-porter, domaine par domaine (specs/catalog-v2-rust-supabase.md §6, phase 4).
+Lecture : `GET /api/sante`, `/api/genres`, `/api/items` (filtres, tri, pagination), `/api/items/{id}`,
+`/api/tmdb/search`. Écriture : `POST /api/items` (ajouter depuis TMDB), `PATCH /api/items/{id}` (statut,
+note, ressenti, avec les règles de la v1), `DELETE /api/items/{id}`. 9 routes sur 41.
+
+- La lecture passe le contrat de parité sur les vraies données de Louis (compte de démonstration) : les
+  1 077 titres sortent dans le même ordre que la v1, champ par champ (sauf les 5 paires de doublons,
+  fusionnées à l'import).
+- L'écriture passe le contrat v2 (`parite/check-v2.mjs`, 23 vérifications sur un compte vierge) et un test
+  d'étanchéité à deux comptes (aucun accès croisé, le catalogue partagé survit au retrait d'un titre).
+- Pas encore porté : le filtre `onMyServices`, `?refresh=1`, et, pour un titre ajouté, les
+  caractéristiques du modèle de préférence, la disponibilité, les dates de sortie et la bande-annonce
+  (un titre déjà connu du catalogue partagé les garde ; un titre neuf ne les a pas encore).
+
+## Transactions : une règle à ne pas casser
+
+Toute route qui touche aux tables personnelles ouvre `bd::transaction()`, qui rend un garde `Tx`
+(`valider()` ou `annuler()`). Abandonner une transaction sqlx sans rollback explicite garde sa
+connexion : constaté, le pool de 5 connexions s'épuisait après 6 requêtes qui sortaient tôt (404).
+Le garde lance lui-même le rollback quand on le détruit (sortie anticipée, `?` sur une erreur).
 
 ## Essayer en local, sans Vercel
 

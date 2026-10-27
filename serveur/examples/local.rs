@@ -7,7 +7,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Ok(texte) = fs::read_to_string("../poc/.env.local") {
         for ligne in texte.lines() {
             if let Some((cle, valeur)) = ligne.split_once('=') {
-                if matches!(cle, "DATABASE_URL" | "SUPABASE_URL") && env::var(cle).is_err() {
+                if matches!(cle, "DATABASE_URL" | "SUPABASE_URL" | "TMDB_ACCESS_TOKEN") && env::var(cle).is_err() {
                     unsafe { env::set_var(cle, valeur.trim()) };
                 }
             }

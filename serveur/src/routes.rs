@@ -1,5 +1,9 @@
 //! Les routes. Chacune reprend la forme de réponse de la v1 (contrat : `parite/`).
-use crate::{auth::Utilisateur, bd, erreur::Erreur};
+use crate::{
+    auth::Utilisateur,
+    bd,
+    erreur::Erreur,
+};
 use axum::Json;
 use serde_json::{Value, json};
 
@@ -21,8 +25,8 @@ pub async fn genres(utilisateur: Utilisateur) -> Result<Json<Value>, Erreur> {
          order by lower(genre), genre",
     )
     .persistent(false)
-    .fetch_all(&mut *tx)
+    .fetch_all(&mut **tx)
     .await?;
-    tx.commit().await?;
+    tx.valider().await?;
     Ok(Json(json!({ "genres": lignes.into_iter().map(|l| l.0).collect::<Vec<_>>() })))
 }

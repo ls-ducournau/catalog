@@ -3,7 +3,11 @@
 //!
 //! Pas encore porté : le filtre `onMyServices` (abonnements) et le synopsis rafraîchi depuis TMDB à
 //! la demande (`?refresh=1`).
-use crate::{auth::Utilisateur, bd, erreur::Erreur};
+use crate::{
+    auth::Utilisateur,
+    bd,
+    erreur::Erreur,
+};
 use axum::{
     Json,
     extract::{Path, Query},
@@ -14,7 +18,7 @@ use serde_json::{Value, json};
 use sqlx::{Postgres, QueryBuilder, Row, postgres::PgRow};
 use std::collections::HashMap;
 
-const NOTES: [&str; 6] = ["💩", "⭐️", "⭐️⭐️", "⭐️⭐️⭐️", "⭐️⭐️⭐️⭐️", "⭐️⭐️⭐️⭐️⭐️"];
+pub(crate) const NOTES: [&str; 6] = ["💩", "⭐️", "⭐️⭐️", "⭐️⭐️⭐️", "⭐️⭐️⭐️⭐️", "⭐️⭐️⭐️⭐️⭐️"];
 const AFFICHE: &str = "https://image.tmdb.org/t/p/w500";
 
 /// Équivalent de `x COLLATE NOCASE` de SQLite : seules les lettres ASCII sont repliées et l'ordre est celui
@@ -23,7 +27,7 @@ fn nocase(x: &str) -> String {
     format!("translate({x}, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz') collate \"C\"")
 }
 
-const COLONNES: &str = "id, name, year, type, genres, watch_status, poster_path, rating::int as rating, ressenti, elo_score,
+pub(crate) const COLONNES: &str = "id, name, year, type, genres, watch_status, poster_path, rating::int as rating, ressenti, elo_score,
     duels_count::int as duels_count, overview, tmdb_rating, vote_count::int as vote_count, watch_providers, release_info,
     trailer_info, (coalesce(genres, '[]'::jsonb) @> '[\"Documentary\"]'::jsonb) as documentaire";
 
@@ -51,7 +55,7 @@ pub fn annee_affichee(brute: Option<&str>) -> Option<String> {
     Some(annee.to_owned())
 }
 
-fn titre(ligne: &PgRow) -> Result<Value, Erreur> {
+pub(crate) fn titre(ligne: &PgRow) -> Result<Value, Erreur> {
     let type_: String = ligne.try_get("type")?;
     let documentaire: bool = ligne.try_get("documentaire")?;
     let duels: i32 = ligne.try_get("duels_count")?;
@@ -151,14 +155,14 @@ pub async fn liste(utilisateur: Utilisateur, Query(p): Query<HashMap<String, Str
     let mut tx = bd::transaction(&utilisateur).await?;
     let mut total = QueryBuilder::<Postgres>::new("select count(*) from public.library_view");
     filtres(&mut total, &p);
-    let total: i64 = total.build_query_scalar().persistent(false).fetch_one(&mut *tx).await?;
+    let total: i64 = total.build_query_scalar().persistent(false).fetch_one(&mut **tx).await?;
 
     let mut liste = QueryBuilder::<Postgres>::new(format!("select {COLONNES} from public.library_view"));
     filtres(&mut liste, &p);
     liste.push(format!(" order by {colonne} is null, {colonne} {sens}, {nom} asc, id asc limit "));
     liste.push_bind(taille).push(" offset ").push_bind((page - 1) * taille);
-    let lignes = liste.build().persistent(false).fetch_all(&mut *tx).await?;
-    tx.commit().await?;
+    let lignes = liste.build().persistent(false).fetch_all(&mut **tx).await?;
+    tx.valider().await?;
 
     let items = lignes.iter().map(titre).collect::<Result<Vec<_>, _>>()?;
     Ok(Json(json!({ "items": items, "page": page, "pageSize": taille, "total": total })))
@@ -169,8 +173,8 @@ pub async fn fiche(utilisateur: Utilisateur, Path(id): Path<String>) -> Result<R
     let introuvable = || (StatusCode::NOT_FOUND, Json(json!({ "error": "not_found" }))).into_response();
     let Ok(id) = id.parse::<i64>() else { return Ok(introuvable()) };
     let mut tx = bd::transaction(&utilisateur).await?;
-    let ligne = sqlx::query(&format!("select {COLONNES} from public.library_view where id = $1")).bind(id).persistent(false).fetch_optional(&mut *tx).await?;
-    tx.commit().await?;
+    let ligne = sqlx::query(&format!("select {COLONNES} from public.library_view where id = $1")).bind(id).persistent(false).fetch_optional(&mut **tx).await?;
+    tx.valider().await?;
     Ok(match ligne {
         Some(l) => Json(titre(&l)?).into_response(),
         None => introuvable(),

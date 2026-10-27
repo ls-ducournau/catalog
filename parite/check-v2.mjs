@@ -8,8 +8,13 @@ const base = process.argv[2];
 if (!base) throw new Error("usage : node parite/check-v2.mjs <url de la copie jetable, compte vierge>");
 if (/:(3000|3001)\b/.test(base)) throw new Error("jamais sur le serveur de travail (3000/3001) : ces scénarios écrivent");
 
-const { call, results } = makeRunner(base, { contract: contratV2, v2: true });
-await scenariosV2(base, call);
+// PARITE_JETON : jeton d'un compte vierge (invité) du serveur v2.
+if (process.env.PARITE_JETON) {
+  const fetchNatif = globalThis.fetch;
+  globalThis.fetch = (url, init = {}) => fetchNatif(url, { ...init, headers: { ...init.headers, Authorization: `Bearer ${process.env.PARITE_JETON}` } });
+}
+const { call, results, controle } = makeRunner(base, { contract: contratV2, v2: true });
+await scenariosV2(base, call, controle);
 let failures = 0;
 for (const [id, r] of Object.entries(results)) {
   console.log(r.problems.length ? "ÉCHEC" : "ok   ", id);

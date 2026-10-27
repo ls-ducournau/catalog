@@ -32,7 +32,11 @@ export function makeRunner(base, { contract = null, v2 = false } = {}) {
     results[id] = entry;
     return { status: res.status, json };
   }
-  return { call, results };
+  /** Une vérification de valeur (ce qu'une forme ne dit pas) : ok ou un message d'écart. */
+  function controle(id, ok, message) {
+    results[id] = { method: "-", path: "-", status: 0, shape: "null", problems: ok ? [] : [message] };
+  }
+  return { call, results, controle };
 }
 
 const pick = async (base, path) => (await fetch(base + path)).json();

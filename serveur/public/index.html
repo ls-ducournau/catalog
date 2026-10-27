@@ -61,6 +61,14 @@
   @media (max-width: 600px) { .fiche { grid-template-columns: 1fr; } .fiche .poster { max-width: 180px; } h1 { font-size: 26px; } }
   .chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 12px; }
   .chip { font-size: 13px; border: 1px solid var(--border); border-radius: 6px; padding: 1px 8px; color: var(--muted); }
+  .resultats { display: grid; gap: 10px; max-height: 60dvh; overflow: auto; }
+  .resultat { display: grid; grid-template-columns: 56px 1fr auto; gap: 12px; align-items: center; }
+  .resultat .mini { width: 56px; aspect-ratio: 2 / 3; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); overflow: hidden; }
+  .resultat .mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .resultat .t { font-size: 15px; line-height: 1.3; }
+  .notes { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 4px; }
+  .notes .btn { padding: 4px 10px; font-size: 14px; }
+  .notes .btn[aria-pressed=true] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -110,6 +118,7 @@
       <p id="erreur-garder" class="error" role="alert"></p>
     </div>
     <div class="toolbar">
+      <button id="ajouter" class="btn primary" type="button">Ajouter un titre</button>
       <input id="q" type="search" placeholder="Rechercher un titre…" aria-label="Rechercher un titre">
       <select id="type" aria-label="Type"><option value="">Tout type</option><option value="Movie">Films</option><option value="TV Series">Séries</option><option value="Documentary">Documentaires</option></select>
       <select id="statut" aria-label="Statut"><option value="">Tout statut</option><option value="Watched">Vus</option><option value="Unwatched">À voir</option></select>
@@ -123,13 +132,23 @@
     <div id="grille" class="grid"></div>
     <div id="vide" class="empty" hidden>
       <h2>Ta bibliothèque est vide.</h2>
-      <p class="muted">Cette version d'essai montre une bibliothèque en lecture seule. L'ajout de titres arrive dans la prochaine étape.</p>
+      <p class="muted">Ajoute un premier titre pour commencer : tu pourras le noter et suivre ce que tu as vu.</p>
+      <button id="ajouter-vide" class="btn primary" type="button">Ajouter un titre</button>
     </div>
     <div class="more"><button id="plus" class="btn" hidden>Voir plus</button></div>
   </section>
 </main>
 
 <dialog id="fiche"><div id="fiche-contenu"></div></dialog>
+<dialog id="ajout">
+  <div style="padding:20px">
+    <h2>Ajouter un titre</h2>
+    <p class="muted small">Cherche un film ou une série : il arrive dans ta bibliothèque, à voir.</p>
+    <div class="row"><input id="ajout-q" type="search" placeholder="Titre d'un film ou d'une série…" aria-label="Titre à ajouter" style="flex:1 1 240px"><button id="ajout-fermer" class="btn" type="button">Fermer</button></div>
+    <p id="ajout-etat" class="count" aria-live="polite"></p>
+    <div id="ajout-liste" class="resultats"></div>
+  </div>
+</dialog>
 
 <script>
 const SUPABASE_URL = "https://sexcywnkqgijptejpudj.supabase.co";
@@ -167,10 +186,10 @@ async function jeton() {
   }
   return session.access_token;
 }
-async function api(chemin) {
+async function api(chemin, methode = "GET", corps) {
   const t = await jeton();
   if (!t) { montrer("accueil"); throw new Error("session expirée"); }
-  const r = await fetch(chemin, { headers: { Authorization: "Bearer " + t } });
+  const r = await fetch(chemin, { method: methode, headers: { Authorization: "Bearer " + t, ...(corps !== undefined ? { "Content-Type": "application/json" } : {}) }, body: corps === undefined ? undefined : JSON.stringify(corps) });
   if (r.status === 401) { garder(null); montrer("accueil"); throw new Error("session expirée"); }
   if (!r.ok) throw new Error("Erreur " + r.status);
   return r.json();
@@ -260,7 +279,7 @@ $("#plus").onclick = () => { page++; charger(false); };
 async function fiche(id) {
   const d = $("#fiche"), c = $("#fiche-contenu");
   c.replaceChildren(el("div", { className: "fiche" }, el("p", { className: "muted", textContent: "Chargement…" })));
-  d.showModal();
+  if (!d.open) d.showModal();
   try {
     const t = await api("/api/items/" + id);
     const fournisseurs = [...new Set(["flatrate", "free", "ads"].flatMap((k) => (t.availability?.[k] || []).map((p) => p.name)))];
@@ -268,6 +287,15 @@ async function fiche(id) {
     const puces = t.genres.map((g) => el("span", { className: "chip", textContent: genreFr(g) }));
     const etat = t.rating ? "Ta note : " + t.rating + " " + (NOTES[t.rating] || "") : t.watchStatus === "Watched" ? "Vu" : t.watchStatus ? "À voir" : null;
     if (etat) puces.unshift(el("span", { className: "chip", textContent: etat }));
+    const NOTES_BTN = [["💩", "Nul"], ["⭐️", "Bof"], ["⭐️⭐️", "Correct"], ["⭐️⭐️⭐️", "Bien"], ["⭐️⭐️⭐️⭐️", "Très bien"], ["⭐️⭐️⭐️⭐️⭐️", "Chef-d'œuvre"]];
+    const modifier = async (patch) => { try { await api("/api/items/" + id, "PATCH", patch); await fiche(id); charger(true); } catch {} };
+    const statut = el("div", { className: "row" },
+      el("button", { className: "btn", type: "button", textContent: t.watchStatus === "Watched" ? "Marquer à voir" : "Marquer comme vu", onclick: () => modifier({ watchStatus: t.watchStatus === "Watched" ? "Unwatched" : "Watched" }) }));
+    const notes = el("div", { className: "notes", role: "group" }, ...NOTES_BTN.map(([n, nom]) => {
+      const b = el("button", { className: "btn", type: "button", title: nom, textContent: n, onclick: () => modifier({ watchStatus: "Watched", rating: t.rating === n ? null : n }) });
+      b.setAttribute("aria-pressed", String(t.rating === n)); b.setAttribute("aria-label", nom + (t.rating === n ? " (ta note, clique pour l'effacer)" : ""));
+      return b;
+    }));
     const actions = [];
     if (t.trailer?.key) actions.push(el("a", { className: "btn", target: "_blank", rel: "noopener", href: "https://www.youtube.com/watch?v=" + encodeURIComponent(t.trailer.key), textContent: "Bande-annonce" }));
     actions.push(el("button", { className: "btn", textContent: "Fermer", onclick: () => d.close() }));
@@ -279,10 +307,43 @@ async function fiche(id) {
         el("p", { className: "muted small", textContent: [nature, t.year, t.voteAverage ? "TMDB " + t.voteAverage.toFixed(1) : null].filter(Boolean).join(" · ") }),
         el("p", { textContent: t.overview || "Pas de synopsis pour l'instant." }),
         el("p", { className: "small", textContent: fournisseurs.length ? "Où le voir : " + fournisseurs.slice(0, 6).join(", ") : "" }),
-        el("div", { className: "row", style: "margin-top:12px" }, ...actions))));
+        el("p", { className: "small muted", textContent: "Ta note" }), notes,
+        el("div", { className: "row", style: "margin-top:8px" }, statut.firstChild, ...actions,
+          el("button", { className: "btn ghost", type: "button", textContent: "Retirer de ma bibliothèque", onclick: async () => { if (!confirm("Retirer « " + t.name + " » de ta bibliothèque ?")) return; try { await api("/api/items/" + id, "DELETE"); d.close(); await Promise.all([genres(), charger(true)]); } catch {} } })))));
   } catch { c.replaceChildren(el("div", { className: "fiche" }, el("p", { textContent: "Impossible de charger la fiche." }))); }
 }
 $("#fiche").addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+
+/* ---------- Ajouter un titre ---------- */
+let minuteurAjout, rechercheAjout = 0;
+function ouvrirAjout() { $("#ajout").showModal(); $("#ajout-q").focus(); }
+async function chercherAjout() {
+  const q = $("#ajout-q").value.trim(), moi = ++rechercheAjout;
+  $("#ajout-liste").replaceChildren();
+  if (q.length < 2) { $("#ajout-etat").textContent = ""; return; }
+  $("#ajout-etat").textContent = "Recherche…";
+  try {
+    const r = await api("/api/tmdb/search?q=" + encodeURIComponent(q));
+    if (moi !== rechercheAjout) return;
+    $("#ajout-etat").textContent = r.results.length ? "" : "Rien pour « " + q + " ».";
+    $("#ajout-liste").replaceChildren(...r.results.slice(0, 12).map((x) => {
+      const bouton = el("button", { className: "btn" + (x.libraryId ? "" : " primary"), type: "button", textContent: x.libraryId ? "Déjà dans ta bibliothèque" : "Ajouter", disabled: Boolean(x.libraryId) });
+      bouton.onclick = async () => {
+        bouton.disabled = true; bouton.textContent = "Ajout…";
+        try { await api("/api/items", "POST", { tmdbId: x.tmdbId, type: x.type, source: "search" }); bouton.textContent = "Ajouté"; await Promise.all([genres(), charger(true)]); }
+        catch { bouton.disabled = false; bouton.textContent = "Réessayer"; }
+      };
+      return el("div", { className: "resultat" },
+        el("div", { className: "mini" }, x.posterUrl ? el("img", { src: x.posterUrl, alt: "", loading: "lazy" }) : null),
+        el("div", {}, el("div", { className: "t", textContent: x.title }), el("div", { className: "muted small", textContent: [x.type === "Movie" ? "Film" : "Série", x.year].filter(Boolean).join(" · ") })),
+        bouton);
+    }));
+  } catch (e) { if (e.message !== "session expirée") $("#ajout-etat").textContent = "La recherche ne répond pas."; }
+}
+$("#ajouter").onclick = ouvrirAjout; $("#ajouter-vide").onclick = ouvrirAjout;
+$("#ajout-q").oninput = () => { clearTimeout(minuteurAjout); minuteurAjout = setTimeout(chercherAjout, 300); };
+$("#ajout-fermer").onclick = () => $("#ajout").close();
+$("#ajout").addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
 
 /* ---------- Démarrage ---------- */
 (async () => { if (await jeton()) await entrer(); else montrer("accueil"); })();

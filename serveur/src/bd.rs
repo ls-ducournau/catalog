@@ -31,10 +31,55 @@ pub async fn pool() -> Result<&'static PgPool, Erreur> {
     .await
 }
 
-/// Ouvre une transaction au nom de l'utilisateur. Rien n'est écrit tant qu'on n'appelle pas `commit()`.
-pub async fn transaction(utilisateur: &Utilisateur) -> Result<Transaction<'static, Postgres>, Erreur> {
+/// Une transaction au nom de l'utilisateur, qui se TERMINE toujours : `valider()` l'enregistre, `annuler()`
+/// la défait, et si le garde est simplement détruit (sortie anticipée, `?` sur une erreur), un rollback
+/// explicite est lancé. Abandonner une transaction sqlx sans rollback garde sa connexion : constaté, le
+/// pool de 5 connexions s'épuisait après 6 requêtes qui sortaient tôt (404).
+pub struct Tx(Option<Transaction<'static, Postgres>>);
+
+impl Tx {
+    pub async fn valider(mut self) -> Result<(), Erreur> {
+        if let Some(tx) = self.0.take() {
+            tx.commit().await?;
+        }
+        Ok(())
+    }
+
+    pub async fn annuler(mut self) -> Result<(), Erreur> {
+        if let Some(tx) = self.0.take() {
+            tx.rollback().await?;
+        }
+        Ok(())
+    }
+}
+
+impl std::ops::Deref for Tx {
+    type Target = Transaction<'static, Postgres>;
+    fn deref(&self) -> &Self::Target {
+        self.0.as_ref().expect("transaction terminée")
+    }
+}
+
+impl std::ops::DerefMut for Tx {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.0.as_mut().expect("transaction terminée")
+    }
+}
+
+impl Drop for Tx {
+    fn drop(&mut self) {
+        if let Some(tx) = self.0.take() {
+            tokio::spawn(async move {
+                let _ = tx.rollback().await;
+            });
+        }
+    }
+}
+
+/// Ouvre une transaction au nom de l'utilisateur : ses revendications, puis le rôle `authenticated`.
+pub async fn transaction(utilisateur: &Utilisateur) -> Result<Tx, Erreur> {
     let mut tx = pool().await?.begin().await?;
     sqlx::query("select set_config('request.jwt.claims', $1, true)").bind(&utilisateur.revendications).persistent(false).execute(&mut *tx).await?;
     sqlx::query("set local role authenticated").persistent(false).execute(&mut *tx).await?;
-    Ok(tx)
+    Ok(Tx(Some(tx)))
 }

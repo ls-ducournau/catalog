@@ -199,7 +199,27 @@ Dossier `serveur/` : un service Axum unique sur Vercel, relié à Supabase, avec
   reprend la règle de la v1 (repli ASCII, ordre des octets) ; la recherche aussi (la v2 ne trouve pas
   « É » en cherchant « é », comme la v1 : à améliorer plus tard).
 - **Mesures sur Vercel** : liste de 48 titres (132 ko) en 0,57 s au premier appel puis 0,16 s.
-- **Limites connues** : l'ajout et le retrait d'un titre ne sont pas portés (il manque l'appel TMDB
-  côté Rust) ; la protection d'accès de Vercel reste active (le projet n'est ouvrable que connecté au
+- **Limites connues** : la protection d'accès de Vercel reste active (le projet n'est ouvrable que connecté au
   compte Vercel) ; les identifiants de la base et la clé secrète ont circulé dans la conversation et
   sont à remplacer avant d'ouvrir à des testeurs.
+
+### Écriture portée (2026-10-27)
+
+Routes ajoutées : `POST /api/items` (ajout depuis TMDB, sans l'ancien service de notes), `PATCH
+/api/items/{id}` (statut, note, ressenti ; mêmes règles que la v1), `DELETE /api/items/{id}`,
+`GET /api/tmdb/search`. La page d'essai permet d'ajouter, noter, changer le statut et retirer.
+
+- **Contrat v2** (`parite/check-v2.mjs`) : 23 vérifications sur un compte vierge, toutes respectées
+  (ajout, doublon, note ignorée sur un titre à voir, statut et note posés ensemble, note effacée, « à
+  voir » qui efface la note, erreurs 400 et 404, recherche qui signale la bibliothèque).
+- **Étanchéité à deux comptes** sur ces routes (12 vérifications) : B ne voit, ne modifie ni ne supprime
+  rien de A ; le titre de A reste intact ; retirer son titre chez A ne touche pas celui de B ni le
+  catalogue partagé ; sans jeton ou avec un jeton falsifié : 401.
+- **Défaut trouvé et corrigé** : une transaction abandonnée sans rollback explicite (sortie anticipée sur
+  un 404) gardait sa connexion ; après 6 requêtes de ce type le pool de 5 connexions était épuisé et le
+  service répondait 500 (« pool timed out »). Correctif : le garde `Tx`, qui termine toujours la
+  transaction (voir `serveur/README.md`). Test : 20 sorties anticipées de suite, aucune erreur.
+- **Limite** : un titre neuf ajouté en v2 n'a pas encore ses caractéristiques (modèle de préférence),
+  sa disponibilité, ses dates de sortie ni sa bande-annonce ; il reçoit seulement ce que la fiche TMDB
+  donne à l'ajout (titre français, synopsis, genres, réalisation, affiche). Un titre déjà connu du
+  catalogue partagé les garde. À porter avec les recommandations et Ce soir.

@@ -8,6 +8,11 @@
 // spec: specs/catalog-v2-rust-supabase.md (FR-1, FR-7, AC-1)
 import fs from "node:fs";
 
+/** En-têtes des lectures directes du scénario : le même jeton que le reste (PARITE_JETON). */
+async function enTetes() {
+  return process.env.PARITE_JETON ? { Authorization: `Bearer ${process.env.PARITE_JETON}` } : {};
+}
+
 const contrat = JSON.parse(fs.readFileSync(new URL("./contrat.json", import.meta.url), "utf8"));
 
 /** Un titre de la bibliothèque, tel que la v1 le rend (GET /api/items/:id) ; la v2 y perd `notionPageId`. */
@@ -15,6 +20,15 @@ const titre = contrat.item.shape;
 
 /** Contrat attendu, appel par appel. */
 export const contratV2 = {
+  "noter-titre-a-voir": { status: 200, shape: titre },
+  "vu-et-note": { status: 200, shape: titre },
+  "ressenti": { status: 200, shape: titre },
+  "note-effacee": { status: 200, shape: titre },
+  "renoter": { status: 200, shape: titre },
+  "a-voir-efface-la-note": { status: 200, shape: titre },
+  "modifier-invalide": { status: 400, shape: { error: "string" } },
+  "modifier-inconnu": { status: 404, shape: { error: "string" } },
+  "recherche-tmdb": { status: 200, shape: contrat["recherche-tmdb"].shape },
   "ajouter-titre": { status: 201, shape: { alreadyExists: "boolean", item: titre } },
   "titre-present": { status: 200, shape: titre },
   "ajouter-titre-deja-present": { status: 200, shape: { alreadyExists: "boolean", item: titre } },
@@ -30,12 +44,31 @@ export const contratV2 = {
  * l'ajout, il n'y est plus après le retrait, et le retrait ne touche pas le catalogue partagé
  * (vérifié avec deux comptes, voir les tests d'étanchéité).
  */
-export async function scenariosV2(base, call) {
+export async function scenariosV2(base, call, controle) {
   const ajout = await call("ajouter-titre", "POST", "/api/items", { tmdbId: 603, type: "Movie", source: "search" }, { status: 201 });
   const id = ajout.json?.item?.id;
   await call("titre-present", "GET", `/api/items/${id}`, undefined, { status: 200 });
   // Ajouter deux fois le même titre ne le duplique pas.
   await call("ajouter-titre-deja-present", "POST", "/api/items", { tmdbId: 603, type: "Movie", source: "search" }, { status: 200 });
+  // Noter et changer le statut : mêmes règles que la v1 (src/lib/itemService.ts, updateItem).
+  const lire = async () => (await (await fetch(`${base}/api/items/${id}`, { headers: await enTetes() })).json());
+  await call("noter-titre-a-voir", "PATCH", `/api/items/${id}`, { rating: "⭐️⭐️⭐️" }, { status: 200 });
+  controle("note-ignoree-si-a-voir", (await lire()).rating === null, "une note sur un titre à voir doit être ignorée");
+  await call("vu-et-note", "PATCH", `/api/items/${id}`, { watchStatus: "Watched", rating: "⭐️⭐️⭐️⭐️" }, { status: 200 });
+  const vu = await lire();
+  controle("vu-et-note-posees", vu.watchStatus === "Watched" && vu.rating === "⭐️⭐️⭐️⭐️", "le statut et la note doivent être posés ensemble");
+  await call("ressenti", "PATCH", `/api/items/${id}`, { ressenti: "Bien" }, { status: 200 });
+  controle("ressenti-pose", (await lire()).ressenti === "Bien", "le ressenti doit être enregistré");
+  await call("note-effacee", "PATCH", `/api/items/${id}`, { rating: null }, { status: 200 });
+  controle("note-effacee-ok", (await lire()).rating === null, "effacer une note est toujours permis");
+  await call("renoter", "PATCH", `/api/items/${id}`, { rating: "💩" }, { status: 200 });
+  await call("a-voir-efface-la-note", "PATCH", `/api/items/${id}`, { watchStatus: "Unwatched" }, { status: 200 });
+  controle("a-voir-efface-la-note-ok", (await lire()).rating === null, "repasser à « à voir » doit effacer la note");
+  await call("modifier-invalide", "PATCH", `/api/items/${id}`, { rating: "pas une note" }, { status: 400 });
+  await call("modifier-inconnu", "PATCH", "/api/items/99999999", { rating: "⭐️" }, { status: 404 });
+  // La recherche TMDB signale ce qui est déjà dans la bibliothèque.
+  const recherche = await call("recherche-tmdb", "GET", "/api/tmdb/search?q=matrix", undefined, { status: 200 });
+  controle("recherche-signale-bibliotheque", (recherche.json?.results ?? []).some((r) => r.tmdbId === 603 && r.libraryId === id), "Matrix doit être signalé comme déjà dans la bibliothèque");
   await call("ajouter-invalide", "POST", "/api/items", { tmdbId: "x", type: "Film" }, { status: 400 });
   await call("ajouter-tmdb-inconnu", "POST", "/api/items", { tmdbId: 999999999, type: "Movie" }, { status: 404 });
   await call("retirer-titre", "DELETE", `/api/items/${id}`, undefined, { status: 200 });
