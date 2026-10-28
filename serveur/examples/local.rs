@@ -1,10 +1,12 @@
 //! Serveur local pour essayer la v2 sans Vercel : cargo run --release --example local
-//! Variables : DATABASE_URL, SUPABASE_URL (lues dans ../poc/.env.local si elles manquent).
+//! Variables : DATABASE_URL, SUPABASE_URL, TMDB_ACCESS_TOKEN, lues dans le fichier `CATALOG_ENV`
+//! (par défaut ../poc/.env.local) si elles manquent ; PORT (par défaut 3004).
 use std::{env, fs};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    if let Ok(texte) = fs::read_to_string("../poc/.env.local") {
+    let fichier = env::var("CATALOG_ENV").unwrap_or_else(|_| "../poc/.env.local".into());
+    if let Ok(texte) = fs::read_to_string(&fichier) {
         for ligne in texte.lines() {
             if let Some((cle, valeur)) = ligne.split_once('=') {
                 if matches!(cle, "DATABASE_URL" | "SUPABASE_URL" | "TMDB_ACCESS_TOKEN") && env::var(cle).is_err() {

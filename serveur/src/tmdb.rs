@@ -146,3 +146,38 @@ pub async fn fiche(tmdb_id: i64, type_: &str) -> Option<Fiche> {
         synopsis: fr.as_ref().and_then(|f| f.get("overview")).and_then(Value::as_str).unwrap_or_default().to_owned(),
     })
 }
+
+static FOURNISSEURS: tokio::sync::RwLock<Option<(Vec<Value>, std::time::Instant)>> = tokio::sync::RwLock::const_new(None);
+
+/// Services disponibles en France, films et séries confondus, du plus au moins populaire (ordre
+/// d'affichage TMDB pour la France), gardés en mémoire une journée. Reprend `listFrenchProviders`.
+pub async fn fournisseurs_fr() -> Vec<Value> {
+    if let Some((liste, quand)) = FOURNISSEURS.read().await.as_ref() {
+        if quand.elapsed() < Duration::from_secs(24 * 60 * 60) {
+            return liste.clone();
+        }
+    }
+    let (films, series) = tokio::join!(get("/watch/providers/movie?watch_region=FR&language=fr-FR"), get("/watch/providers/tv?watch_region=FR&language=fr-FR"));
+    if films.is_none() && series.is_none() {
+        return FOURNISSEURS.read().await.as_ref().map(|(l, _)| l.clone()).unwrap_or_default();
+    }
+    // id -> (fournisseur, priorité, rang d'arrivée) ; on garde la meilleure priorité.
+    let mut par_id: Vec<(i64, Value, i64)> = vec![];
+    for brut in [films, series].into_iter().flatten().filter_map(|v| v.get("results").and_then(Value::as_array).cloned()).flatten() {
+        let Some(id) = brut.get("provider_id").and_then(Value::as_i64) else { continue };
+        let priorite = brut.pointer("/display_priorities/FR").and_then(Value::as_i64).or_else(|| brut.get("display_priority").and_then(Value::as_i64)).unwrap_or(999);
+        let fournisseur = serde_json::json!({ "id": id, "name": brut.get("provider_name").and_then(Value::as_str).unwrap_or_default(), "logoPath": brut.get("logo_path").cloned().filter(|v| !v.is_null()) });
+        match par_id.iter_mut().find(|e| e.0 == id) {
+            Some(e) if e.2 > priorite => {
+                e.1 = fournisseur;
+                e.2 = priorite;
+            }
+            Some(_) => {}
+            None => par_id.push((id, fournisseur, priorite)),
+        }
+    }
+    par_id.sort_by_key(|e| e.2); // tri stable, comme Array.prototype.sort
+    let liste: Vec<Value> = par_id.into_iter().map(|e| e.1).collect();
+    *FOURNISSEURS.write().await = Some((liste.clone(), std::time::Instant::now()));
+    liste
+}

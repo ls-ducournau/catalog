@@ -1,7 +1,7 @@
 //! Bibliothèque : liste paginée et fiche d'un titre. Même forme de réponse que la v1 (`LibraryItem`,
 //! src/lib/libraryItem.ts ; contrat `parite/`), lue dans la vue `library_view` du compte.
 //!
-//! Pas encore porté : le filtre `onMyServices` (abonnements) et le synopsis rafraîchi depuis TMDB à
+//! Pas encore porté : le synopsis rafraîchi depuis TMDB à
 //! la demande (`?refresh=1`).
 use crate::{
     auth::Utilisateur,
@@ -88,7 +88,7 @@ pub(crate) fn titre(ligne: &PgRow) -> Result<Value, Erreur> {
 }
 
 /// Les filtres de la liste, tels que la v1 les lit dans l'adresse (une valeur inconnue = pas de filtre).
-fn filtres<'a>(qb: &mut QueryBuilder<'a, Postgres>, p: &'a HashMap<String, String>) {
+fn filtres<'a>(qb: &mut QueryBuilder<'a, Postgres>, p: &'a HashMap<String, String>, couverts: &Option<Vec<i32>>) {
     qb.push(" where true");
     match p.get("type").map(String::as_str) {
         Some("Documentary") => {
@@ -113,6 +113,15 @@ fn filtres<'a>(qb: &mut QueryBuilder<'a, Postgres>, p: &'a HashMap<String, Strin
     }
     if let Some(n) = p.get("rating").and_then(|v| v.parse::<i32>().ok()).filter(|n| (0..=5).contains(n)) {
         qb.push(" and rating = ").push_bind(n);
+    }
+    // « Sur mes abonnements » : inclus (abonnement, gratuit, avec publicité) sur un service couvert ;
+    // sans abonnement, rien ne passe (comme `onServicesCondition` de la v1).
+    if let Some(ids) = couverts {
+        qb.push(
+            " and exists (select 1 from jsonb_array_elements(coalesce(watch_providers -> 'flatrate', '[]'::jsonb) || coalesce(watch_providers -> 'free', '[]'::jsonb) || coalesce(watch_providers -> 'ads', '[]'::jsonb)) fournisseur where (fournisseur ->> 'id')::int = any(",
+        )
+        .push_bind(ids.clone())
+        .push("))");
     }
 }
 
@@ -153,12 +162,17 @@ pub async fn liste(utilisateur: Utilisateur, Query(p): Query<HashMap<String, Str
     };
 
     let mut tx = bd::transaction(&utilisateur).await?;
+    let couverts: Option<Vec<i32>> = if p.get("onMyServices").map(String::as_str) == Some("1") {
+        Some(crate::reglages::services_couverts(&mut tx).await?.into_iter().map(|i| i as i32).collect())
+    } else {
+        None
+    };
     let mut total = QueryBuilder::<Postgres>::new("select count(*) from public.library_view");
-    filtres(&mut total, &p);
+    filtres(&mut total, &p, &couverts);
     let total: i64 = total.build_query_scalar().persistent(false).fetch_one(&mut **tx).await?;
 
     let mut liste = QueryBuilder::<Postgres>::new(format!("select {COLONNES} from public.library_view"));
-    filtres(&mut liste, &p);
+    filtres(&mut liste, &p, &couverts);
     liste.push(format!(" order by {colonne} is null, {colonne} {sens}, {nom} asc, id asc limit "));
     liste.push_bind(taille).push(" offset ").push_bind((page - 1) * taille);
     let lignes = liste.build().persistent(false).fetch_all(&mut **tx).await?;
