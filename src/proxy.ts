@@ -1,0 +1,70 @@
+import { NextResponse, type NextRequest } from "next/server";
+import {
+  COOKIE_ACCES,
+  COOKIE_RENOUVELLEMENT,
+  DUREE_RENOUVELLEMENT,
+  ENTETE_JETON,
+  frais,
+  optionsCookie,
+  renouveler,
+  sessionInvitee,
+  type Session,
+} from "@/lib/sessionV2";
+
+// Proxy de la v2 (spec: specs/catalog-v2-rust-supabase.md) : il n'agit que si CATALOG_API_URL est
+// défini (application en ligne). En local, la v1 passe sans rien changer.
+//
+// 1. Session : à la première visite, une session invitée est ouverte d'office (l'accueil est la page
+//    d'arrivée) ; un jeton expiré est renouvelé.
+// 2. API : chaque appel `/api/*` part vers le serveur Rust, avec le jeton de l'utilisateur et le jeton
+//    de contournement de la protection d'accès de Vercel (appel de serveur à serveur).
+// 3. Pages : le jeton est passé aux composants serveur par un en-tête interne (l'accueil lit ses
+//    données côté serveur).
+
+export async function proxy(request: NextRequest) {
+  const api = process.env.CATALOG_API_URL;
+  if (!api) return NextResponse.next();
+
+  let acces = request.cookies.get(COOKIE_ACCES)?.value;
+  const renouvellement = request.cookies.get(COOKIE_RENOUVELLEMENT)?.value;
+  let nouvelle: Session | null = null;
+  if (!frais(acces)) {
+    try {
+      nouvelle = renouvellement ? await renouveler(renouvellement) : await sessionInvitee();
+    } catch {
+      // Jeton de renouvellement refusé (compte supprimé, révoqué…) : une nouvelle session invitée.
+      try {
+        nouvelle = await sessionInvitee();
+      } catch {
+        nouvelle = null;
+      }
+    }
+    if (nouvelle) acces = nouvelle.access_token;
+  }
+
+  const entetes = new Headers(request.headers);
+  if (acces) entetes.set(ENTETE_JETON, acces);
+
+  let reponse: NextResponse;
+  if (request.nextUrl.pathname.startsWith("/api/")) {
+    const cible = new URL(request.nextUrl.pathname + request.nextUrl.search, api);
+    if (acces) entetes.set("authorization", `Bearer ${acces}`);
+    const contournement = process.env.CATALOG_API_BYPASS;
+    if (contournement) entetes.set("x-vercel-protection-bypass", contournement);
+    entetes.delete("cookie");
+    reponse = NextResponse.rewrite(cible, { request: { headers: entetes } });
+  } else {
+    reponse = NextResponse.next({ request: { headers: entetes } });
+  }
+
+  if (nouvelle) {
+    reponse.cookies.set(COOKIE_ACCES, nouvelle.access_token, optionsCookie(nouvelle.expires_in));
+    reponse.cookies.set(COOKIE_RENOUVELLEMENT, nouvelle.refresh_token, optionsCookie(DUREE_RENOUVELLEMENT));
+  }
+  return reponse;
+}
+
+export const config = {
+  // Ni les fichiers statiques, ni les images, ni les routes de session (qui gèrent elles-mêmes leurs cookies).
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|session/|.*\\.(?:png|jpg|jpeg|svg|webp|ico|txt|woff2?)$).*)"],
+};

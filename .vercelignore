@@ -1,0 +1,24 @@
+# Déploiement de l'interface (v2) sur Vercel : ce qui ne doit JAMAIS partir.
+# La base personnelle de Louis et ses sauvegardes.
+data/
+# Les secrets.
+.env
+.env.*
+**/.env*
+# Le serveur Rust et le POC : déployés à part, depuis leur propre dossier.
+serveur/
+poc/
+supabase/
+# Outils, essais, documentation, arbres de travail des agents.
+.claude/
+.git/
+node_modules/
+.next/
+tests/
+test-results/
+playwright-report/
+parite/
+scripts/
+specs/
+docs/
+*.log

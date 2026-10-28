@@ -4,6 +4,7 @@ import { buttonClass } from "@/components/ui/Button";
 import { useEffect, useRef, useState } from "react";
 import { Settings } from "lucide-react";
 import { useTrailerMode, writeTrailerMode, type TrailerMode } from "@/components/trailerMode";
+import { CompteV2 } from "@/components/CompteV2";
 
 // Réglages de l'appareil — spec: specs/bandes-annonces-v1.md (FR-7)
 
@@ -59,6 +60,8 @@ export function SettingsMenu() {
           aria-label="Réglages"
           className="menu-pop menu-panel absolute right-0 top-full z-50 mt-2 w-72 max-w-[calc(100vw-2rem)] p-2"
         >
+          {/* En ligne seulement (v2) : le compte. Invisible en local. */}
+          <CompteV2 />
           <fieldset>
             <legend className="px-1 text-sm font-semibold text-foreground">Bandes-annonces</legend>
             <div className="mt-2 flex flex-col gap-1">

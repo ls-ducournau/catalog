@@ -52,3 +52,6 @@ next-env.d.ts
 
 # scripts et captures temporaires (agents, essais)
 /.tmp-*
+
+# Arbres de travail des agents (Claude Code)
+.claude/worktrees/

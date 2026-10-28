@@ -15,9 +15,7 @@ import {
   TitleListSection,
 } from "@/components/sections";
 import { Button, MonoMeta } from "@/components/ui";
-import { getDb } from "@/lib/db";
-import { getHomeFeatures, type HomeFeatures } from "@/lib/homeFeatures";
-import { getHomeShowcase, type HomeShowcase } from "@/lib/showcase";
+import { chargerAccueil } from "@/lib/accueilDonnees";
 
 // Accueil — spec: specs/design-system-v2-raycast.md (§ 7, HeroLayout). Le héros de DESIGN.md :
 // décor en éclats, grand titre, action principale neutre, mentions techniques en Geist Mono.
@@ -26,45 +24,12 @@ import { getHomeShowcase, type HomeShowcase } from "@/lib/showcase";
 // les sections « texte et visuel » dont le visuel est une vraie commande : Ce soir, Notation,
 // Recommandations et À découvrir, Duels, Bibliothèque, Sorties.
 
-// Les compteurs et les aperçus sont lus à chaque visite (lecture seule, base locale).
+// Les compteurs et les aperçus sont lus à chaque visite (lecture seule) : dans la base locale (v1)
+// ou auprès du serveur de la v2 (src/lib/accueilDonnees.ts).
 export const dynamic = "force-dynamic";
 
-function counts(): { total: number; rated: number; toWatch: number } | null {
-  try {
-    const row = getDb()
-      .prepare(
-        `SELECT COUNT(*) AS total,
-                SUM(CASE WHEN rating IS NOT NULL AND rating <> '' THEN 1 ELSE 0 END) AS rated,
-                SUM(CASE WHEN watch_status = 'Unwatched' THEN 1 ELSE 0 END) AS toWatch
-         FROM items`
-      )
-      .get() as { total: number; rated: number | null; toWatch: number | null };
-    return { total: row.total, rated: row.rated ?? 0, toWatch: row.toWatch ?? 0 };
-  } catch {
-    return null;
-  }
-}
-
-/** Les aperçus ; rien plutôt qu'une erreur si la base ou TMDB ne répondent pas. */
-async function showcase(): Promise<HomeShowcase | null> {
-  try {
-    return await getHomeShowcase(getDb());
-  } catch {
-    return null;
-  }
-}
-
-async function features(): Promise<HomeFeatures | null> {
-  try {
-    return await getHomeFeatures(getDb());
-  } catch {
-    return null;
-  }
-}
-
 export default async function Home() {
-  const stats = counts();
-  const [preview, keys] = await Promise.all([showcase(), features()]);
+  const { stats, showcase: preview, features: keys } = await chargerAccueil();
   const fr = (n: number) => n.toLocaleString("fr-FR");
   const plural = (n: number, one: string, many: string) => `${fr(n)} ${n > 1 ? many : one}`;
 
