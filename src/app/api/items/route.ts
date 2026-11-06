@@ -5,7 +5,7 @@ import type { AddSource } from "@/lib/journalService";
 import { actionErrorStatus, addTitleToLibrary } from "@/lib/libraryActions";
 import { getCoveredServiceIds } from "@/lib/settingsService";
 
-const ADD_SOURCES: AddSource[] = ["search", "discover", "suggestions", "triage", "tonight", "calendar"];
+const ADD_SOURCES: AddSource[] = ["search", "discover", "suggestions", "triage", "tonight", "calendar", "home"];
 
 const SORT_BY_VALUES: SortBy[] = [
   "name",

@@ -38,6 +38,7 @@ import type { Category } from "@/lib/libraryItem";
 import type { RecommendationProfile, RecommendedItem } from "@/lib/recommendationService";
 import type { ShowcaseTitle } from "@/lib/showcase";
 import { EASING_TOKENS } from "@/lib/tokens";
+import { SuggestionBadge, SuggestionButton, useSuggestions, type Suggestions } from "./suggestion";
 import type { TriageUndo, UnseenCard } from "@/lib/triageService";
 import { cn } from "@/lib/utils";
 import { closeTo } from "@/lib/format";
@@ -88,7 +89,8 @@ function fromRecommended(item: RecommendedItem): ShowcaseTitle {
 
 // ---------- La fenêtre de ta pile ----------
 
-function PickDetail({ title, onDismiss }: { title: ShowcaseTitle; onDismiss: () => void }) {
+function PickDetail({ title, onDismiss, suggestions }: { title: ShowcaseTitle; onDismiss: () => void; suggestions: Suggestions }) {
+  const addedId = title.suggestion ? suggestions.libraryIdOf(title) : null;
   const { covered } = useMyServices();
   const mine = includedIn(title.availability, covered);
   const near = title.neighbours.slice(0, 3);
@@ -101,6 +103,7 @@ function PickDetail({ title, onDismiss }: { title: ShowcaseTitle; onDismiss: () 
         <div className="flex min-w-0 flex-col items-start gap-2.5">
           <h3 className="line-clamp-2 text-subheading text-foreground">{title.name}</h3>
           <MetaRow>
+            {title.suggestion && <SuggestionBadge />}
             <span>{CATEGORY_LABEL[title.category]}</span>
             {title.year && <span>{title.year}</span>}
             {title.genres.length > 0 && <span>{genreLine(title.genres)}</span>}
@@ -123,15 +126,23 @@ function PickDetail({ title, onDismiss }: { title: ShowcaseTitle; onDismiss: () 
       </div>
       {title.overview && <p className="line-clamp-3 text-sm leading-relaxed text-muted">{title.overview}</p>}
       <div className="flex flex-wrap items-center gap-2">
-        <Button href={`/library?fiche=${title.id}`} size="sm">
-          Voir la fiche
-          <Kbd className="hidden sm:inline-flex">↵</Kbd>
-        </Button>
+        {title.suggestion && addedId === null ? (
+          <SuggestionButton title={title} suggestions={suggestions} />
+        ) : (
+          <Button href={`/library?fiche=${addedId ?? title.id}`} size="sm">
+            Voir la fiche
+            <Kbd className="hidden sm:inline-flex">↵</Kbd>
+          </Button>
+        )}
+        {title.suggestion && addedId !== null && <SuggestionButton title={title} suggestions={suggestions} />}
         <TrailerButton trailer={title.trailer} title={title.name} />
-        <Button size="sm" variant="ghost" onClick={onDismiss}>
-          <X size={14} aria-hidden="true" />
-          Ne plus me proposer
-        </Button>
+        {/* Une suggestion n'est pas dans ta pile : rien à écarter durablement. */}
+        {!title.suggestion && (
+          <Button size="sm" variant="ghost" onClick={onDismiss}>
+            <X size={14} aria-hidden="true" />
+            Ne plus me proposer
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -142,8 +153,20 @@ function PickDetail({ title, onDismiss }: { title: ShowcaseTitle; onDismiss: () 
  * (↑ ↓), le détail du titre choisi, ↵ pour sa fiche ; « Ne plus me proposer » l'écarte (annulable).
  * Un genre choisi dans « Tes goûts » recharge la liste sur ce genre.
  */
-function PileWindow({ picks, genre, onClearGenre }: { picks: ShowcaseTitle[]; genre: string | null; onClearGenre: () => void }) {
+function PileWindow({
+  picks,
+  genre,
+  onClearGenre,
+  heading,
+}: {
+  picks: ShowcaseTitle[];
+  genre: string | null;
+  onClearGenre: () => void;
+  /** Visiteur : ce ne sont pas « ta pile » mais les tendances. */
+  heading?: string;
+}) {
   const router = useRouter();
+  const suggestions = useSuggestions();
   const listId = useId();
   const [query, setQuery] = useState("");
   const [index, setIndex] = useState(0);
@@ -195,8 +218,12 @@ function PileWindow({ picks, genre, onClearGenre }: { picks: ShowcaseTitle[]; ge
   }, [selectedIndex]);
 
   const open = useCallback(() => {
-    if (selected) router.push(`/library?fiche=${selected.id}`);
-  }, [router, selected]);
+    if (!selected) return;
+    const addedId = selected.suggestion ? suggestions.libraryIdOf(selected) : selected.id;
+    // ↵ sur une suggestion : l'ajouter à ta pile ; ajoutée, sa fiche s'ouvre.
+    if (addedId === null) void suggestions.toggle(selected);
+    else router.push(`/library?fiche=${addedId}`);
+  }, [router, selected, suggestions]);
 
   async function dismiss(title: ShowcaseTitle) {
     setDismissed((prev) => [title, ...prev]);
@@ -240,7 +267,7 @@ function PileWindow({ picks, genre, onClearGenre }: { picks: ShowcaseTitle[]; ge
   }
 
   const lastDismissed = dismissed[0];
-  const status = message ?? (lastDismissed ? `« ${lastDismissed.name} » ne te sera plus proposé` : null);
+  const status = message ?? suggestions.message ?? (lastDismissed ? `« ${lastDismissed.name} » ne te sera plus proposé` : null);
 
   return (
     <article
@@ -276,7 +303,7 @@ function PileWindow({ picks, genre, onClearGenre }: { picks: ShowcaseTitle[]; ge
           </div>
           <div className="h-px bg-contrast-subtle" />
           <p className="flex items-center justify-between px-4 pb-1 pt-3 text-2xs font-medium text-muted">
-            <span>{genre ? `Ta pile, en ${genreLabel(genre).toLowerCase()}` : "Ta pile, dans l'ordre"}</span>
+            <span>{genre ? `Ta pile, en ${genreLabel(genre).toLowerCase()}` : (heading ?? "Ta pile, dans l'ordre")}</span>
             <span aria-hidden="true" className="hidden items-center gap-1 sm:flex">
               <Kbd>↑</Kbd>
               <Kbd>↓</Kbd>
@@ -302,11 +329,14 @@ function PileWindow({ picks, genre, onClearGenre }: { picks: ShowcaseTitle[]; ge
                 <li
                   key={t.id}
                   id={`${listId}-${t.id}`}
-                  data-impression={itemExposureKey(t.id)}
+                  data-impression={t.suggestion ? undefined : itemExposureKey(t.id)}
                   role="option"
                   aria-selected={i === selectedIndex}
                   onClick={() => setIndex(i)}
-                  onDoubleClick={() => router.push(`/library?fiche=${t.id}`)}
+                  onDoubleClick={() => {
+                    const id = t.suggestion ? suggestions.libraryIdOf(t) : t.id;
+                    if (id !== null) router.push(`/library?fiche=${id}`);
+                  }}
                   className={cn(
                     "pick-row flex cursor-pointer items-center gap-3 rounded-control px-2 py-1.5 text-sm",
                     i === selectedIndex ? "bg-selection text-foreground" : "text-muted"
@@ -324,14 +354,14 @@ function PileWindow({ picks, genre, onClearGenre }: { picks: ShowcaseTitle[]; ge
         </div>
         <div className="pick-detail flex min-w-0 flex-col justify-between gap-4 overflow-hidden p-5 sm:p-6">
           {selected ? (
-            <PickDetail title={selected} onDismiss={() => dismiss(selected)} />
+            <PickDetail title={selected} onDismiss={() => dismiss(selected)} suggestions={suggestions} />
           ) : (
             <p className="text-sm text-muted">Choisis un titre dans la liste.</p>
           )}
           {status && (
             <div className="flex min-h-8 flex-wrap items-center gap-3 text-sm text-muted">
               <span aria-live="polite">{status}</span>
-              {lastDismissed && !message && (
+              {lastDismissed && !message && !suggestions.message && (
                 <Button size="sm" variant="ghost" onClick={undoDismiss}>
                   <Undo2 size={14} aria-hidden="true" />
                   Annuler
@@ -739,23 +769,34 @@ export function RecommendationsWall({
   picks,
   profile,
   pileGenres,
+  visitor = false,
+  heading,
 }: {
   picks: ShowcaseTitle[];
   profile: RecommendationProfile | null;
   pileGenres: Record<string, number>;
+  /** Visiteur (spec accueil-vitrine-connexion-v1 § 3) : les tendances, sans pile à trier. */
+  visitor?: boolean;
+  /** Le titre de la liste quand elle ne montre que des suggestions (« Tendances de la semaine »). */
+  heading?: string;
 }) {
   const [genre, setGenre] = useState<string | null>(null);
   return (
     // Les deux cartes restent côte à côte dès 768 px (demande de l'utilisateur).
     <div className="grid min-w-0 gap-6 md:grid-cols-2 lg:col-span-2 lg:gap-8">
       <div className="min-w-0 md:col-span-2">
-        <PileWindow picks={picks} genre={genre} onClearGenre={() => setGenre(null)} />
+        <PileWindow
+          picks={picks}
+          genre={genre}
+          onClearGenre={() => setGenre(null)}
+          heading={heading ?? (visitor ? "Tendances de la semaine" : undefined)}
+        />
       </div>
-      <DiscoverDeck />
+      {!visitor && <DiscoverDeck />}
       {profile && profile.genres.length >= 3 ? (
         <TasteRadar profile={profile} pileGenres={pileGenres} genre={genre} onGenre={setGenre} />
       ) : (
-        <article className="feature-card taste-radar">
+        <article className={cn("feature-card taste-radar", visitor && "md:col-span-2")}>
           <h3 className="text-lg text-foreground">Tes goûts</h3>
           <p className="text-base text-muted">
             <span className="text-foreground">Note quelques titres</span> et Catalog apprendra ce que tu aimes.

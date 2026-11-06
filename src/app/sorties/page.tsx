@@ -230,11 +230,7 @@ export default function SortiesPage() {
         });
         const body = await res.json();
         if (!res.ok) {
-          setMessage(
-            body.error === "notion_not_configured"
-              ? "Notion n'est pas configuré, impossible d'ajouter."
-              : "Échec de l'ajout, réessaie."
-          );
+          setMessage("Échec de l'ajout, réessaie.");
           return;
         }
         setChanges((prev) => new Map(prev).set(key, body.item.id));

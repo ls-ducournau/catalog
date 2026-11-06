@@ -12,10 +12,12 @@ import {
   RecommendationsWall,
   ReleasesPreview,
   ShowcaseCarousel,
+  SuggestionRating,
   TitleListSection,
 } from "@/components/sections";
 import { Button, MonoMeta } from "@/components/ui";
-import { chargerAccueil } from "@/lib/accueilDonnees";
+import { chargerAccueil, chargerVitrine } from "@/lib/accueilDonnees";
+import { composerAccueil, NOTES_POUR_RECOS } from "@/lib/amorce";
 
 // Accueil — spec: specs/design-system-v2-raycast.md (§ 7, HeroLayout). Le héros de DESIGN.md :
 // décor en éclats, grand titre, action principale neutre, mentions techniques en Geist Mono.
@@ -23,15 +25,28 @@ import { chargerAccueil } from "@/lib/accueilDonnees";
 // alternant les aperçus pleine largeur tirés de raycast.com (carrousel, mur, liste du Store) et
 // les sections « texte et visuel » dont le visuel est une vraie commande : Ce soir, Notation,
 // Recommandations et À découvrir, Duels, Bibliothèque, Sorties.
+//
+// Trois états (specs/accueil-vitrine-connexion-v1.md, § 2 et § 3, règles dans src/lib/amorce.ts) :
+// un visiteur voit les mêmes sections remplies de titres tendances ; une bibliothèque qui démarre
+// voit ses titres complétés par des suggestions à ajouter ; une bibliothèque garnie, l'accueil du
+// compte à l'identique.
 
 // Les compteurs et les aperçus sont lus à chaque visite (lecture seule) : dans la base locale (v1)
 // ou auprès du serveur de la v2 (src/lib/accueilDonnees.ts).
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const { stats, showcase: preview, features: keys } = await chargerAccueil();
+  const [{ stats, showcase: preview, features: keys }, vitrine] = await Promise.all([chargerAccueil(), chargerVitrine()]);
+  const { moods, picks, lists, visiteur, demarrage } = composerAccueil(preview, vitrine, stats?.total ?? null);
+  const rated = stats?.rated ?? 0;
+  // Notation : sans titre vu à noter, des titres très vus à reconnaître (bibliothèque qui démarre).
+  const notationSuggeree = vitrine.rating.length > 0 && (visiteur || (demarrage && (keys?.rating.cards.length ?? 0) === 0));
   const fr = (n: number) => n.toLocaleString("fr-FR");
   const plural = (n: number, one: string, many: string) => `${fr(n)} ${n > 1 ? many : one}`;
+  const manque = Math.max(0, NOTES_POUR_RECOS - rated);
+  // Une section qui ne montre que des suggestions ne parle pas de « ta pile » ni de « ta bibliothèque ».
+  const queSuggestions = (titles: { suggestion?: unknown }[]) => titles.length > 0 && titles.every((t) => t.suggestion);
+  const bibliothequeVide = (stats?.total ?? 0) === 0;
 
   return (
     <HeroLayout
@@ -50,9 +65,15 @@ export default async function Home() {
               <Popcorn size={16} aria-hidden="true" />
               Que regarder ce soir
             </Button>
-            <Button href="/recommendations" size="lg">
-              Ma pile à voir
-            </Button>
+            {visiteur ? (
+              <Button href="/connexion" size="lg">
+                Se connecter
+              </Button>
+            ) : (
+              <Button href="/recommendations" size="lg">
+                Ma pile à voir
+              </Button>
+            )}
           </div>
           {stats && (
             <MonoMeta>
@@ -62,54 +83,90 @@ export default async function Home() {
         </div>
       }
     >
-      {preview && preview.moods.length > 0 && (
+      {moods.length > 0 && (
         <ShowcaseCarousel
           id="ce-soir"
           title="Il y a un titre pour ça."
-          lead="Choisis une envie, ta pile répond."
-          tabs={preview.moods}
+          lead={
+            visiteur
+              ? "Choisis une envie, les titres du moment répondent."
+              : demarrage
+                ? "Choisis une envie : ta pile d'abord, des suggestions pour la compléter."
+                : "Choisis une envie, ta pile répond."
+          }
+          tabs={moods}
           more={{ href: "/ce-soir", label: "Que regarder ce soir" }}
         />
       )}
 
-      {keys && (
+      {(keys || notationSuggeree) && (
         <FeatureSection
           id="notation"
           eyebrow={<FeatureEyebrow icon={<Star size={16} />}>Notation</FeatureEyebrow>}
           title="Note d'une touche."
-          lead="Tes titres vus arrivent un par un : 0 pour 💩, de 1 à 5 étoiles pour le reste. Même geste pour les personnes que tu aimes. Chaque note affine tes recommandations."
-          meta={`${plural(keys.rating.unratedSeen, "titre vu", "titres vus")} | ${plural(
-            keys.rating.unratedPeople,
-            "personne aimée",
-            "personnes aimées"
-          )} sans note`}
-          actions={
-            <>
-              <Button href="/tri?famille=seen">Noter mes titres vus</Button>
-              <ArrowLink href="/tri?famille=person&mode=noter">Noter les personnes</ArrowLink>
-            </>
+          lead={
+            notationSuggeree
+              ? `Des titres que presque tout le monde a vus : note ceux que tu connais, 0 pour 💩, de 1 à 5 étoiles. ${NOTES_POUR_RECOS} notes, et Catalog sait quoi te proposer.`
+              : "Tes titres vus arrivent un par un : 0 pour 💩, de 1 à 5 étoiles pour le reste. Même geste pour les personnes que tu aimes. Chaque note affine tes recommandations."
           }
-          visual={<RatingPreview cards={keys.rating.cards} remaining={keys.rating.unratedSeen} />}
+          meta={
+            keys && !notationSuggeree
+              ? `${plural(keys.rating.unratedSeen, "titre vu", "titres vus")} | ${plural(
+                  keys.rating.unratedPeople,
+                  "personne aimée",
+                  "personnes aimées"
+                )} sans note`
+              : undefined
+          }
+          actions={
+            keys && !notationSuggeree ? (
+              <>
+                <Button href="/tri?famille=seen">Noter mes titres vus</Button>
+                <ArrowLink href="/tri?famille=person&mode=noter">Noter les personnes</ArrowLink>
+              </>
+            ) : undefined
+          }
+          visual={
+            notationSuggeree ? (
+              <SuggestionRating titles={vitrine.rating} rated={rated} goal={NOTES_POUR_RECOS} />
+            ) : (
+              keys && <RatingPreview cards={keys.rating.cards} remaining={keys.rating.unratedSeen} />
+            )
+          }
         />
       )}
 
-      {preview && preview.picks.length > 0 && (
+      {picks.length > 0 && (
         <FeatureWall
           id="recommandations"
           title="À la une."
-          lead="Ta pile, dans l'ordre de tes goûts."
+          lead={
+            visiteur
+              ? "Les titres dont on parle cette semaine."
+              : demarrage && !preview?.profile && manque > 0
+                ? `Note encore ${plural(manque, "titre", "titres")} pour des recommandations à ton goût.`
+                : "Ta pile, dans l'ordre de tes goûts."
+          }
           footer={
-            <>
-              <ArrowLink href="/recommendations">Toutes tes recommandations</ArrowLink>
-              <ArrowLink href="/tri?famille=unseen">Trier ce qui est à découvrir</ArrowLink>
-            </>
+            visiteur ? undefined : (
+              <>
+                <ArrowLink href="/recommendations">Toutes tes recommandations</ArrowLink>
+                <ArrowLink href="/tri?famille=unseen">Trier ce qui est à découvrir</ArrowLink>
+              </>
+            )
           }
         >
-          <RecommendationsWall picks={preview.picks} profile={preview.profile} pileGenres={preview.pileGenres} />
+          <RecommendationsWall
+            picks={picks}
+            profile={preview?.profile ?? null}
+            pileGenres={preview?.pileGenres ?? {}}
+            visitor={visiteur}
+            heading={queSuggestions(picks) ? "Tendances de la semaine" : undefined}
+          />
         </FeatureWall>
       )}
 
-      {keys && (
+      {(keys || visiteur) && (
         <FeatureSection
           id="duels"
           reverse
@@ -117,7 +174,7 @@ export default async function Home() {
           title="Deux titres, un seul passe devant."
           lead="Tu choisis ton préféré, Catalog range. Duel après duel, ton classement se précise, jusque dans chaque palier d'étoiles."
           meta={
-            keys.duel.ranked > 0
+            keys && keys.duel.ranked > 0
               ? `${plural(keys.duel.ranked, "titre classé", "titres classés")} | ${plural(
                   keys.duel.tiers,
                   "palier",
@@ -126,45 +183,54 @@ export default async function Home() {
               : undefined
           }
           actions={
-            <>
-              <Button href="/duels">Lancer les duels</Button>
-              <ArrowLink href="/classement">Voir ton classement</ArrowLink>
-            </>
+            keys ? (
+              <>
+                <Button href="/duels">Lancer les duels</Button>
+                <ArrowLink href="/classement">Voir ton classement</ArrowLink>
+              </>
+            ) : undefined
           }
-          visual={<DuelPreview initial={keys.duel.pair} />}
+          visual={<DuelPreview initial={keys?.duel.pair ?? null} />}
         />
       )}
 
-      {preview && preview.lists.length > 0 && (
+      {lists.length > 0 && (
         <TitleListSection
           id="bibliotheque"
-          title="Ta bibliothèque"
-          lead="Tes derniers ajouts, tes coups de cœur, les plus acclamés. Filtre par type ou par note, note sur place."
-          tabs={preview.lists}
-          stats={preview.stats}
+          title={visiteur ? "Les titres du moment" : "Ta bibliothèque"}
+          lead={
+            visiteur
+              ? "Les tendances de la semaine, ce qui sort au cinéma, les mieux notés. Ajoute d'un clic ce qui te tente."
+              : bibliothequeVide
+                ? "Elle est vide pour l'instant : les tendances, ce qui sort au cinéma, les mieux notés. Ajoute d'un clic ce qui te tente."
+                : "Tes derniers ajouts, tes coups de cœur, les plus acclamés. Filtre par type ou par note, note sur place."
+          }
+          tabs={lists}
+          stats={visiteur || bibliothequeVide ? undefined : preview?.stats}
+          library={!visiteur}
         />
       )}
 
       {/* playlists-v2 FR-10 : une fonction clé de la vitrine, après la bibliothèque (décision de
           l'utilisateur : pas juste sous le héros). Visuel à gauche, pour alterner avec Sorties. */}
-      {keys && (
+      {(keys || visiteur) && (
         <FeatureSection
           id="playlists"
           reverse
           eyebrow={<FeatureEyebrow icon={<ListVideo size={16} />}>Playlists</FeatureEyebrow>}
           title="Tes listes, dans l'ordre."
           lead="Une saga à revoir, des films de Noël, une soirée à deux : range tes titres, Catalog te dit lequel vient ensuite et où le regarder."
-          meta={keys.playlist.count > 0 ? plural(keys.playlist.count, "playlist", "playlists") : undefined}
+          meta={keys && keys.playlist.count > 0 ? plural(keys.playlist.count, "playlist", "playlists") : undefined}
           // Sans playlist, l'invitation du visuel porte l'action : pas de second « Nouvelle playlist ».
           actions={
-            keys.playlist.count > 0 ? (
+            keys && keys.playlist.count > 0 ? (
               <>
                 <Button href="/playlists">Voir tes playlists</Button>
                 <ArrowLink href="/playlists?nouvelle=1">Nouvelle playlist</ArrowLink>
               </>
             ) : undefined
           }
-          visual={<PlaylistPreview initial={keys.playlist.current} />}
+          visual={<PlaylistPreview initial={keys?.playlist.current ?? null} />}
         />
       )}
 

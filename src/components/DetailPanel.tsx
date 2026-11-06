@@ -227,7 +227,7 @@ export function DetailPanel({
               <span />
             )}
             <span className="ml-auto flex items-center gap-1">
-              {/* Recharger depuis TMDB : titre, synopsis, note et affiche. Local, jamais vers Notion. */}
+              {/* Recharger depuis TMDB : titre, synopsis, note et affiche. */}
               <button
                 type="button"
                 onClick={refetch}

@@ -24,6 +24,7 @@ import type { Category, LibraryItem, WatchStatus } from "@/lib/libraryItem";
 import { prefersReducedMotion } from "@/lib/motion";
 import type { LibraryStats, ShowcaseTab, ShowcaseTitle } from "@/lib/showcase";
 import { cn } from "@/lib/utils";
+import { SuggestionBadge, SuggestionButton, useSuggestions, type Suggestions } from "./suggestion";
 
 // Vitrine de l'accueil — fiche docs/design-reference/raycast/composants/vitrine.md. Trois aperçus
 // repris de raycast.com : le carrousel d'extensions de l'accueil (ShowcaseCarousel), le mur de
@@ -46,9 +47,9 @@ function useOnMyServices(title: ShowcaseTitle) {
 }
 
 /** Lien étiré : il couvre toute la carte (`position: relative`) ; les boutons sont au-dessus. */
-function StretchedLink({ title, className }: { title: ShowcaseTitle; className: string }) {
+function StretchedLink({ title, className, href }: { title: ShowcaseTitle; className: string; href?: string }) {
   return (
-    <Link href={ficheHref(title)} className={cn("outline-none after:absolute after:inset-0", className)}>
+    <Link href={href ?? ficheHref(title)} className={cn("outline-none after:absolute after:inset-0", className)}>
       {title.name}
     </Link>
   );
@@ -158,13 +159,18 @@ function Ticker({ items }: { items: TickerItem[] }) {
 export function ShowcaseCard({
   title,
   actions,
+  suggestions,
   now = null,
 }: {
   title: ShowcaseTitle;
   actions?: ShowcaseCardActions;
+  /** Une suggestion (hors bibliothèque) s'ajoute d'un clic au lieu des gestes de Ce soir. */
+  suggestions?: Suggestions;
   now?: Date | null;
 }) {
   const mine = useOnMyServices(title);
+  // Une suggestion ajoutée devient un titre de ta pile : sa fiche s'ouvre.
+  const addedId = title.suggestion ? (suggestions?.libraryIdOf(title) ?? null) : null;
   const series = title.type === "TV Series";
   const end = title.runtime && !series && now ? clock(new Date(now.getTime() + title.runtime * 60_000)) : null;
   const timing = title.runtime
@@ -186,7 +192,7 @@ export function ShowcaseCard({
   ];
   return (
     <article
-      data-impression={itemExposureKey(title.id)}
+      data-impression={title.suggestion ? undefined : itemExposureKey(title.id)}
       className={cn("showcase-card showcase-card-poster", actions?.watching && "is-open")}
       style={title.tint ? ({ "--tint": title.tint } as CSSProperties) : undefined}
     >
@@ -194,9 +200,18 @@ export function ShowcaseCard({
       <div aria-hidden="true" className="showcase-shade" />
       <div className="showcase-overlay">
         <h3 className="line-clamp-2 text-lg text-foreground">
-          <StretchedLink title={title} className="showcase-link" />
+          {title.suggestion && addedId === null ? (
+            title.name
+          ) : (
+            <StretchedLink title={title} href={addedId !== null ? `/library?fiche=${addedId}` : undefined} className="showcase-link" />
+          )}
         </h3>
         <MetaRow className="mt-1.5 flex-nowrap">
+          {title.suggestion && (
+            <span className="shrink-0">
+              <SuggestionBadge />
+            </span>
+          )}
           {title.compatibility !== null && (
             <span className="shrink-0">
               <CompatibilityChip value={title.compatibility} />
@@ -224,7 +239,8 @@ export function ShowcaseCard({
             </div>
           ) : (
             <div className="relative z-10 flex items-center gap-2">
-              {actions && (
+              {title.suggestion && suggestions && <SuggestionButton title={title} suggestions={suggestions} onImage />}
+              {actions && !title.suggestion && (
                 <>
                   <Button size="sm" variant="overlay" onClick={actions.onWatch} loading={actions.pending} aria-label={`Je regarde « ${title.name} »`}>
                     {!actions.pending && <Check size={14} aria-hidden="true" />}
@@ -280,6 +296,7 @@ export function ShowcaseCarousel({
   const current = tabs.find((tab) => tab.value === active) ?? tabs[0];
   const shown = current ? current.titles.filter((t) => !skipped.some((s) => s.id === t.id)) : [];
   const now = useNow();
+  const suggestions = useSuggestions();
 
   const measure = useCallback(() => {
     const el = reel.current;
@@ -395,6 +412,7 @@ export function ShowcaseCarousel({
             key={t.id}
             title={t}
             now={now}
+            suggestions={suggestions}
             actions={{
               watching: watching.has(t.id),
               pending: pending === t.id,
@@ -423,9 +441,9 @@ export function ShowcaseCarousel({
         )}
         <div className="flex min-w-0 items-center gap-3">
           <span aria-live="polite" className="min-w-0 truncate text-sm text-muted">
-            {message ?? (lastSkipped ? `« ${lastSkipped.name} » écarté pour ce soir` : "")}
+            {message ?? suggestions.message ?? (lastSkipped ? `« ${lastSkipped.name} » écarté pour ce soir` : "")}
           </span>
-          {lastSkipped && !message && (
+          {lastSkipped && !message && !suggestions.message && (
             <Button size="sm" variant="ghost" onClick={() => setSkipped((prev) => prev.slice(1))}>
               <Undo2 size={14} aria-hidden="true" />
               Annuler
@@ -514,7 +532,17 @@ export type TitleRowActions = {
  * « Vu » et les étoiles (on note sur place), ou « À voir » et « Marquer vu ». Teintée par
  * l'affiche ; le titre est un lien étiré vers la fiche.
  */
-export function TitleRowCard({ title, actions }: { title: ShowcaseTitle; actions?: TitleRowActions }) {
+export function TitleRowCard({
+  title,
+  actions,
+  suggestions,
+}: {
+  title: ShowcaseTitle;
+  actions?: TitleRowActions;
+  /** Une suggestion (hors bibliothèque) s'ajoute d'un clic au lieu d'être notée. */
+  suggestions?: Suggestions;
+}) {
+  const addedId = title.suggestion ? (suggestions?.libraryIdOf(title) ?? null) : null;
   const stars = starCount(title.rating);
   const watched = title.watchStatus === "Watched";
   const director = title.directors[0];
@@ -533,9 +561,14 @@ export function TitleRowCard({ title, actions }: { title: ShowcaseTitle; actions
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
             <h3 className="line-clamp-2 text-lg text-foreground">
-              <StretchedLink title={title} className="row-link" />
+              {title.suggestion && addedId === null ? (
+                title.name
+              ) : (
+                <StretchedLink title={title} href={addedId !== null ? `/library?fiche=${addedId}` : undefined} className="row-link" />
+              )}
             </h3>
             <MetaRow className="mt-1">
+              {title.suggestion && <SuggestionBadge />}
               {title.year && <span>{title.year}</span>}
               {title.genres.length > 0 && <span>{genreLine(title.genres)}</span>}
             </MetaRow>
@@ -544,7 +577,11 @@ export function TitleRowCard({ title, actions }: { title: ShowcaseTitle; actions
           <ScoreBadge voteAverage={title.voteAverage} voteCount={title.voteCount} />
         </div>
         {title.overview && <p className="line-clamp-2 text-sm text-muted">{title.overview}</p>}
-        {actions ? (
+        {title.suggestion ? (
+          <div className="relative z-10 mt-auto flex min-h-8 flex-wrap items-center gap-x-3 gap-y-2 pt-1">
+            {suggestions && <SuggestionButton title={title} suggestions={suggestions} />}
+          </div>
+        ) : actions ? (
           <div className="relative z-10 mt-auto flex min-h-8 flex-wrap items-center gap-x-3 gap-y-2 pt-1">
             {watched ? (
               <>
@@ -690,6 +727,7 @@ export function TitleListSection({
   eyebrow,
   tabs,
   stats,
+  library = true,
 }: {
   id: string;
   title: string;
@@ -697,8 +735,11 @@ export function TitleListSection({
   eyebrow?: ReactNode;
   tabs: ShowcaseTab[];
   stats?: LibraryStats;
+  /** Faux pour un visiteur : pas de bibliothèque où chercher, seulement des suggestions. */
+  library?: boolean;
 }) {
   const router = useRouter();
+  const suggestions = useSuggestions();
   const [active, setActive] = useState(tabs[0]?.value ?? "");
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<Category | null>(null);
@@ -804,7 +845,7 @@ export function TitleListSection({
     setPatches((prev) => new Map(prev).set(change.title.id, { ...prev.get(change.title.id), ...restored }));
   }
 
-  const status = message ?? (last ? `« ${last.title.name} » ${last.label}` : null);
+  const status = message ?? suggestions.message ?? (last ? `« ${last.title.name} » ${last.label}` : null);
   const filterLabel = [category && CATEGORY_PLURAL[category], rating !== null && (rating === 0 ? "💩" : `${rating} étoile${rating > 1 ? "s" : ""}`)]
     .filter(Boolean)
     .join(", ");
@@ -830,17 +871,19 @@ export function TitleListSection({
                 setQuery("");
               }}
             />
-            <form role="search" onSubmit={search} className="w-full sm:ml-auto sm:w-64">
-              <SearchField
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onClear={() => setQuery("")}
-                searching={loading}
-                shortcut={["↵"]}
-                placeholder="Rechercher un titre…"
-                aria-label="Rechercher dans ta bibliothèque"
-              />
-            </form>
+            {library && (
+              <form role="search" onSubmit={search} className="w-full sm:ml-auto sm:w-64">
+                <SearchField
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onClear={() => setQuery("")}
+                  searching={loading}
+                  shortcut={["↵"]}
+                  placeholder="Rechercher un titre…"
+                  aria-label="Rechercher dans ta bibliothèque"
+                />
+              </form>
+            )}
           </div>
 
           {fetchKey && (
@@ -881,6 +924,7 @@ export function TitleListSection({
               <li key={t.id}>
                 <TitleRowCard
                   title={t}
+                  suggestions={suggestions}
                   actions={{
                     pending: pending === t.id,
                     onRate: (next) => void apply(t, { rating: next }, ratingPhrase(next), { rating: t.rating }),
@@ -894,7 +938,7 @@ export function TitleListSection({
 
           <div className="flex min-h-8 flex-wrap items-center gap-3 text-sm text-muted">
             <span aria-live="polite">{status ?? ""}</span>
-            {last && !message && (
+            {last && !message && !suggestions.message && (
               <Button size="sm" variant="ghost" onClick={undo}>
                 <Undo2 size={14} aria-hidden="true" />
                 Annuler

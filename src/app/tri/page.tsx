@@ -133,8 +133,6 @@ const COPY: Record<
 };
 
 const ERROR_MESSAGE: Record<string, string> = {
-  notion_unreachable: "Notion est injoignable : le titre n'a pas été ajouté.",
-  notion_not_configured: "Notion n'est pas configuré : ajout impossible.",
   tmdb_not_found: "Titre introuvable chez TMDB.",
 };
 
@@ -328,7 +326,7 @@ export default function TriPage() {
       setHistory((h) => [...h.slice(-(HISTORY_MAX - 1)), entry]);
 
       request.catch((err: Error) => {
-        // Réponse refusée (Notion injoignable…) : la carte revient, rien n'est compté.
+        // Réponse refusée (TMDB injoignable…) : la carte revient, rien n'est compté.
         setHistory((h) => h.filter((e) => e !== entry));
         setCounts((c) =>
           value === "skip" ? { ...c, skipped: c.skipped - 1 } : { ...c, answered: c.answered - 1 }
