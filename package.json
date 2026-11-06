@@ -13,7 +13,8 @@
     "test:visual": "playwright test tests/visual",
     "check": "node scripts/build-tokens.mjs --check && next typegen && tsc --noEmit && eslint && vitest run && node scripts/ds-audit.mjs",
     "test:motion": "playwright test tests/motion --project=ordinateur",
-    "tokens": "node scripts/build-tokens.mjs"
+    "tokens": "node scripts/build-tokens.mjs",
+    "deploy": "node scripts/deployer.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

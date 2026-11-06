@@ -55,3 +55,6 @@ next-env.d.ts
 
 # Arbres de travail des agents (Claude Code)
 .claude/worktrees/
+
+# Réglages personnels de Claude Code (autorisations), jamais versionnés.
+.claude/settings.local.json
