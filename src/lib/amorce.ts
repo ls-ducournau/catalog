@@ -49,7 +49,9 @@ function completerEnvies(own: ShowcaseTab[], vitrine: ShowcaseTab[], demarrage: 
 
 export function composerAccueil(preview: HomeShowcase | null, vitrine: Vitrine, total: number | null): AccueilCompose {
   if (!preview || total === null) {
-    return { moods: vitrine.moods, picks: vitrine.picks, lists: vitrine.lists, visiteur: true, demarrage: true };
+    // Les tendances sont déjà « À la une » : la liste du visiteur garde le cinéma et les mieux notés.
+    const lists = vitrine.lists.filter((t) => t.value !== "trending");
+    return { moods: vitrine.moods, picks: vitrine.picks, lists: lists.length > 0 ? lists : vitrine.lists, visiteur: true, demarrage: true };
   }
   const demarrage = total < DEMARRAGE_TITRES;
   const suggestions = vitrine.lists.find((t) => t.value === "trending")?.titles ?? vitrine.picks;

@@ -16,6 +16,8 @@ import {
   TitleListSection,
 } from "@/components/sections";
 import { Button, MonoMeta } from "@/components/ui";
+import { DuelsVisite, PlaylistVisite, SortiesVisite, TriVisite } from "@/components/visite/chapitres";
+import { VisiteProvider } from "@/components/visite/VisiteEtat";
 import { chargerAccueil, chargerVitrine } from "@/lib/accueilDonnees";
 import { composerAccueil, NOTES_POUR_RECOS } from "@/lib/amorce";
 
@@ -61,10 +63,17 @@ export default async function Home() {
             Note, classe, trouve quoi regarder ce soir : Catalog apprend de chacun de tes avis.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <Button href="/ce-soir" variant="primary" size="lg">
-              <Popcorn size={16} aria-hidden="true" />
-              Que regarder ce soir
-            </Button>
+            {visiteur ? (
+              // Un visiteur commence par la visite (specs/visite-interactive-v1.md).
+              <Button href="/visite" variant="primary" size="lg">
+                Fais le tour
+              </Button>
+            ) : (
+              <Button href="/ce-soir" variant="primary" size="lg">
+                <Popcorn size={16} aria-hidden="true" />
+                Que regarder ce soir
+              </Button>
+            )}
             {visiteur ? (
               <Button href="/connexion" size="lg">
                 Se connecter
@@ -95,11 +104,26 @@ export default async function Home() {
                 : "Choisis une envie, ta pile répond."
           }
           tabs={moods}
-          more={{ href: "/ce-soir", label: "Que regarder ce soir" }}
+          more={visiteur ? { href: "/visite#ce-soir", label: "Essayer Ce soir" } : { href: "/ce-soir", label: "Que regarder ce soir" }}
         />
       )}
 
-      {(keys || notationSuggeree) && (
+      {visiteur && vitrine.rating.length > 0 && (
+        <FeatureSection
+          id="notation"
+          eyebrow={<FeatureEyebrow icon={<Star size={16} />}>Notation</FeatureEyebrow>}
+          title="Commence par ce que tu as vu."
+          lead="Des titres que presque tout le monde connaît. Vu, pas vu, ou ça te tente : c'est la première étape de la visite, et rien n'est enregistré avant que tu le gardes."
+          actions={<ArrowLink href="/visite#notation">Continuer la visite</ArrowLink>}
+          visual={
+            <VisiteProvider>
+              <TriVisite titres={vitrine.rating} />
+            </VisiteProvider>
+          }
+        />
+      )}
+
+      {!visiteur && (keys || notationSuggeree) && (
         <FeatureSection
           id="notation"
           eyebrow={<FeatureEyebrow icon={<Star size={16} />}>Notation</FeatureEyebrow>}
@@ -148,7 +172,9 @@ export default async function Home() {
                 : "Ta pile, dans l'ordre de tes goûts."
           }
           footer={
-            visiteur ? undefined : (
+            visiteur ? (
+              <ArrowLink href="/visite#recos">Tes recommandations, dans la visite</ArrowLink>
+            ) : (
               <>
                 <ArrowLink href="/recommendations">Toutes tes recommandations</ArrowLink>
                 <ArrowLink href="/tri?famille=unseen">Trier ce qui est à découvrir</ArrowLink>
@@ -188,9 +214,20 @@ export default async function Home() {
                 <Button href="/duels">Lancer les duels</Button>
                 <ArrowLink href="/classement">Voir ton classement</ArrowLink>
               </>
-            ) : undefined
+            ) : (
+              <ArrowLink href="/visite#duels">Départager tes titres, dans la visite</ArrowLink>
+            )
           }
-          visual={<DuelPreview initial={keys?.duel.pair ?? null} />}
+          visual={
+            keys ? (
+              <DuelPreview initial={keys.duel.pair} />
+            ) : (
+              // Un visiteur tranche entre des titres connus : rien n'est gardé.
+              <VisiteProvider persistant={false}>
+                <DuelsVisite titres={vitrine.rating.slice(0, 6)} libre />
+              </VisiteProvider>
+            )
+          }
         />
       )}
 
@@ -228,20 +265,46 @@ export default async function Home() {
                 <Button href="/playlists">Voir tes playlists</Button>
                 <ArrowLink href="/playlists?nouvelle=1">Nouvelle playlist</ArrowLink>
               </>
+            ) : visiteur ? (
+              <ArrowLink href="/visite#playlists">Ta liste d&apos;envies, dans la visite</ArrowLink>
             ) : undefined
           }
-          visual={<PlaylistPreview initial={keys?.playlist.current ?? null} />}
+          visual={
+            keys ? (
+              <PlaylistPreview initial={keys.playlist.current} />
+            ) : (
+              // Un exemple : cocher « Vu » fait avancer « Ensuite », rien n'est gardé.
+              <VisiteProvider persistant={false}>
+                <PlaylistVisite titres={[]} exemple={vitrine.picks.slice(0, 5)} />
+              </VisiteProvider>
+            )
+          }
         />
       )}
 
-      <FeatureSection
-        id="sorties"
-        eyebrow={<FeatureEyebrow icon={<CalendarDays size={16} />}>Sorties</FeatureEyebrow>}
-        title="Ce qui sort, pour toi."
-        lead="Cinéma et séries, semaine par semaine, avec ta compatibilité pour chaque titre. Ajoute d'un clic ce qui te tente."
-        actions={<Button href="/sorties">Voir les sorties</Button>}
-        visual={<ReleasesPreview />}
-      />
+      {visiteur ? (
+        <FeatureSection
+          id="sorties"
+          eyebrow={<FeatureEyebrow icon={<CalendarDays size={16} />}>Sorties</FeatureEyebrow>}
+          title="Ce qui sort, à ne pas rater."
+          lead="À l'affiche et bientôt au cinéma. Ce qui te tente rejoint ta pile, et te suit dans la visite jusqu'à ce que tu le gardes."
+          actions={<ArrowLink href="/visite#sorties">Les sorties, dans la visite</ArrowLink>}
+          visual={
+            <VisiteProvider>
+              <SortiesVisite sorties={vitrine.lists.find((t) => t.value === "cinema")?.titles ?? []} />
+            </VisiteProvider>
+          }
+        />
+      ) : (
+        <FeatureSection
+          id="sorties"
+          eyebrow={<FeatureEyebrow icon={<CalendarDays size={16} />}>Sorties</FeatureEyebrow>}
+          title="Ce qui sort, pour toi."
+          lead="Cinéma et séries, semaine par semaine, avec ta compatibilité pour chaque titre. Ajoute d'un clic ce qui te tente."
+          actions={<Button href="/sorties">Voir les sorties</Button>}
+          visual={<ReleasesPreview />}
+        />
+      )}
     </HeroLayout>
   );
 }

@@ -21,6 +21,7 @@ import {
 import { CompteBouton } from "@/components/CompteBouton";
 import { SettingsMenu } from "@/components/SettingsMenu";
 import { Logo } from "@/components/brand/Logo";
+import { versVisite } from "@/lib/visite";
 import { Button } from "@/components/ui";
 
 type NavLink = {
@@ -126,7 +127,9 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export default function NavBar() {
+export default function NavBar({ visiteur = false }: { visiteur?: boolean }) {
+  // Un visiteur découvre chaque partie dans la visite (specs/visite-interactive-v1.md), pas sur une page vide.
+  const lien = (href: string) => (visiteur ? versVisite(href) : href);
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const moreButton = useRef<HTMLButtonElement | null>(null);
@@ -172,37 +175,46 @@ export default function NavBar() {
             </Link>
             {/* Les menus ne tiennent qu'à partir de 1024 px : en dessous, la barre d'onglets du bas
                 prend le relais. */}
-            <TopMenus pathname={pathname} />
+            <TopMenus pathname={pathname} lien={lien} />
             <div className="ml-auto flex items-center gap-2">
               {/* En ligne seulement : « Se connecter », ou l'initiale du compte. */}
               <CompteBouton />
-              <SettingsMenu />
+              {/* Un visiteur n'a ni réglages ni bibliothèque où ajouter (décision de Louis, 2026-11-06). */}
+              {!visiteur && <SettingsMenu />}
               {/* Ajouter un titre, depuis n'importe quelle page : la fenêtre d'ajout de la
                   bibliothèque s'ouvre (sur place si on y est déjà). */}
-              <Button
-                href="/library?ajouter=1"
-                onClick={(e) => {
-                  if (pathname !== "/library") return;
-                  e.preventDefault();
-                  window.dispatchEvent(new Event(ADD_TITLE_EVENT));
-                }}
-                aria-label="Ajouter un titre"
-                title="Ajouter un titre"
-                variant="secondary"
-                className="max-xl:btn-icon"
-              >
-                <Plus size={15} aria-hidden="true" />
-                <span className="hidden xl:inline">Ajouter</span>
-              </Button>
-              <Button
-                href="/ce-soir"
-                aria-current={isActive(pathname, "/ce-soir") ? "page" : undefined}
-                variant="primary"
-                className="hidden lg:inline-flex"
-              >
-                <Popcorn size={15} aria-hidden="true" />
-                Ce soir
-              </Button>
+              {!visiteur && (
+                <Button
+                  href="/library?ajouter=1"
+                  onClick={(e) => {
+                    if (pathname !== "/library") return;
+                    e.preventDefault();
+                    window.dispatchEvent(new Event(ADD_TITLE_EVENT));
+                  }}
+                  aria-label="Ajouter un titre"
+                  title="Ajouter un titre"
+                  variant="secondary"
+                  className="max-xl:btn-icon"
+                >
+                  <Plus size={15} aria-hidden="true" />
+                  <span className="hidden xl:inline">Ajouter</span>
+                </Button>
+              )}
+              {visiteur ? (
+                <Button href="/visite" aria-current={pathname === "/visite" ? "page" : undefined} variant="primary" className="hidden lg:inline-flex">
+                  Fais le tour
+                </Button>
+              ) : (
+                <Button
+                  href="/ce-soir"
+                  aria-current={isActive(pathname, "/ce-soir") ? "page" : undefined}
+                  variant="primary"
+                  className="hidden lg:inline-flex"
+                >
+                  <Popcorn size={15} aria-hidden="true" />
+                  Ce soir
+                </Button>
+              )}
             </div>
           </nav>
         </div>
@@ -221,7 +233,7 @@ export default function NavBar() {
             return (
               <li key={link.href} className={`min-w-0 flex-1 ${link.primary ? "flex" : "hidden sm:flex"}`}>
                 <Link
-                  href={link.href}
+                  href={lien(link.href)}
                   aria-current={active ? "page" : undefined}
                   className="group flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg outline-none transition-transform duration-100 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-focus"
                 >
@@ -265,7 +277,7 @@ export default function NavBar() {
                   <li key={link.href}>
                     <Link
                       ref={index === 0 ? firstMoreLink : undefined}
-                      href={link.href}
+                      href={lien(link.href)}
                       onClick={() => setMoreOpen(false)}
                       aria-current={active ? "page" : undefined}
                       className={`flex min-h-14 items-center gap-3 rounded-lg px-3 py-2 outline-none transition-colors duration-100 focus-visible:ring-2 focus-visible:ring-focus ${
@@ -306,7 +318,7 @@ function entryActive(pathname: string, search: string, href: string): boolean {
  * ou au clavier ; le panneau (deux colonnes d'entrées, une carte mise en avant, un pied) se pose
  * sous la barre. Échap le ferme, comme un clic ailleurs ou un changement de page.
  */
-function TopMenus({ pathname }: { pathname: string }) {
+function TopMenus({ pathname, lien }: { pathname: string; lien: (href: string) => string }) {
   const [open, setOpen] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -394,7 +406,7 @@ function TopMenus({ pathname }: { pathname: string }) {
                     {menu.entries.map((entry) => (
                       <li key={entry.href}>
                         <Link
-                          href={entry.href}
+                          href={lien(entry.href)}
                           aria-current={entryActive(pathname, search, entry.href) ? "page" : undefined}
                           onClick={() => setOpen(null)}
                           className="mega-item"
@@ -405,7 +417,7 @@ function TopMenus({ pathname }: { pathname: string }) {
                       </li>
                     ))}
                   </ul>
-                  <Link href={menu.feature.href} onClick={() => setOpen(null)} className="mega-feature">
+                  <Link href={lien(menu.feature.href)} onClick={() => setOpen(null)} className="mega-feature">
                     <span aria-hidden="true" className="shards relative flex h-24 items-center justify-center">
                       <span className="icon-circle relative z-10 size-11">
                         <Feature size={20} />
@@ -422,7 +434,7 @@ function TopMenus({ pathname }: { pathname: string }) {
                     <span className="font-medium text-foreground">{menu.footer.strong}</span>{" "}
                     <span className="text-muted">{menu.footer.rest}</span>
                   </p>
-                  <Link href={menu.footer.href} onClick={() => setOpen(null)} className="arrow-link text-sm">
+                  <Link href={lien(menu.footer.href)} onClick={() => setOpen(null)} className="arrow-link text-sm">
                     {menu.footer.cta}
                     <ArrowRight size={14} aria-hidden="true" />
                   </Link>

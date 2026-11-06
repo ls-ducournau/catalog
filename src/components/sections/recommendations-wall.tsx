@@ -286,8 +286,8 @@ function PileWindow({
                 setQuery(e.target.value);
                 setIndex(0);
               }}
-              placeholder="Filtrer ta pile…"
-              aria-label="Filtrer ta pile"
+              placeholder={heading ? "Filtrer…" : "Filtrer ta pile…"}
+              aria-label={heading ? "Filtrer la liste" : "Filtrer ta pile"}
               role="combobox"
               aria-expanded="true"
               aria-controls={listId}
@@ -793,7 +793,8 @@ export function RecommendationsWall({
         />
       </div>
       {!visitor && <DiscoverDeck />}
-      {profile && profile.genres.length >= 3 ? (
+      {/* Un visiteur note dans la Notation, juste au-dessus : pas de carte « Tes goûts » en double. */}
+      {visitor ? null : profile && profile.genres.length >= 3 ? (
         <TasteRadar profile={profile} pileGenres={pileGenres} genre={genre} onGenre={setGenre} />
       ) : (
         <article className={cn("feature-card taste-radar", visitor && "md:col-span-2")}>

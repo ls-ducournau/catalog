@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Bricolage_Grotesque, Geist_Mono, Work_Sans } from "next/font/google";
 import NavBar from "./NavBar";
 import { PlaylistDialogHost } from "@/components/playlists/PlaylistDialog";
 import { ImpressionTracker } from "@/components/ImpressionTracker";
 import { MotionRoot } from "@/components/MotionRoot";
 import { BackToTop } from "@/components/BackToTop";
+import { ENTETE_JETON, estV2 } from "@/lib/sessionV2";
 import "./globals.css";
 
 // Polices (choix de l'utilisateur, 2026-09-28) : Work Sans pour le texte, Bricolage Grotesque en
@@ -31,7 +33,10 @@ export const metadata: Metadata = {
   description: "Tes films, séries et documentaires : duels, classement, recommandations, sorties et soirées.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // En ligne, un visiteur n'a pas encore de session (specs/accueil-vitrine-connexion-v1.md § 5) : la barre
+  // ne lui montre ni les réglages ni « Ajouter ». En local, jamais de visiteur (et pas de lecture d'en-têtes).
+  const visiteur = estV2() && !(await headers()).get(ENTETE_JETON);
   return (
     <html
       lang="fr"
@@ -39,7 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <MotionRoot />
-        <NavBar />
+        <NavBar visiteur={visiteur} />
         {children}
         {/* playlists-v2 FR-1 : la fenêtre « Ajouter à une playlist », ouverte depuis n'importe quelle carte. */}
         <PlaylistDialogHost />

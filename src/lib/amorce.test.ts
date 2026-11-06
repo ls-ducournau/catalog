@@ -109,7 +109,8 @@ describe("composerAccueil", () => {
     const c = composerAccueil(null, vitrine, null);
     expect(c.visiteur).toBe(true);
     expect(c.picks).toBe(vitrine.picks);
-    expect(c.lists).toBe(vitrine.lists);
+    // Pas d'onglet « Tendances » en double avec « À la une ».
+    expect(c.lists.map((t) => t.value)).toEqual(["cinema", "top"]);
   });
 
   it("complète une bibliothèque qui démarre : ses titres d'abord", () => {

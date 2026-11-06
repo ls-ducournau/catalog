@@ -23,11 +23,19 @@ import {
 // 3. Pages : le jeton est passé aux composants serveur par un en-tête interne (l'accueil lit ses
 //    données côté serveur).
 
-/** Ce qu'un visiteur fait sans session : regarder l'accueil, lire l'API (la vitrine est publique). */
+/**
+ * Ce qu'un visiteur fait sans session : regarder l'accueil et la visite, lire l'API (la vitrine est
+ * publique). Une page de l'application n'ouvre la session que sur une vraie navigation du navigateur
+ * (`sec-fetch-dest: document`) : jamais pour un préchargement de lien ni une requête de composants, que
+ * Next.js lance en arrière-plan et dont il retire les en-têtes avant le proxy. Sans cela, chaque lien
+ * visible de l'accueil créait un compte invité vide.
+ */
 function sansSession(request: NextRequest): boolean {
   const { pathname } = request.nextUrl;
-  if (pathname === "/") return true;
-  return pathname.startsWith("/api/") && (request.method === "GET" || request.method === "HEAD");
+  // L'accueil et la visite se regardent sans compte (specs/visite-interactive-v1.md).
+  if (pathname === "/" || pathname === "/visite") return true;
+  if (pathname.startsWith("/api/")) return request.method === "GET" || request.method === "HEAD";
+  return request.headers.get("sec-fetch-dest") !== "document";
 }
 
 export async function proxy(request: NextRequest) {
