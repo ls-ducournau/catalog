@@ -1,5 +1,5 @@
 <svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
-<!-- Symbole Catalog (catalog.svg). Dégradé à garder aligné sur --logo-mark-from / --logo-mark-to (globals.css). -->
+<!-- Symbole Catalog (catalog.svg). Dégradé à garder aligné sur les variables logo-mark-from et logo-mark-to (globals.css). -->
 <g clip-path="url(#clip0_4155_65)">
 <g filter="url(#filter0_iii_4155_65)">
 <mask id="mask0_4155_65" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
