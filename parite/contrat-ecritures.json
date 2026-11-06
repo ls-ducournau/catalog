@@ -764,5 +764,448 @@
       "error": "string"
     },
     "problems": []
+  },
+  "ecarter-compte": {
+    "method": "GET",
+    "path": "/api/dismissals",
+    "status": 200,
+    "shape": {
+      "count": "number"
+    },
+    "problems": []
+  },
+  "ecarter-profil": {
+    "method": "GET",
+    "path": "/api/profile/feedback",
+    "status": 200,
+    "shape": {
+      "acceptance": {
+        "decided": "number",
+        "keptRate": "number",
+        "lovedRate": "null",
+        "seen": "number"
+      },
+      "dismissed": "number"
+    },
+    "problems": []
+  },
+  "affichages-trop": {
+    "method": "POST",
+    "path": "/api/impressions",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "ouverture-tmdb": {
+    "method": "POST",
+    "path": "/api/opened",
+    "status": 200,
+    "shape": {
+      "ok": "boolean"
+    },
+    "problems": []
+  },
+  "playlist-ajouter-deja": {
+    "method": "POST",
+    "path": "/api/playlists/:id/items",
+    "status": 200,
+    "shape": {
+      "added": "boolean"
+    },
+    "problems": []
+  },
+  "playlist-lire": {
+    "method": "GET",
+    "path": "/api/playlists/:id",
+    "status": 200,
+    "shape": {
+      "playlist": {
+        "count": "number",
+        "covers": [
+          "array",
+          "string"
+        ],
+        "createdAt": "string",
+        "description": "null",
+        "id": "number",
+        "items": [
+          "array",
+          {
+            "availability": {
+              "ads": [
+                "array",
+                "vide"
+              ],
+              "buy": [
+                "array",
+                {
+                  "id": "number",
+                  "logoPath": "string",
+                  "name": "string"
+                }
+              ],
+              "fetchedAt": "string",
+              "flatrate": [
+                "array",
+                {
+                  "id": "number",
+                  "logoPath": "string",
+                  "name": "string"
+                }
+              ],
+              "free": [
+                "array",
+                "vide"
+              ],
+              "link": "string",
+              "rent": [
+                "array",
+                {
+                  "id": "number",
+                  "logoPath": "string",
+                  "name": "string"
+                }
+              ]
+            },
+            "category": "string",
+            "duelsCount": "number",
+            "eloScore": "null",
+            "genres": [
+              "array",
+              "string"
+            ],
+            "id": "number",
+            "name": "string",
+            "overview": "string",
+            "position": "number",
+            "posterUrl": "string",
+            "rating": "string",
+            "release": {
+              "digital": "string",
+              "fetchedAt": "string",
+              "firstAir": "string",
+              "kind": "string",
+              "nextEpisode": "null",
+              "status": "string",
+              "theatrical": "string"
+            },
+            "ressenti": "null",
+            "runtime": "number",
+            "touchedAt": "string",
+            "trailer": {
+              "channel": "string",
+              "embeddable": "boolean",
+              "key": "string",
+              "kind": "string",
+              "language": "string",
+              "name": "string"
+            },
+            "type": "string",
+            "voteAverage": "number",
+            "voteCount": "number",
+            "watchStatus": "string",
+            "year": "string"
+          }
+        ],
+        "name": "string",
+        "next": "null",
+        "nextId": "null",
+        "runtime": {
+          "hasSeries": "boolean",
+          "known": "number",
+          "minutes": "number"
+        },
+        "updatedAt": "string",
+        "watched": "number"
+      }
+    },
+    "problems": []
+  },
+  "playlist-lire-liste": {
+    "method": "GET",
+    "path": "/api/playlists?item=842",
+    "status": 200,
+    "shape": {
+      "playlists": [
+        "array",
+        {
+          "contains": "boolean",
+          "count": "number",
+          "covers": [
+            "array",
+            "string"
+          ],
+          "createdAt": "string",
+          "description": "null",
+          "id": "number",
+          "name": "string",
+          "next": "null",
+          "runtime": {
+            "hasSeries": "boolean",
+            "known": "number",
+            "minutes": "number"
+          },
+          "updatedAt": "string",
+          "watched": "number"
+        }
+      ]
+    },
+    "problems": []
+  },
+  "playlist-suggestions": {
+    "method": "GET",
+    "path": "/api/playlists/:id/suggestions",
+    "status": 200,
+    "shape": {
+      "suggestions": [
+        "array",
+        {
+          "availability": {
+            "ads": [
+              "array",
+              "vide"
+            ],
+            "buy": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "fetchedAt": "string",
+            "flatrate": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ],
+            "free": [
+              "array",
+              "vide"
+            ],
+            "link": "string",
+            "rent": [
+              "array",
+              {
+                "id": "number",
+                "logoPath": "string",
+                "name": "string"
+              }
+            ]
+          },
+          "category": "string",
+          "duelsCount": "number",
+          "eloScore": "number",
+          "genres": [
+            "array",
+            "string"
+          ],
+          "id": "number",
+          "name": "string",
+          "overview": "string",
+          "posterUrl": "string",
+          "rating": "string",
+          "reason": "string",
+          "release": {
+            "digital": "string",
+            "fetchedAt": "string",
+            "firstAir": "string",
+            "kind": "string",
+            "nextEpisode": "null",
+            "status": "string",
+            "theatrical": "string"
+          },
+          "ressenti": "null",
+          "trailer": {
+            "channel": "string",
+            "embeddable": "boolean",
+            "key": "string",
+            "kind": "string",
+            "language": "string",
+            "name": "string"
+          },
+          "type": "string",
+          "voteAverage": "number",
+          "voteCount": "number",
+          "watchStatus": "string",
+          "year": "string"
+        }
+      ]
+    },
+    "problems": []
+  },
+  "playlist-renommer-invalide": {
+    "method": "PATCH",
+    "path": "/api/playlists/:id",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "playlist-renommer-inconnue": {
+    "method": "PATCH",
+    "path": "/api/playlists/:id",
+    "status": 404,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "playlist-voir-hors": {
+    "method": "POST",
+    "path": "/api/playlists/:id/watch",
+    "status": 404,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "playlist-noter-invalide": {
+    "method": "POST",
+    "path": "/api/playlists/:id/rate",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "playlist-suggestion-ecarter-invalide": {
+    "method": "POST",
+    "path": "/api/playlists/:id/suggestions",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "playlist-retirer-absent": {
+    "method": "DELETE",
+    "path": "/api/playlists/:id/items",
+    "status": 200,
+    "shape": {
+      "position": "null",
+      "removed": "boolean"
+    },
+    "problems": []
+  },
+  "playlist-supprimer-inconnue": {
+    "method": "DELETE",
+    "path": "/api/playlists/:id",
+    "status": 404,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "playlist-retablir-invalide": {
+    "method": "POST",
+    "path": "/api/playlists/restore",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    },
+    "problems": []
+  },
+  "personnes-resultat-invalide": {
+    "method": "POST",
+    "path": "/api/duels/people/result",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    }
+  },
+  "personnes-inconnue": {
+    "method": "POST",
+    "path": "/api/duels/people/result",
+    "status": 404,
+    "shape": {
+      "error": "string"
+    }
+  },
+  "personnes-annuler": {
+    "method": "POST",
+    "path": "/api/duels/undo",
+    "status": 200,
+    "shape": {
+      "ok": "boolean"
+    }
+  },
+  "personnes-annuler-absent": {
+    "method": "POST",
+    "path": "/api/duels/undo",
+    "status": 404,
+    "shape": {
+      "error": "string"
+    }
+  },
+  "avis-reinitialisation-annuler-invalide": {
+    "method": "POST",
+    "path": "/api/people/opinions/restore",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    }
+  },
+  "palier-quatuor": {
+    "method": "POST",
+    "path": "/api/duels/tier/quad",
+    "status": 200,
+    "shape": {
+      "roundId": "number"
+    }
+  },
+  "palier-quatuor-invalide": {
+    "method": "POST",
+    "path": "/api/duels/tier/quad",
+    "status": 400,
+    "shape": {
+      "error": "string"
+    }
+  },
+  "palier-quatuor-perime": {
+    "method": "POST",
+    "path": "/api/duels/tier/quad",
+    "status": 409,
+    "shape": {
+      "error": "string"
+    }
+  },
+  "palier-annuler-conflit": {
+    "method": "POST",
+    "path": "/api/duels/undo",
+    "status": 409,
+    "shape": {
+      "error": "string"
+    }
+  },
+  "palier-annuler-quatuor": {
+    "method": "POST",
+    "path": "/api/duels/undo",
+    "status": 200,
+    "shape": {
+      "ok": "boolean"
+    }
+  },
+  "palier-annuler-tranche": {
+    "method": "POST",
+    "path": "/api/duels/undo",
+    "status": 200,
+    "shape": {
+      "ok": "boolean"
+    }
+  },
+  "palier-annuler-absent": {
+    "method": "POST",
+    "path": "/api/duels/undo",
+    "status": 404,
+    "shape": {
+      "error": "string"
+    }
   }
 }

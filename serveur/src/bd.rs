@@ -76,6 +76,17 @@ impl Drop for Tx {
     }
 }
 
+/// Une transaction du SERVEUR (rôle de connexion, hors règles d'accès), seulement pour le catalogue partagé
+/// (`catalog_titles`, `catalog_people`), avec le même garde `Tx`. RÈGLE : jamais de requête avec paramètres
+/// sur le pool hors transaction. Derrière le pooler de Supabase en mode transaction, sqlx prépare puis
+/// exécute en deux échanges séparés par un `Sync` : hors transaction, ils peuvent partir sur deux connexions
+/// différentes, partagées avec d'autres clients (constaté : « bind message supplies 15 parameters, but
+/// prepared statement "" requires 1 », « unnamed prepared statement does not exist »). Une transaction
+/// garde la même connexion du début à la fin.
+pub async fn transaction_serveur() -> Result<Tx, Erreur> {
+    Ok(Tx(Some(pool().await?.begin().await?)))
+}
+
 /// Ouvre une transaction au nom de l'utilisateur : ses revendications, puis le rôle `authenticated`.
 pub async fn transaction(utilisateur: &Utilisateur) -> Result<Tx, Erreur> {
     let mut tx = pool().await?.begin().await?;

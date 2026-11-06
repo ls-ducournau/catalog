@@ -215,15 +215,21 @@ pub async fn resultat(utilisateur: Utilisateur, corps: Bytes) -> Result<Response
 
 /// POST /api/duels/undo : défait un duel de titres. Refusé (409) si un duel plus récent a touché l'un des
 /// deux titres, ou si leurs scores ont bougé depuis (réinitialisation…) : revenir en arrière écraserait
-/// alors autre chose que ce duel. Les modes `people` et `round` ne sont pas encore portés (501).
+/// alors autre chose que ce duel. Mode `people` : un duel d'acteurs (duels_personnes.rs) ; mode `round` :
+/// une répartition ou un quatuor de départage (paliers.rs). Pour ces deux modes, comme la v1, tout nombre
+/// est accepté : un identifiant non entier ne désigne rien (404).
 pub async fn annuler(utilisateur: Utilisateur, corps: Bytes) -> Result<Response, Erreur> {
     let Ok(corps) = serde_json::from_slice::<Value>(&corps) else { return Ok(reponse(400, json!({ "error": "invalid_request" }))) };
+    match (corps.get("mode").and_then(Value::as_str), corps.get("duelId").filter(|v| v.is_number())) {
+        (Some("people"), Some(id)) => return crate::duels_personnes::annuler_duel(&utilisateur, id).await,
+        (Some("round"), Some(id)) => return crate::paliers::annuler_manche(&utilisateur, id).await,
+        _ => {}
+    }
     let (Some(mode), Some(duel_id)) = (corps.get("mode").and_then(Value::as_str), corps.get("duelId").and_then(Value::as_i64)) else {
         return Ok(reponse(400, json!({ "error": "invalid_request" })));
     };
     match mode {
         "titles" => {}
-        "people" | "round" => return Ok(reponse(501, json!({ "error": "not_implemented" }))),
         _ => return Ok(reponse(400, json!({ "error": "invalid_request" }))),
     }
     let mut tx = bd::transaction(&utilisateur).await?;

@@ -1,10 +1,9 @@
 //! Tri rapide : un lot de cartes, la réponse à une carte, et de quoi la défaire. Reprend
 //! `src/lib/triageService.ts` et ses trois routes.
 //!
-//! Porté : les cartes « titres déjà vus à noter » (`seen`) et « personnes » (`person`), toutes les réponses
-//! (y compris « ça me tente » sur un titre à découvrir, qui l'ajoute sans l'ancien service de notes) et
-//! l'annulation. Pas encore porté : les cartes « à découvrir » (`unseen`), qui reposent sur le modèle de
-//! préférence : le lot est vide pour l'instant.
+//! Porté : les cartes « titres déjà vus à noter » (`seen`), « personnes » (`person`) et « à découvrir »
+//! (`unseen`, tirées de la découverte : `crate::decouverte`, groupe 3), toutes les réponses (y compris « ça me
+//! tente » sur un titre à découvrir, qui l'ajoute sans l'ancien service de notes) et l'annulation.
 use crate::{
     auth::Utilisateur,
     bd::{self, Tx},
@@ -57,7 +56,7 @@ async fn evenement(tx: &mut Tx, genre: &str, sujet: &str, id: &str, contexte: Op
 
 // ---------- les cartes ----------
 
-async fn cartes_vues(u: &Utilisateur, cat: Option<&str>, limite: i64, exclure: &HashSet<String>) -> Result<Vec<Value>, Erreur> {
+pub(crate) async fn cartes_vues(u: &Utilisateur, cat: Option<&str>, limite: i64, exclure: &HashSet<String>) -> Result<Vec<Value>, Erreur> {
     let ignores: Vec<i64> = exclure.iter().filter_map(|k| k.strip_prefix("item:")?.parse().ok()).collect();
     let mut tx = bd::transaction(u).await?;
     let mut q = QueryBuilder::<Postgres>::new(
@@ -158,6 +157,29 @@ async fn cartes_personnes(u: &Utilisateur, limite: usize, exclure: &HashSet<Stri
         .collect())
 }
 
+/// `unseenCards` : les découvertes (semences tirées au hasard : chaque lot diffère), sans les cartes déjà
+/// montrées dans la session (`Movie:603`).
+async fn cartes_a_decouvrir(u: &Utilisateur, cat: Option<&str>, limite: i64, exclure: &HashSet<String>) -> Result<Vec<Value>, Erreur> {
+    let mut tx = bd::transaction(u).await?;
+    let resultat = crate::decouverte::decouvertes(&mut tx, u, cat, (limite + exclure.len() as i64).min(60) as f64, None).await?;
+    tx.valider().await?;
+    let Some((items, _)) = resultat else { return Ok(vec![]) };
+    Ok(items
+        .iter()
+        .filter(|d| !exclure.contains(&crate::decouverte::cle_decouverte(d)))
+        .take(limite as usize)
+        .map(|d| {
+            let j = d.json();
+            json!({
+                "family": "unseen", "key": crate::decouverte::cle_decouverte(d), "tmdbId": j["tmdbId"], "mediaType": j["type"],
+                "title": j["title"], "year": j["year"], "posterUrl": j["posterUrl"], "overview": j["overview"],
+                "voteAverage": j["voteAverage"], "voteCount": j["voteCount"], "seeds": j["seeds"], "availability": j["availability"],
+                "compatibility": j["compatibility"], "release": j["release"], "trailer": j["trailer"],
+            })
+        })
+        .collect())
+}
+
 /// GET /api/triage/batch?family=&category=&limit=&exclude=
 pub async fn lot(utilisateur: Utilisateur, Query(p): Query<HashMap<String, String>>) -> Result<Response, Erreur> {
     let Some(famille) = p.get("family").map(String::as_str).filter(|f| matches!(*f, "unseen" | "seen" | "person")) else { return Ok(invalide()) };
@@ -166,7 +188,7 @@ pub async fn lot(utilisateur: Utilisateur, Query(p): Query<HashMap<String, Strin
     let cartes = match famille {
         "seen" => cartes_vues(&utilisateur, parse_categorie(&p), limite, &exclure).await?,
         "person" => cartes_personnes(&utilisateur, limite as usize, &exclure).await?,
-        _ => vec![], // « à découvrir » : pas encore porté (modèle de préférence)
+        _ => cartes_a_decouvrir(&utilisateur, parse_categorie(&p), limite, &exclure).await?,
     };
     Ok(Json(json!({ "cards": cartes })).into_response())
 }
@@ -219,7 +241,7 @@ pub async fn repondre(utilisateur: Utilisateur, corps: Bytes) -> Result<Response
                 Ajout::Cree(item) => Json(json!({ "undo": { "kind": "remove", "itemId": item["id"] } })).into_response(),
                 // Un titre déjà présent n'est pas « défait » : il était là avant la réponse.
                 Ajout::Existant(_) => Json(json!({ "undo": { "kind": "none" } })).into_response(),
-                Ajout::TmdbIntrouvable => reponse(404, json!({ "error": "tmdb_not_found" })),
+                Ajout::TmdbIntrouvable => ecriture::tmdb_introuvable(),
             })
         }
         Some("seen") => {

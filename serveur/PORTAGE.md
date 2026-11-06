@@ -42,6 +42,12 @@ Toute autre différence est un défaut, sauf si elle est **écrite, justifiée e
 9. Erreurs : même statut et même corps que la v1 (`{ "error": "..." }`). Une erreur interne : `Erreur::Interne`
    (le détail va dans les journaux, la réponse dit `internal_error`).
 10. Une route non portée n'existe pas (404 vide d'Axum) : ne crée pas de fausse route.
+11. **Jamais de requête avec paramètres sur le pool hors transaction** (`.execute(bd::pool().await?)`). Derrière
+    le pooler de Supabase, sqlx prépare puis exécute en deux échanges séparés par un `Sync` : hors transaction,
+    ils peuvent partir sur deux connexions différentes, partagées avec les autres clients (constaté le
+    2026-11-05 sur l'écriture du catalogue : « bind message supplies 15 parameters, but prepared statement ""
+    requires 1 », « unnamed prepared statement does not exist », 5 ajouts sur 24 en 500). Pour le catalogue
+    partagé : `bd::transaction_serveur()` (même garde `Tx`), courte, jamais ouverte pendant un appel à TMDB.
 
 ## Comment prouver le 1 pour 1 (obligatoire pour chaque route)
 

@@ -31,9 +31,11 @@ export const contratV2 = {
   "recherche-tmdb": { status: 200, shape: contrat["recherche-tmdb"].shape },
   "ajouter-titre": { status: 201, shape: { alreadyExists: "boolean", item: titre } },
   "titre-present": { status: 200, shape: titre },
+  "titre-rafraichi": { status: 200, shape: titre },
   "ajouter-titre-deja-present": { status: 200, shape: { alreadyExists: "boolean", item: titre } },
   "ajouter-invalide": { status: 400, shape: { error: "string" } },
-  "ajouter-tmdb-inconnu": { status: 404, shape: { error: "string" } },
+  // 502 comme la v1 : toute erreur d'ajout autre que `not_found` (`actionErrorStatus`, libraryActions.ts).
+  "ajouter-tmdb-inconnu": { status: 502, shape: { error: "string" } },
   "retirer-titre": { status: 200, shape: { ok: "boolean" } },
   "titre-retire": { status: 404, shape: { error: "string" } },
   "retirer-inconnu": { status: 404, shape: { error: "string" } },
@@ -47,7 +49,13 @@ export const contratV2 = {
 export async function scenariosV2(base, call, controle) {
   const ajout = await call("ajouter-titre", "POST", "/api/items", { tmdbId: 603, type: "Movie", source: "search" }, { status: 201 });
   const id = ajout.json?.item?.id;
+  // L'ajout enrichit la fiche depuis TMDB comme la v1 (getTitleData) : disponibilité, dates de sortie, synopsis.
+  const ajoute = ajout.json?.item ?? {};
+  controle("ajout-enrichi", ajoute.availability !== null && ajoute.release !== null && typeof ajoute.overview === "string", "un titre ajouté doit porter sa disponibilité, ses dates de sortie et son synopsis");
   await call("titre-present", "GET", `/api/items/${id}`, undefined, { status: 200 });
+  // `?refresh=1` : tout rafraîchir depuis TMDB (refreshItemFromTmdb).
+  const rafraichi = await call("titre-rafraichi", "GET", `/api/items/${id}?refresh=1`, undefined, { status: 200 });
+  controle("rafraichi-meme-titre", rafraichi.json?.id === id && rafraichi.json?.watchStatus === "Unwatched", "le rafraîchissement rend le même titre, sans toucher son statut");
   // Ajouter deux fois le même titre ne le duplique pas.
   await call("ajouter-titre-deja-present", "POST", "/api/items", { tmdbId: 603, type: "Movie", source: "search" }, { status: 200 });
   // Noter et changer le statut : mêmes règles que la v1 (src/lib/itemService.ts, updateItem).
@@ -70,7 +78,7 @@ export async function scenariosV2(base, call, controle) {
   const recherche = await call("recherche-tmdb", "GET", "/api/tmdb/search?q=matrix", undefined, { status: 200 });
   controle("recherche-signale-bibliotheque", (recherche.json?.results ?? []).some((r) => r.tmdbId === 603 && r.libraryId === id), "Matrix doit être signalé comme déjà dans la bibliothèque");
   await call("ajouter-invalide", "POST", "/api/items", { tmdbId: "x", type: "Film" }, { status: 400 });
-  await call("ajouter-tmdb-inconnu", "POST", "/api/items", { tmdbId: 999999999, type: "Movie" }, { status: 404 });
+  await call("ajouter-tmdb-inconnu", "POST", "/api/items", { tmdbId: 999999999, type: "Movie" }, { status: 502 });
   await call("retirer-titre", "DELETE", `/api/items/${id}`, undefined, { status: 200 });
   await call("titre-retire", "GET", `/api/items/${id}`, undefined, { status: 404 });
   await call("retirer-inconnu", "DELETE", "/api/items/99999999", undefined, { status: 404 });

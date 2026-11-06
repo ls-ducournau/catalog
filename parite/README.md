@@ -60,6 +60,11 @@ La v1 ne peut pas le passer (elle exige l'ancien service). Reste à écrire : la
 envie » du Tri rapide (qui ajoute), et le test à deux comptes (retirer chez l'un ne touche pas
 le catalogue de l'autre).
 
+Ajouté le 2026-11-05 (groupe 4, TMDB) : le cas de lecture `recherche-tmdb-personne` (un nom de personne :
+sa filmographie avec `personCredit`), et dans `ecritures-v2.mjs` le rafraîchissement `?refresh=1`
+(`titre-rafraichi`), l'enrichissement à l'ajout (`ajout-enrichi` : disponibilité, dates, synopsis) et le
+statut de la v1 pour un titre TMDB inconnu (502, `actionErrorStatus`, et non 404).
+
 ## Pas encore couvert
 
-`POST /api/duels/tier/quad`, `GET /api/items/:id?refresh=1` (rafraîchit depuis TMDB, réseau).
+`POST /api/duels/tier/quad`.

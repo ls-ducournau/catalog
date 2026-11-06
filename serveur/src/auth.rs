@@ -76,6 +76,14 @@ pub async fn verifier(jeton: &str) -> Result<Value, Erreur> {
     decode::<Value>(jeton, &cle, &validation).map(|d| d.claims).map_err(|_| Erreur::NonAutorise)
 }
 
+/// L'utilisateur d'un jeton déjà extrait (routes publiques qui lisent un jeton facultatif).
+pub async fn utilisateur(jeton: &str) -> Result<Utilisateur, Erreur> {
+    let revendications = verifier(jeton).await?;
+    let id = revendications.get("sub").and_then(Value::as_str).ok_or(Erreur::NonAutorise)?.to_owned();
+    let anonyme = revendications.get("is_anonymous").and_then(Value::as_bool).unwrap_or(false);
+    Ok(Utilisateur { id, revendications: revendications.to_string(), anonyme })
+}
+
 impl<S: Send + Sync> FromRequestParts<S> for Utilisateur {
     type Rejection = Erreur;
 
@@ -86,9 +94,6 @@ impl<S: Send + Sync> FromRequestParts<S> for Utilisateur {
             .and_then(|v| v.to_str().ok())
             .and_then(|v| v.strip_prefix("Bearer "))
             .ok_or(Erreur::NonAutorise)?;
-        let revendications = verifier(jeton).await?;
-        let id = revendications.get("sub").and_then(Value::as_str).ok_or(Erreur::NonAutorise)?.to_owned();
-        let anonyme = revendications.get("is_anonymous").and_then(Value::as_bool).unwrap_or(false);
-        Ok(Utilisateur { id, revendications: revendications.to_string(), anonyme })
+        utilisateur(jeton).await
     }
 }

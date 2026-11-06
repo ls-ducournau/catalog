@@ -47,11 +47,10 @@ pub fn services_couverts_de(abonnes: &[i64], catalogue: &[Value]) -> HashSet<i64
     let familles: HashSet<String> = catalogue.iter().filter(|p| id(p).is_some_and(|i| abonnes_set.contains(&i))).map(|p| famille_service(&nom(p))).collect();
     let mut couverts = abonnes_set.clone();
     for p in catalogue {
-        if let Some(i) = id(p) {
-            if familles.contains(&famille_service(&nom(p))) {
+        if let Some(i) = id(p)
+            && familles.contains(&famille_service(&nom(p))) {
                 couverts.insert(i);
             }
-        }
     }
     couverts
 }
@@ -100,11 +99,10 @@ pub async fn ecrire_abonnements(utilisateur: Utilisateur, corps: Bytes) -> Resul
     for v in liste {
         // Number.isInteger(id) && id > 0 : un nombre entier, même écrit 8.0
         let entier = v.as_i64().or_else(|| v.as_f64().filter(|f| f.fract() == 0.0 && f.is_finite()).map(|f| f as i64));
-        if let Some(i) = entier.filter(|i| *i > 0) {
-            if !propres.contains(&i) {
+        if let Some(i) = entier.filter(|i| *i > 0)
+            && !propres.contains(&i) {
                 propres.push(i);
             }
-        }
     }
     let mut tx = bd::transaction(&utilisateur).await?;
     sqlx::query("insert into public.settings (key, value) values ($1, $2) on conflict (user_id, key) do update set value = excluded.value")

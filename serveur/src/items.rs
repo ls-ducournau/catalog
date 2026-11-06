@@ -1,8 +1,7 @@
 //! Bibliothèque : liste paginée et fiche d'un titre. Même forme de réponse que la v1 (`LibraryItem`,
 //! src/lib/libraryItem.ts ; contrat `parite/`), lue dans la vue `library_view` du compte.
 //!
-//! Pas encore porté : le synopsis rafraîchi depuis TMDB à
-//! la demande (`?refresh=1`).
+//! La fiche (`GET /api/items/{id}`) complète le catalogue partagé depuis TMDB : voir `catalogue.rs`.
 use crate::{
     auth::Utilisateur,
     bd,
@@ -182,15 +181,15 @@ pub async fn liste(utilisateur: Utilisateur, Query(p): Query<HashMap<String, Str
     Ok(Json(json!({ "items": items, "page": page, "pageSize": taille, "total": total })))
 }
 
-/// GET /api/items/{id}
-pub async fn fiche(utilisateur: Utilisateur, Path(id): Path<String>) -> Result<Response, Erreur> {
+/// GET /api/items/{id} : la fiche, avec le synopsis cherché à la demande et la disponibilité, les dates et
+/// la bande-annonce rafraîchies si elles ont plus de 7 jours (`getItemWithOverview`) ; `?refresh=1` :
+/// tout rafraîchir depuis TMDB (`refreshItemFromTmdb`). Voir `catalogue.rs`.
+pub async fn fiche(utilisateur: Utilisateur, Path(id): Path<String>, Query(p): Query<HashMap<String, String>>) -> Result<Response, Erreur> {
     let introuvable = || (StatusCode::NOT_FOUND, Json(json!({ "error": "not_found" }))).into_response();
-    let Ok(id) = id.parse::<i64>() else { return Ok(introuvable()) };
-    let mut tx = bd::transaction(&utilisateur).await?;
-    let ligne = sqlx::query(&format!("select {COLONNES} from public.library_view where id = $1")).bind(id).persistent(false).fetch_optional(&mut **tx).await?;
-    tx.valider().await?;
-    Ok(match ligne {
-        Some(l) => Json(titre(&l)?).into_response(),
+    let Some(id) = crate::ecriture::identifiant(&id) else { return Ok(introuvable()) };
+    let rafraichir = p.get("refresh").map(String::as_str) == Some("1");
+    Ok(match crate::catalogue::fiche_du_titre(&utilisateur, id, rafraichir).await? {
+        Some(item) => Json(item).into_response(),
         None => introuvable(),
     })
 }

@@ -8,11 +8,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let fichier = env::var("CATALOG_ENV").unwrap_or_else(|_| "../poc/.env.local".into());
     if let Ok(texte) = fs::read_to_string(&fichier) {
         for ligne in texte.lines() {
-            if let Some((cle, valeur)) = ligne.split_once('=') {
-                if matches!(cle, "DATABASE_URL" | "SUPABASE_URL" | "TMDB_ACCESS_TOKEN") && env::var(cle).is_err() {
+            if let Some((cle, valeur)) = ligne.split_once('=')
+                && matches!(cle, "DATABASE_URL" | "SUPABASE_URL" | "TMDB_ACCESS_TOKEN") && env::var(cle).is_err() {
                     unsafe { env::set_var(cle, valeur.trim()) };
                 }
-            }
         }
     }
     let port = env::var("PORT").unwrap_or_else(|_| "3004".into());
