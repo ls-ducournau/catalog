@@ -45,18 +45,25 @@ export async function proxy(request: NextRequest) {
   let acces = request.cookies.get(COOKIE_ACCES)?.value;
   const renouvellement = request.cookies.get(COOKIE_RENOUVELLEMENT)?.value;
   let nouvelle: Session | null = null;
+  /** Session refusée sur l'accueil ou la visite : on efface ses cookies, sans en recréer une. */
+  let perimee = false;
   if (!frais(acces) && (renouvellement || !sansSession(request))) {
     try {
       nouvelle = renouvellement ? await renouveler(renouvellement) : await sessionInvitee();
     } catch {
-      // Jeton de renouvellement refusé (compte supprimé, révoqué…) : une nouvelle session invitée.
-      try {
-        nouvelle = await sessionInvitee();
-      } catch {
-        nouvelle = null;
+      if (sansSession(request)) {
+        // Compte supprimé ou révoqué : on redevient un simple visiteur, aucun compte n'est créé.
+        perimee = true;
+      } else {
+        // Une page de l'application en a besoin : une nouvelle session invitée.
+        try {
+          nouvelle = await sessionInvitee();
+        } catch {
+          nouvelle = null;
+        }
       }
     }
-    if (nouvelle) acces = nouvelle.access_token;
+    acces = nouvelle?.access_token;
   }
 
   const entetes = new Headers(request.headers);
@@ -77,6 +84,9 @@ export async function proxy(request: NextRequest) {
   if (nouvelle) {
     reponse.cookies.set(COOKIE_ACCES, nouvelle.access_token, optionsCookie(nouvelle.expires_in));
     reponse.cookies.set(COOKIE_RENOUVELLEMENT, nouvelle.refresh_token, optionsCookie(DUREE_RENOUVELLEMENT));
+  } else if (perimee) {
+    reponse.cookies.delete(COOKIE_ACCES);
+    reponse.cookies.delete(COOKIE_RENOUVELLEMENT);
   }
   return reponse;
 }

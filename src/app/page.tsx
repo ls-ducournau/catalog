@@ -20,6 +20,7 @@ import { DuelsVisite, PlaylistVisite, SortiesVisite, TriVisite } from "@/compone
 import { VisiteProvider } from "@/components/visite/VisiteEtat";
 import { chargerAccueil, chargerVitrine } from "@/lib/accueilDonnees";
 import { composerAccueil, NOTES_POUR_RECOS } from "@/lib/amorce";
+import { estVisiteur } from "@/lib/visiteur";
 
 // Accueil — spec: specs/design-system-v2-raycast.md (§ 7, HeroLayout). Le héros de DESIGN.md :
 // décor en éclats, grand titre, action principale neutre, mentions techniques en Geist Mono.
@@ -38,7 +39,14 @@ import { composerAccueil, NOTES_POUR_RECOS } from "@/lib/amorce";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [{ stats, showcase: preview, features: keys }, vitrine] = await Promise.all([chargerAccueil(), chargerVitrine()]);
+  // Un invité qui n'a encore rien gardé voit l'accueil d'un visiteur (la vitrine et la visite) : ses
+  // données d'accueil ne sont même pas demandées.
+  const sansBibliotheque = await estVisiteur();
+  const [donnees, vitrine] = await Promise.all([
+    sansBibliotheque ? Promise.resolve({ stats: null, showcase: null, features: null }) : chargerAccueil(),
+    chargerVitrine(),
+  ]);
+  const { stats, showcase: preview, features: keys } = donnees;
   const { moods, picks, lists, visiteur, demarrage } = composerAccueil(preview, vitrine, stats?.total ?? null);
   const rated = stats?.rated ?? 0;
   // Notation : sans titre vu à noter, des titres très vus à reconnaître (bibliothèque qui démarre).

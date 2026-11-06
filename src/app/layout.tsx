@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { Bricolage_Grotesque, Geist_Mono, Work_Sans } from "next/font/google";
 import NavBar from "./NavBar";
 import { PlaylistDialogHost } from "@/components/playlists/PlaylistDialog";
 import { ImpressionTracker } from "@/components/ImpressionTracker";
 import { MotionRoot } from "@/components/MotionRoot";
 import { BackToTop } from "@/components/BackToTop";
-import { ENTETE_JETON, estV2 } from "@/lib/sessionV2";
+import { estVisiteur } from "@/lib/visiteur";
 import "./globals.css";
 
 // Polices (choix de l'utilisateur, 2026-09-28) : Work Sans pour le texte, Bricolage Grotesque en
@@ -34,9 +33,9 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  // En ligne, un visiteur n'a pas encore de session (specs/accueil-vitrine-connexion-v1.md § 5) : la barre
-  // ne lui montre ni les réglages ni « Ajouter ». En local, jamais de visiteur (et pas de lecture d'en-têtes).
-  const visiteur = estV2() && !(await headers()).get(ENTETE_JETON);
+  // En ligne, un visiteur (sans session, ou invité sans aucun titre) n'a ni réglages ni « Ajouter » dans la
+  // barre, et ses liens mènent à la visite. En local, jamais de visiteur.
+  const visiteur = await estVisiteur();
   return (
     <html
       lang="fr"
