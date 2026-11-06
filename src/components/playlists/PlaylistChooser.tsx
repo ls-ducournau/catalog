@@ -43,7 +43,7 @@ async function addToLibrary(subject: Extract<PlaylistSubject, { kind: "tmdb" }>,
   const res = await post("/api/items", { tmdbId: subject.tmdbId, type: subject.mediaType, source: LIBRARY_SOURCE[source] ?? "search" });
   const body: { item?: { id: number }; alreadyExists?: boolean; error?: string } | null = res ? await res.json().catch(() => null) : null;
   if (!res?.ok || !body?.item) {
-    return { error: body?.error === "notion_not_configured" ? "Notion n'est pas configuré : le titre n'a pas pu être ajouté." : "Le titre n'a pas pu être ajouté à ta pile." };
+    return { error: "Le titre n'a pas pu être ajouté à ta pile." };
   }
   return { id: body.item.id, alreadyExists: Boolean(body.alreadyExists) };
 }

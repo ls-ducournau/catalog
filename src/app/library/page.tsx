@@ -341,7 +341,7 @@ export default function LibraryPage() {
     setSelected((prev) => (prev && prev.id === id ? { ...prev, ...fresh } : prev));
   }
 
-  /** Refetch TMDB explicite (titre, synopsis, note, affiche…) — local, rien n'est poussé vers Notion. */
+  /** Refetch TMDB explicite (titre, synopsis, note, affiche…), en local. */
   async function refetchItem(id: number) {
     const res = await fetch(`/api/items/${id}?refresh=1`);
     if (!res.ok) return;
@@ -351,7 +351,7 @@ export default function LibraryPage() {
     setSelected((prev) => (prev && prev.id === id ? updated : prev));
   }
 
-  /** Appel réel : archive côté Notion puis supprime localement. Restaure l'item en cas d'échec. */
+  /** Appel réel : supprime le titre. Restaure l'item en cas d'échec. */
   const finalizeDelete = useCallback(async (item: LibraryItem) => {
     const res = await fetch(`/api/items/${item.id}`, { method: "DELETE" });
     if (!res.ok) {
@@ -877,7 +877,7 @@ function sortTitleMatches(results: TmdbSearchItem[], query: string): TmdbSearchI
   return [...exact, ...rest];
 }
 
-/** spec: specs/ajout-item-v1.md — recherche TMDB puis création Notion + insertion locale. */
+/** spec: specs/ajout-item-v1.md — recherche TMDB puis insertion locale. */
 function AddItemModal({
   onClose,
   onAdded,
@@ -1132,11 +1132,7 @@ function AddItemModal({
       const body = await res.json();
 
       if (!res.ok) {
-        setMessage(
-          body.error === "notion_not_configured"
-            ? "Notion n'est pas configuré : impossible d'ajouter."
-            : "Échec de l'ajout, réessaie."
-        );
+        setMessage("Échec de l'ajout, réessaie.");
         return;
       }
 

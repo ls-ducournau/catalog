@@ -43,6 +43,11 @@ export type ShowcaseTitle = {
   /** Réalisation et têtes d'affiche, d'après TMDB. */
   directors: string[];
   cast: string[];
+  /**
+   * Titre proposé hors de ta bibliothèque (vitrine, bibliothèque qui démarre : spec
+   * accueil-vitrine-connexion-v1 § 3). Il s'ajoute d'un clic ; `id` est alors négatif.
+   */
+  suggestion?: { tmdbId: number };
 };
 
 /** Ta collection en chiffres (panneau de « Ta bibliothèque »). */

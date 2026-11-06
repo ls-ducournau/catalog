@@ -262,11 +262,7 @@ export default function RecommendationsPage() {
       const body = await res.json();
 
       if (!res.ok) {
-        setAddError(
-          body.error === "notion_not_configured"
-            ? "Notion n'est pas configuré, impossible d'ajouter."
-            : "Échec de l'ajout, réessaie."
-        );
+        setAddError("Échec de l'ajout, réessaie.");
         return;
       }
 
@@ -282,8 +278,8 @@ export default function RecommendationsPage() {
   }
 
   /**
-   * Retrait depuis la découverte : même flux que le tirage et la bibliothèque (archivage de la
-   * page Notion puis suppression locale). Utile juste après un ajout qu'on regrette, sans avoir
+   * Retrait depuis la découverte : même flux que le tirage et la bibliothèque (suppression du
+   * titre). Utile juste après un ajout qu'on regrette, sans avoir
    * à passer par la bibliothèque. Le titre reste affiché, il repasse simplement à « + ».
    */
   async function removeDiscovered(item: DiscoveredItem) {
@@ -294,12 +290,7 @@ export default function RecommendationsPage() {
     try {
       const res = await fetch(`/api/items/${item.libraryId}`, { method: "DELETE" });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        setAddError(
-          body.error === "notion_not_configured"
-            ? "Notion n'est pas configuré, impossible de retirer."
-            : "Échec du retrait, réessaie."
-        );
+        setAddError("Échec du retrait, réessaie.");
         return;
       }
 

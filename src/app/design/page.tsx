@@ -25,6 +25,8 @@ import { ScoreBadge } from "@/components/ScoreBadge";
 import { CompatibilityChip } from "@/components/CompatibilityChip";
 import { ChipDemo, ControlsDemo, FieldDemo, MotionDemo, SwitchDemo } from "./Demos";
 import { ArchetypesDemo, SectionsDemo } from "./Archetypes";
+import { CompteBoutonVue } from "@/components/CompteBouton";
+import { ConnexionForm } from "@/components/ConnexionForm";
 
 export const metadata: Metadata = { title: "Système de design · Catalog" };
 
@@ -351,6 +353,17 @@ export default function DesignPage() {
           <Skeleton className="aspect-[2/3]" />
           <Skeleton className="aspect-[2/3]" />
           <Skeleton className="aspect-[2/3]" />
+        </div>
+      </Section>
+
+      <Section id="compte" title="Compte" lead="En ligne seulement. Dans la barre du haut : « Se connecter », puis l'initiale du compte. La page /connexion pose la fenêtre de commande sur le héros, comme les Duels.">
+        <div className="flex flex-wrap items-center gap-3">
+          <CompteBoutonVue etat={{ connecte: true, anonyme: true, email: null }} />
+          <CompteBoutonVue etat={{ connecte: true, anonyme: false, email: "louis@exemple.fr" }} />
+        </div>
+        <div className="mt-6 grid max-w-3xl items-start gap-6 md:grid-cols-2">
+          <ConnexionForm retour="/design" demo={{ connecte: true, anonyme: true, email: null }} />
+          <ConnexionForm retour="/design" demo={{ connecte: true, anonyme: false, email: "louis@exemple.fr" }} />
         </div>
       </Section>
 

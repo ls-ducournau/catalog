@@ -263,11 +263,7 @@ export default function CeSoirPage() {
     });
     const body = await res.json();
     if (!res.ok) {
-      setMessage(
-        body.error === "notion_not_configured"
-          ? "Notion n'est pas configuré, impossible d'ajouter."
-          : "Échec de l'ajout, réessaie."
-      );
+      setMessage("Échec de l'ajout, réessaie.");
       return null;
     }
     return { id: body.item.id, alreadyExists: body.alreadyExists };

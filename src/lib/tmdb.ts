@@ -762,6 +762,33 @@ export async function discoverReleases(
 }
 
 /**
+ * Accueil vitrine (specs/accueil-vitrine-connexion-v1.md § 6) : une liste TMDB telle que TMDB la
+ * classe (tendances, mieux notés, à l'affiche, à venir), en français. `kind` null : liste mêlant
+ * films et séries (`media_type` sur chaque ligne).
+ */
+export async function listTmdb(
+  path: string,
+  params: Record<string, string>,
+  kind: "Movie" | "TV Series" | null
+): Promise<TmdbSearchResult[]> {
+  const query = new URLSearchParams({ language: "fr-FR", include_adult: "false", ...params });
+  try {
+    const [res, maps] = await Promise.all([
+      fetch(`${TMDB_API_BASE}${path}?${query}`, { headers: authHeaders() }),
+      getGenreMaps(),
+    ]);
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (!Array.isArray(data.results)) return [];
+    return (data.results as Record<string, unknown>[])
+      .map((row) => (kind ? rowToResult(row, kind, maps) : toSearchResult(row, maps)))
+      .filter((r): r is TmdbSearchResult => r !== null);
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Ce soir v2 (FR-5, « tout le catalogue ») : titres populaires d'un genre parmi `genreNames`
  * (tous si null), d'une durée maximale (films), et inclus chez l'un des services donnés en
  * France (tous si null). Le filtrage exact reste fait localement : ceci ne fait que dégrossir.

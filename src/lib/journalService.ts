@@ -22,7 +22,7 @@ export type EventKind =
 export type SubjectType = "item" | "tmdb" | "person" | "playlist";
 
 /** D'où vient un ajout : seuls les ajouts issus d'une proposition comptent pour FR-8. */
-export type AddSource = "search" | "discover" | "suggestions" | "triage" | "tonight" | "calendar";
+export type AddSource = "search" | "discover" | "suggestions" | "triage" | "tonight" | "calendar" | "home";
 const PROPOSAL_SOURCES: AddSource[] = ["discover", "suggestions", "triage"];
 
 export function logEvent(

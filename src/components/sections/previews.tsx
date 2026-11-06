@@ -13,6 +13,7 @@ import type { DuelItem } from "@/lib/duelService";
 import { genreLine } from "@/lib/genres";
 import type { RatingCard } from "@/lib/homeFeatures";
 import type { Category } from "@/lib/libraryItem";
+import type { ShowcaseTitle } from "@/lib/showcase";
 import type { TriageUndo } from "@/lib/triageService";
 
 // Aperçus vivants des sections de fonctionnalité de l'accueil — fiche
@@ -154,6 +155,153 @@ export function RatingPreview({ cards, remaining }: { cards: RatingCard[]; remai
       <div className="flex min-h-8 flex-wrap items-center justify-between gap-x-4 gap-y-2 text-sm text-muted">
         <span aria-live="polite" className="min-w-0">
           {error ?? (last ? `« ${last.card.title} » ${ratedAs(last.rating)}` : current ? "Une note par clic, ou au clavier de 0 à 5." : "")}
+        </span>
+        {last && (
+          <Button size="sm" variant="ghost" onClick={undoLast} aria-keyshortcuts="Control+Z">
+            <Undo2 size={14} aria-hidden="true" />
+            Annuler
+            <span className="hidden items-center gap-1 sm:inline-flex">
+              <Kbd>Ctrl</Kbd>
+              <Kbd>Z</Kbd>
+            </span>
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------- Notation d'une bibliothèque qui démarre ----------
+
+type SuggestionEntry = { title: ShowcaseTitle; rating: number; id: Promise<number | null> };
+
+/**
+ * Notation quand la bibliothèque démarre (spec accueil-vitrine-connexion-v1 § 3) : des titres très
+ * vus, hors de ta bibliothèque. « Tu l'as vu ? » : une note l'ajoute, vu et noté ; « Pas vu » passe
+ * au suivant sans rien écrire. La dernière note s'annule (le titre est retiré). Les écritures partent
+ * l'une après l'autre : en ligne, la première ouvre la session invitée.
+ */
+export function SuggestionRating({ titles, rated, goal }: { titles: ShowcaseTitle[]; rated: number; goal: number }) {
+  const [queue, setQueue] = useState(titles);
+  const [count, setCount] = useState(rated);
+  const [last, setLast] = useState<SuggestionEntry | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pressed, press] = usePressed();
+  const chain = useRef<Promise<unknown>>(Promise.resolve());
+  const current = queue[0] ?? null;
+
+  const rate = useCallback(
+    (n: number) => {
+      const title = current;
+      if (!title?.suggestion) return;
+      press(String(n));
+      setError(null);
+      const tmdbId = title.suggestion.tmdbId;
+      const id = chain.current
+        .then(async () => {
+          const res = await fetch("/api/items", {
+            method: "POST",
+            headers: JSON_HEADERS,
+            body: JSON.stringify({ tmdbId, type: title.type, source: "home" }),
+          });
+          const body = (await res.json().catch(() => null)) as { item?: { id: number } } | null;
+          const itemId = body?.item?.id;
+          if (!res.ok || typeof itemId !== "number") throw new Error("ajout");
+          const patch = await fetch(`/api/items/${itemId}`, {
+            method: "PATCH",
+            headers: JSON_HEADERS,
+            body: JSON.stringify({ watchStatus: "Watched", rating: n === 0 ? "💩" : "⭐️".repeat(n) }),
+          });
+          if (!patch.ok) throw new Error("note");
+          return itemId;
+        })
+        .catch(() => {
+          setError("La note n'a pas été enregistrée.");
+          return null;
+        });
+      chain.current = id;
+      setLast({ title, rating: n, id });
+      setQueue((q) => q.slice(1));
+      setCount((c) => c + 1);
+    },
+    [current, press]
+  );
+
+  const undoLast = useCallback(async () => {
+    const entry = last;
+    if (!entry) return;
+    setLast(null);
+    setError(null);
+    setQueue((q) => [entry.title, ...q]);
+    setCount((c) => Math.max(0, c - 1));
+    const id = await entry.id;
+    if (id === null) return;
+    const res = await fetch(`/api/items/${id}`, { method: "DELETE" }).catch(() => null);
+    if (!res?.ok) setError("L'annulation n'a pas pu être appliquée.");
+  }, [last]);
+
+  function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+    if (e.altKey || e.repeat) return;
+    if (isUndo(e)) {
+      e.preventDefault();
+      void undoLast();
+    } else if (!e.ctrlKey && !e.metaKey && /^[0-5]$/.test(e.key)) {
+      e.preventDefault();
+      rate(Number(e.key));
+    }
+  }
+
+  const ready = count >= goal;
+  return (
+    <div
+      className="feature-stage"
+      style={current?.tint ? ({ "--tint": current.tint } as CSSProperties) : undefined}
+      onKeyDown={onKeyDown}
+    >
+      {current ? (
+        <>
+          <div className="flex items-center gap-5 sm:gap-6">
+            <div className="poster aspect-[2/3] w-24 shrink-0 sm:w-32">
+              <Poster url={current.posterUrl} className="h-full w-full object-cover" />
+            </div>
+            <div className="flex min-w-0 flex-col items-start gap-3">
+              <Badge>Tu l&apos;as vu ?</Badge>
+              <div className="flex min-w-0 flex-col gap-1">
+                <h3 className="line-clamp-2 text-subheading text-foreground">{current.name}</h3>
+                <MetaRow>
+                  <span>{CATEGORY_LABEL[current.category]}</span>
+                  {current.year && <span>{current.year}</span>}
+                </MetaRow>
+              </div>
+              <Button size="sm" variant="ghost" onClick={() => setQueue((q) => q.slice(1))}>
+                Pas vu
+              </Button>
+            </div>
+          </div>
+          <RatingKeys onRate={rate} disabled={false} pressed={pressed} fitContainer className="max-w-none" />
+        </>
+      ) : (
+        <div className="flex flex-col items-start gap-4 py-8">
+          <h3 className="text-subheading text-foreground">
+            {ready ? "Tes premières recommandations sont prêtes." : "Ajoute les titres que tu as vus, et note-les."}
+          </h3>
+          <Button href={ready ? "/recommendations" : "/library"} size="sm">
+            {ready ? "Voir mes recommandations" : "Ouvrir la bibliothèque"}
+            <ArrowRight size={14} aria-hidden="true" />
+          </Button>
+        </div>
+      )}
+
+      <div className="flex min-h-8 flex-wrap items-center justify-between gap-x-4 gap-y-2 text-sm text-muted">
+        <span aria-live="polite" className="min-w-0">
+          {error ??
+            (last
+              ? `« ${last.title.name} » ${ratedAs(last.rating)}`
+              : current
+                ? ready
+                  ? "Une note par clic, ou au clavier de 0 à 5."
+                  : `${count} sur ${goal} notes pour tes premières recommandations.`
+                : "")}
         </span>
         {last && (
           <Button size="sm" variant="ghost" onClick={undoLast} aria-keyshortcuts="Control+Z">
@@ -361,6 +509,8 @@ function isoDay(date: Date): string {
 export function ReleasesPreview({ limit = 4 }: { limit?: number }) {
   const [data, setData] = useState<CalendarResult | null>(null);
   const [failed, setFailed] = useState(false);
+  /** En ligne, un visiteur sans session : les sorties se voient sur leur page (qui ouvre la session). */
+  const [visitor, setVisitor] = useState(false);
   /** Ajouts et retraits faits ici, par clé TMDB : id local, ou null si retiré. */
   const [changes, setChanges] = useState<Map<string, number | null>>(new Map());
   const [pending, setPending] = useState<string | null>(null);
@@ -372,8 +522,14 @@ export function ReleasesPreview({ limit = 4 }: { limit?: number }) {
     const to = isoDay(new Date(today.getTime() + (RELEASE_DAYS - 1) * DAY_MS));
     let alive = true;
     fetch(`/api/calendar?from=${from}&to=${to}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((body: CalendarResult) => alive && setData(body))
+      .then((r) => {
+        if (r.status === 401) {
+          if (alive) setVisitor(true);
+          return null;
+        }
+        return r.ok ? r.json() : Promise.reject(new Error(String(r.status)));
+      })
+      .then((body: CalendarResult | null) => alive && body && setData(body))
       .catch(() => alive && setFailed(true));
     return () => {
       alive = false;
@@ -419,9 +575,7 @@ export function ReleasesPreview({ limit = 4 }: { limit?: number }) {
         });
         const body = await res.json().catch(() => null);
         if (!res.ok) {
-          setMessage(
-            body?.error === "notion_not_configured" ? "Notion n'est pas configuré, impossible d'ajouter." : "Échec de l'ajout, réessaie."
-          );
+          setMessage("Échec de l'ajout, réessaie.");
           return;
         }
         setChanges((prev) => new Map(prev).set(key, body.item.id));
@@ -451,7 +605,17 @@ export function ReleasesPreview({ limit = 4 }: { limit?: number }) {
         <MonoMeta>Les {RELEASE_DAYS} prochains jours, pour toi</MonoMeta>
       </div>
 
-      {!data && !failed && (
+      {visitor && (
+        <div className="flex flex-col items-start gap-4 py-8">
+          <h3 className="text-subheading text-foreground">Cinéma et séries, les deux prochaines semaines.</h3>
+          <Button href="/sorties" size="sm">
+            Voir les sorties
+            <ArrowRight size={14} aria-hidden="true" />
+          </Button>
+        </div>
+      )}
+
+      {!data && !failed && !visitor && (
         <ul aria-busy="true" className="flex flex-col gap-2">
           {Array.from({ length: limit }, (_, i) => (
             <Card as="li" key={i} className="flex items-center gap-3 p-2">

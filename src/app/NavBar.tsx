@@ -18,6 +18,7 @@ import {
   Trophy,
   type LucideProps,
 } from "lucide-react";
+import { CompteBouton } from "@/components/CompteBouton";
 import { SettingsMenu } from "@/components/SettingsMenu";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui";
@@ -173,6 +174,8 @@ export default function NavBar() {
                 prend le relais. */}
             <TopMenus pathname={pathname} />
             <div className="ml-auto flex items-center gap-2">
+              {/* En ligne seulement : « Se connecter », ou l'initiale du compte. */}
+              <CompteBouton />
               <SettingsMenu />
               {/* Ajouter un titre, depuis n'importe quelle page : la fenêtre d'ajout de la
                   bibliothèque s'ouvre (sur place si on y est déjà). */}

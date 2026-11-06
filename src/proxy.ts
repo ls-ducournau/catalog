@@ -14,12 +14,21 @@ import {
 // Proxy de la v2 (spec: specs/catalog-v2-rust-supabase.md) : il n'agit que si CATALOG_API_URL est
 // défini (application en ligne). En local, la v1 passe sans rien changer.
 //
-// 1. Session : à la première visite, une session invitée est ouverte d'office (l'accueil est la page
-//    d'arrivée) ; un jeton expiré est renouvelé.
+// 1. Session : au premier geste (specs/accueil-vitrine-connexion-v1.md § 5). L'accueil et les lectures
+//    d'API d'un visiteur passent sans session (la vitrine) ; la première écriture, ou la première page
+//    de l'application, ouvre une session invitée, sans écran. Un robot qui ne fait que lire l'accueil
+//    ne crée donc aucun compte. Un jeton expiré est renouvelé.
 // 2. API : chaque appel `/api/*` part vers le serveur Rust, avec le jeton de l'utilisateur et le jeton
 //    de contournement de la protection d'accès de Vercel (appel de serveur à serveur).
 // 3. Pages : le jeton est passé aux composants serveur par un en-tête interne (l'accueil lit ses
 //    données côté serveur).
+
+/** Ce qu'un visiteur fait sans session : regarder l'accueil, lire l'API (la vitrine est publique). */
+function sansSession(request: NextRequest): boolean {
+  const { pathname } = request.nextUrl;
+  if (pathname === "/") return true;
+  return pathname.startsWith("/api/") && (request.method === "GET" || request.method === "HEAD");
+}
 
 export async function proxy(request: NextRequest) {
   const api = process.env.CATALOG_API_URL;
@@ -28,7 +37,7 @@ export async function proxy(request: NextRequest) {
   let acces = request.cookies.get(COOKIE_ACCES)?.value;
   const renouvellement = request.cookies.get(COOKIE_RENOUVELLEMENT)?.value;
   let nouvelle: Session | null = null;
-  if (!frais(acces)) {
+  if (!frais(acces) && (renouvellement || !sansSession(request))) {
     try {
       nouvelle = renouvellement ? await renouveler(renouvellement) : await sessionInvitee();
     } catch {

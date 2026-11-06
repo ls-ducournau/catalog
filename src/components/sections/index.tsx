@@ -11,7 +11,7 @@ export { PageHeader } from "@/components/PageHeader";
 export { SectionHeading, Toolbar } from "./basics";
 export { FeatureWall, ShowcaseCard, ShowcaseCarousel, TitleListSection, TitleRowCard } from "./showcase";
 export { ArrowLink, FeatureEyebrow, FeatureSection } from "./feature";
-export { DuelPreview, RatingPreview, ReleasesPreview } from "./previews";
+export { DuelPreview, RatingPreview, ReleasesPreview, SuggestionRating } from "./previews";
 export { RecommendationsWall } from "./recommendations-wall";
 export { PlaylistPreview } from "./playlist-preview";
 export { FlipGrid as MediaGrid } from "@/components/motion/FlipGrid";

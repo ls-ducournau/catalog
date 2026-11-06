@@ -3,7 +3,7 @@
 import { useRef, useState, type CSSProperties } from "react";
 import { Star } from "lucide-react";
 
-/** Échelle de notation Notion : "💩" (palier le plus bas), puis 1 à 5 "⭐️". */
+/** Échelle de notation : "💩" (palier le plus bas), puis 1 à 5 "⭐️". */
 const WORST = "💩";
 /** Nom de chaque note, de 💩 (0) à cinq étoiles : titres et personnes. */
 export const STAR_LABELS = ["Nul", "Bof", "Correct", "Bien", "Très bien", "Chef-d'œuvre"] as const;
