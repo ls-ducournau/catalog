@@ -200,16 +200,24 @@ export function NotationVisite({ titres }: { titres: ShowcaseTitle[] }) {
   const { etat, maj } = useVisite();
   const [dernier, setDernier] = useState<{ cle: string; nom: string; note: number } | null>(null);
   const [pressed, press] = usePressed();
-  const vus = titres.filter((t) => etat.tri[cleTitre(t)] === "vu");
-  const file = vus.filter((t) => etat.notes[cleTitre(t)] === undefined);
+  // Les titres vus à noter d'abord ; sans eux, les titres connus pas encore triés : chaque chapitre se
+  // joue seul (décision de Louis, 2026-11-06), noter un titre le marque vu.
+  const aNoter = titres.filter((t) => etat.tri[cleTitre(t)] === "vu" && etat.notes[cleTitre(t)] === undefined);
+  const file = aNoter.length > 0 ? aNoter : titres.filter((t) => !etat.tri[cleTitre(t)] && etat.notes[cleTitre(t)] === undefined);
   const courant = file[0] ?? null;
+  const dejaVu = courant ? etat.tri[cleTitre(courant)] === "vu" : false;
 
   const noter = (n: number) => {
     if (!courant) return;
     press(String(n));
     const cle = cleTitre(courant);
-    maj((e) => ({ ...e, notes: { ...e.notes, [cle]: n } }));
+    maj((e) => ({ ...e, tri: { ...e.tri, [cle]: "vu" }, notes: { ...e.notes, [cle]: n } }));
     setDernier({ cle, nom: courant.name, note: n });
+  };
+  const pasVu = () => {
+    if (!courant) return;
+    const cle = cleTitre(courant);
+    maj((e) => ({ ...e, tri: { ...e.tri, [cle]: "pasvu" } }));
   };
 
   function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
@@ -221,21 +229,24 @@ export function NotationVisite({ titres }: { titres: ShowcaseTitle[] }) {
 
   return (
     <div className="feature-stage" style={courant?.tint ? ({ "--tint": courant.tint } as CSSProperties) : undefined} onKeyDown={onKeyDown}>
-      {vus.length === 0 ? (
-        <Suite titre="Marque d'abord des titres que tu as vus." href="#tri" action="Revenir au tri" />
-      ) : courant ? (
+      {courant ? (
         <>
           <div className="flex items-center gap-5 sm:gap-6">
             <div className="poster aspect-[2/3] w-24 shrink-0 sm:w-32">
               <Poster url={courant.posterUrl} className="h-full w-full object-cover" />
             </div>
             <div className="flex min-w-0 flex-col items-start gap-3">
-              <Badge>Vu, pas encore noté</Badge>
+              <Badge>{dejaVu ? "Vu, pas encore noté" : "Tu l'as vu ? Note-le"}</Badge>
               <h3 className="line-clamp-2 text-subheading text-foreground">{courant.name}</h3>
               <MetaRow>
                 <span>{CATEGORY_LABEL[courant.category]}</span>
                 {courant.year && <span>{courant.year}</span>}
               </MetaRow>
+              {!dejaVu && (
+                <Button size="sm" variant="ghost" onClick={pasVu}>
+                  Pas vu
+                </Button>
+              )}
             </div>
           </div>
           <RatingKeys onRate={noter} disabled={false} pressed={pressed} fitContainer className="max-w-none" />
@@ -244,7 +255,7 @@ export function NotationVisite({ titres }: { titres: ShowcaseTitle[] }) {
         <Suite titre="Tes titres vus sont notés." href="#duels" action="Passer aux duels" />
       )}
       <p aria-live="polite" className="min-h-8 text-sm text-muted">
-        {dernier ? `« ${dernier.nom} » ${ratedAs(dernier.note)}` : vus.length > 0 ? "Une note par clic, ou au clavier de 0 à 5." : ""}
+        {dernier ? `« ${dernier.nom} » ${ratedAs(dernier.note)}` : courant ? "Une note par clic, ou au clavier de 0 à 5." : ""}
       </p>
     </div>
   );
@@ -257,8 +268,10 @@ export function DuelsVisite({ titres, libre = false }: { titres: ShowcaseTitle[]
   const { etat, maj } = useVisite();
   const parCle = useParCle(titres);
   const [pressed, press] = usePressed();
-  const cles = libre ? titres.map(cleTitre) : undefined;
-  const paire = prochainePaire(etat, cles);
+  // Tant qu'il n'y a pas deux titres notés, on départage des titres connus (jamais de chapitre bloqué).
+  const connus = titres.map(cleTitre).filter((cle) => etat.tri[cle] !== "pasvu").slice(0, 8);
+  const sansNotes = libre || prochainePaire(etat) === null;
+  const paire = sansNotes ? prochainePaire(etat, connus) : prochainePaire(etat);
   const a = paire ? parCle.get(paire[0]) : undefined;
   const b = paire ? parCle.get(paire[1]) : undefined;
 
@@ -276,7 +289,7 @@ export function DuelsVisite({ titres, libre = false }: { titres: ShowcaseTitle[]
     }
   }
 
-  const tete = libre
+  const tete = sansNotes
     ? [...new Set(etat.duels.flatMap((d) => [d.a, d.b]))].sort((x, y) => eloDe(etat, y) - eloDe(etat, x)).slice(0, 3)
     : [];
   return (
@@ -332,9 +345,29 @@ export function ClassementVisite({ titres }: { titres: ShowcaseTitle[] }) {
   const parCle = useParCle(titres);
   const paliers = classement(etat);
   if (paliers.length === 0) {
+    // Sans note : l'ordre de tes duels, sinon un exemple (les mieux notés sur TMDB).
+    const duelles = [...new Set(etat.duels.flatMap((d) => [d.a, d.b]))].sort((x, y) => eloDe(etat, y) - eloDe(etat, x));
+    const exemple = duelles.length === 0;
+    const ordre = exemple
+      ? [...titres].sort((x, y) => (y.voteAverage ?? 0) - (x.voteAverage ?? 0)).slice(0, 6)
+      : duelles.map((cle) => parCle.get(cle)).filter((t): t is ShowcaseTitle => Boolean(t));
     return (
-      <div className="feature-stage">
-        <Suite titre="Ton classement se forme dès ta première note." href="#notation" action="Noter mes titres vus" />
+      <div className="feature-stage justify-start">
+        <div className="flex flex-wrap items-center gap-3">
+          <Badge>{exemple ? "Exemple" : "D'après tes duels"}</Badge>
+          <span className="text-sm text-muted">{exemple ? "Tes notes le remplaceront." : "Note-les pour les ranger par palier."}</span>
+        </div>
+        <ol className="flex flex-wrap gap-2">
+          {ordre.map((t, i) => (
+            <li key={cleTitre(t)} className="flex w-20 flex-col gap-1">
+              <div className="poster relative aspect-[2/3] w-full rounded-control">
+                <Poster url={t.posterUrl} className="h-full w-full object-cover" />
+                <span className="overlay-pill absolute left-1 top-1 text-xs">{i + 1}</span>
+              </div>
+              <p className="line-clamp-2 text-xs text-muted">{t.name}</p>
+            </li>
+          ))}
+        </ol>
       </div>
     );
   }
@@ -372,16 +405,24 @@ export function ClassementVisite({ titres }: { titres: ShowcaseTitle[] }) {
 export function RecosVisite({ titres, pool }: { titres: ShowcaseTitle[]; pool: ShowcaseTitle[] }) {
   const { etat } = useVisite();
   const parCle = useParCle([...titres, ...pool]);
-  const recos = recommandations(etat, pool, parCle);
-  if (recos.length === 0) {
-    return (
-      <div className="feature-stage">
-        <Suite titre="Note un titre 4 ou 5 étoiles : tes recommandations partent de là." href="#notation" action="Noter mes titres vus" />
-      </div>
-    );
-  }
+  const aToi = recommandations(etat, pool, parCle);
+  // Sans titre aimé : les mieux notés du moment, en attendant (jamais de chapitre vide).
+  const recos =
+    aToi.length > 0
+      ? aToi
+      : [...new Map(pool.map((t) => [cleTitre(t), t])).values()]
+          .filter((t) => !etat.tri[cleTitre(t)])
+          .sort((x, y) => (y.voteAverage ?? 0) - (x.voteAverage ?? 0))
+          .slice(0, 6)
+          .map((titre) => ({ titre, parce: null as ShowcaseTitle | null }));
   return (
     <div className="feature-stage justify-start">
+      {aToi.length === 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <Badge>En attendant</Badge>
+          <span className="text-sm text-muted">Note un titre 4 ou 5 étoiles : les recos partiront de lui.</span>
+        </div>
+      )}
       <ul className="grid gap-3 sm:grid-cols-2">
         {recos.map(({ titre, parce }) => (
           <Card as="li" key={cleTitre(titre)} className="flex gap-3 p-2">
@@ -390,10 +431,17 @@ export function RecosVisite({ titres, pool }: { titres: ShowcaseTitle[]; pool: S
             </div>
             <div className="flex min-w-0 flex-col items-start gap-1.5">
               <p className="line-clamp-1 text-sm font-medium text-foreground">{titre.name}</p>
-              <p className="line-clamp-2 flex items-start gap-1.5 text-xs text-muted">
-                <Heart size={12} aria-hidden="true" className="mt-0.5 shrink-0" />
-                Parce que tu as aimé {parce.name}
-              </p>
+              {parce ? (
+                <p className="line-clamp-2 flex items-start gap-1.5 text-xs text-muted">
+                  <Heart size={12} aria-hidden="true" className="mt-0.5 shrink-0" />
+                  Parce que tu as aimé {parce.name}
+                </p>
+              ) : (
+                <MetaRow>
+                  {titre.year && <span>{titre.year}</span>}
+                  {titre.genres.length > 0 && <span>{genreLine(titre.genres, 1)}</span>}
+                </MetaRow>
+              )}
               <EnvieBouton titre={titre} />
             </div>
           </Card>

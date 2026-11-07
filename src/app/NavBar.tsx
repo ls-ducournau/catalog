@@ -175,7 +175,9 @@ export default function NavBar({ visiteur = false }: { visiteur?: boolean }) {
             </Link>
             {/* Les menus ne tiennent qu'à partir de 1024 px : en dessous, la barre d'onglets du bas
                 prend le relais. */}
-            <TopMenus pathname={pathname} lien={lien} />
+            {/* Un visiteur n'a pas encore de collection ni de goûts : pas de menus de l'application
+                (décision de Louis, 2026-11-06). */}
+            {!visiteur && <TopMenus pathname={pathname} lien={lien} />}
             <div className="ml-auto flex items-center gap-2">
               {/* En ligne seulement : « Se connecter », ou l'initiale du compte. */}
               <CompteBouton />
@@ -201,7 +203,7 @@ export default function NavBar({ visiteur = false }: { visiteur?: boolean }) {
                 </Button>
               )}
               {visiteur ? (
-                <Button href="/visite" aria-current={pathname === "/visite" ? "page" : undefined} variant="primary" className="hidden lg:inline-flex">
+                <Button href="/visite" aria-current={pathname === "/visite" ? "page" : undefined} variant="primary">
                   Fais le tour
                 </Button>
               ) : (
@@ -223,39 +225,41 @@ export default function NavBar({ visiteur = false }: { visiteur?: boolean }) {
       {/* Barre d'onglets, au pouce : téléphone et tablette. Sur téléphone, quatre onglets et
           « Plus » ; sur tablette, les sept. Sa hauteur est réservée en bas de page
           (--bottom-nav-h, globals.css). */}
-      <nav
-        aria-label="Navigation"
-        className="nav-glass fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 mx-auto max-w-3xl lg:hidden"
-      >
-        <ul className="flex h-16 items-stretch px-1">
-          {NAV_LINKS.map((link) => {
-            const active = isActive(pathname, link.href);
-            return (
-              <li key={link.href} className={`min-w-0 flex-1 ${link.primary ? "flex" : "hidden sm:flex"}`}>
-                <Link
-                  href={lien(link.href)}
-                  aria-current={active ? "page" : undefined}
-                  className="group flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg outline-none transition-transform duration-100 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-focus"
-                >
-                  <TabContent icon={link.icon} label={link.short ?? link.label} active={active} />
-                </Link>
-              </li>
-            );
-          })}
-          <li className="flex min-w-0 flex-1 sm:hidden">
-            <button
-              ref={moreButton}
-              type="button"
-              onClick={() => setMoreOpen(true)}
-              aria-haspopup="dialog"
-              aria-expanded={moreOpen}
-              className="group flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg outline-none transition-transform duration-100 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-focus"
-            >
-              <TabContent icon={Ellipsis} label="Plus" active={overflowActive} />
-            </button>
-          </li>
-        </ul>
-      </nav>
+      {!visiteur && (
+        <nav
+          aria-label="Navigation"
+          className="nav-glass fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 mx-auto max-w-3xl lg:hidden"
+        >
+          <ul className="flex h-16 items-stretch px-1">
+            {NAV_LINKS.map((link) => {
+              const active = isActive(pathname, link.href);
+              return (
+                <li key={link.href} className={`min-w-0 flex-1 ${link.primary ? "flex" : "hidden sm:flex"}`}>
+                  <Link
+                    href={lien(link.href)}
+                    aria-current={active ? "page" : undefined}
+                    className="group flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg outline-none transition-transform duration-100 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-focus"
+                  >
+                    <TabContent icon={link.icon} label={link.short ?? link.label} active={active} />
+                  </Link>
+                </li>
+              );
+            })}
+            <li className="flex min-w-0 flex-1 sm:hidden">
+              <button
+                ref={moreButton}
+                type="button"
+                onClick={() => setMoreOpen(true)}
+                aria-haspopup="dialog"
+                aria-expanded={moreOpen}
+                className="group flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg outline-none transition-transform duration-100 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-focus"
+              >
+                <TabContent icon={Ellipsis} label="Plus" active={overflowActive} />
+              </button>
+            </li>
+          </ul>
+        </nav>
+      )}
 
       {/* « Plus » : les pages sans onglet sur téléphone, en feuille depuis le bas. Hors de la barre :
           son flou d'arrière-plan piégerait une surcouche fixe placée dedans. */}

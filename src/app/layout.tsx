@@ -40,6 +40,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="fr"
       className={`${workSans.variable} ${bricolage.variable} ${geistMono.variable} h-full antialiased`}
+      // Un visiteur n'a pas de barre d'onglets en bas : pas de place réservée (globals.css).
+      data-visiteur={visiteur ? "" : undefined}
     >
       <body className="min-h-full flex flex-col">
         <MotionRoot />

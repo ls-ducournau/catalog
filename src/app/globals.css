@@ -2208,6 +2208,11 @@ html {
   }
 }
 
+/* Un visiteur (accueil, visite) n'a pas la barre d'onglets de l'application. */
+:root[data-visiteur] {
+  --bottom-nav-h: 0px;
+}
+
 body {
   overflow-x: clip;
   padding-bottom: var(--bottom-nav-h);
