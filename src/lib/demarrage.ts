@@ -1,5 +1,5 @@
 import type { Availability } from "./availability";
-import { DEMARRAGE_TITRES, NOTES_POUR_RECOS } from "./amorce";
+import { DEMARRAGE_TITRES, NOTES_POUR_RECOS } from "./seuils";
 import type { DiscoveredItem } from "./discoveryService";
 import type { Category } from "./libraryItem";
 import type { ShowcaseTitle } from "./showcase";

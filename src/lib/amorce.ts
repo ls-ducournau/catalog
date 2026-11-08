@@ -8,8 +8,9 @@ import { VITRINE_PER_LIST, VITRINE_PER_MOOD, VITRINE_PICKS, type Vitrine } from 
 // - bibliothèque garnie : l'accueil du compte, à l'identique (aucune suggestion), sauf une section
 //   qui serait vide : elle se remplit de suggestions plutôt que de disparaître.
 
-/** En dessous de ce nombre de titres, la bibliothèque « démarre » (seuil du score de compatibilité). */
-export const DEMARRAGE_TITRES = 30;
+import { DEMARRAGE_TITRES } from "./seuils";
+
+export { DEMARRAGE_TITRES, NOTES_POUR_RECOS } from "./seuils";
 
 export type AccueilCompose = {
   moods: ShowcaseTab[];
@@ -70,5 +71,3 @@ export function composerAccueil(preview: HomeShowcase | null, vitrine: Vitrine, 
   };
 }
 
-/** Notes à donner avant les premières recommandations (MIN_RATED_TITLES, preferenceService.ts). */
-export const NOTES_POUR_RECOS = 10;
