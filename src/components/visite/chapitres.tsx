@@ -701,7 +701,8 @@ export function BarreVisite({ avant, apres, garder: avecGarder = true }: { avant
           </p>
           {montrer && (
             <Button onClick={() => void garder()} loading={envoi !== null}>
-              Garder<span className="hidden sm:inline">&nbsp;ce que j&apos;ai fait</span>
+              <span className="sm:hidden">Garder</span>
+              <span className="hidden sm:inline">Garder ce que j&apos;ai fait</span>
             </Button>
           )}
           {apres}
