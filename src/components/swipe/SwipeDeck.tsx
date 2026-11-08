@@ -5,7 +5,7 @@ import { Eye, Heart, Info, Undo2, X, type LucideIcon } from "lucide-react";
 import { RatingKeys } from "@/components/RatingKeys";
 import { TrailerButton } from "@/components/TrailerButton";
 import { Button } from "@/components/ui/Button";
-import { Card, Kbd, Keycap, MetaRow } from "@/components/ui/primitives";
+import { Card, Kbd, MetaRow } from "@/components/ui/primitives";
 import type { CarteSwipe, ReponseSwipe } from "@/lib/demarrage";
 import type { FicheCarte } from "@/lib/ficheCarte";
 import { genreLine } from "@/lib/genres";
@@ -41,13 +41,13 @@ function Geste({ icon: Icon, label, touche, onClick, disabled }: { icon: LucideI
       variant="tile"
       onClick={onClick}
       disabled={disabled}
-      className="flex min-h-14 items-center justify-center gap-2 px-2 text-sm font-medium text-foreground disabled:opacity-40 sm:min-h-16"
+      className="flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-2 text-xs font-medium text-foreground disabled:opacity-40 sm:min-h-16 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
     >
       <Icon size={16} aria-hidden="true" className="shrink-0" />
-      <span className="truncate">{label}</span>
-      <Keycap aria-hidden="true" className="hidden md:inline-flex">
+      <span className="whitespace-nowrap">{label}</span>
+      <Kbd aria-hidden="true" className="hidden md:inline-flex">
         {touche}
-      </Keycap>
+      </Kbd>
     </Card>
   );
 }
@@ -215,14 +215,17 @@ export function SwipeDeck({
     if (!carte || sortie) return;
     setGlisse(null);
     setMode({ cle: carte.cle, note: true, verso: false });
-  }, [carte, sortie]);
+    // Le bouton « Déjà vu » disparaît : le focus revient au paquet, pour noter au clavier.
+    if (clavier === "focus") paquet.current?.focus({ preventScroll: true });
+  }, [carte, sortie, clavier]);
 
   const retourner = useCallback(
     (v: boolean) => {
       if (!carte) return;
       setMode({ cle: carte.cle, note: false, verso: v });
+      if (clavier === "focus") paquet.current?.focus({ preventScroll: true });
     },
-    [carte]
+    [carte, clavier]
   );
 
   const noter = (n: number | null) => {
@@ -350,7 +353,7 @@ export function SwipeDeck({
         ref={paquet}
         tabIndex={clavier === "focus" ? 0 : -1}
         aria-label={clavier === "focus" ? "Cartes de titres : flèches gauche, droite et haut pour répondre" : undefined}
-        className="swipe-deck"
+        className={cn("swipe-deck", clavier === "page" && "is-page")}
         style={tint}
       >
         {[dessous, carte].map((c, i) =>
@@ -401,7 +404,7 @@ export function SwipeDeck({
           </div>
         </div>
       ) : (
-        <div className="grid w-full max-w-md grid-cols-3 gap-2">
+        <div className="grid w-full max-w-xl grid-cols-3 gap-2">
           <Geste icon={X} label="Pas pour moi" touche="←" onClick={() => partir({ kind: "non" })} disabled={!carte} />
           <Geste icon={Eye} label="Déjà vu" touche="↑" onClick={commencerNote} disabled={!carte} />
           <Geste icon={Heart} label="Ça me tente" touche="→" onClick={() => partir({ kind: "envie" })} disabled={!carte} />

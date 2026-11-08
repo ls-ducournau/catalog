@@ -1802,11 +1802,22 @@ html {
   .swipe-deck {
     --tint: 112 114 120;
     position: relative;
-    width: min(100%, 22rem, max(15rem, calc((100svh - 22rem) * 0.6667)));
+    width: min(100%, 22rem, max(15rem, calc((100svh - 14rem) * 0.6667)));
     aspect-ratio: 2 / 3;
     margin-inline: auto;
     border-radius: var(--r-card-lg);
     outline: none;
+  }
+
+  /* La bienvenue : la jauge et la question au-dessus, les trois gestes dessous, tout dans l'écran. */
+  .swipe-deck.is-page {
+    width: min(100%, 24rem, max(14rem, calc((100svh - 20rem) * 0.6667)));
+  }
+
+  @media (width >= 40rem) {
+    .swipe-deck.is-page {
+      width: min(100%, 24rem, max(14rem, calc((100svh - 27rem) * 0.6667)));
+    }
   }
 
   .swipe-deck:focus-visible {
@@ -1880,8 +1891,8 @@ html {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
-    padding: 5rem 1.25rem 1.25rem;
-    background: linear-gradient(to top, rgb(0 0 0 / 0.9) 0%, rgb(0 0 0 / 0.72) 55%, transparent 100%);
+    padding: 6rem 1.25rem 1.25rem;
+    background: linear-gradient(to top, rgb(0 0 0 / 0.94) 0%, rgb(0 0 0 / 0.82) 50%, transparent 100%);
   }
 
   .swipe-card-verso {

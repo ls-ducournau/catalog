@@ -161,9 +161,9 @@ export function Bienvenue({ vitrine, depart }: { vitrine: Vitrine; depart: Progr
         <>
           <JaugeDemarrage progression={progression} className="mb-4" />
           <h1 className="text-balance text-heading-sm text-foreground sm:text-heading">Ça te tente ?</h1>
-          <p className="max-w-md text-balance text-sm text-muted sm:text-base">
-            <span className="sm:hidden">À droite ça te tente, à gauche pas pour toi, vers le haut déjà vu.</span>
-            <span className="hidden sm:inline">Chaque geste remplit ta bibliothèque et apprend tes goûts. Les flèches du clavier marchent aussi.</span>
+          {/* Au téléphone, les trois boutons sous la carte disent les gestes : la place va à l'affiche. */}
+          <p className="hidden max-w-md text-balance text-base text-muted sm:block">
+            Chaque geste remplit ta bibliothèque et apprend tes goûts. Les flèches du clavier marchent aussi.
           </p>
           {prete && (
             <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
