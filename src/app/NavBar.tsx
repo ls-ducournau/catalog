@@ -205,7 +205,9 @@ export default function NavBar({ visiteur = false }: { visiteur?: boolean }) {
               {visiteur ? (
                 // Dans la visite, la barre ne pousse plus à la visite : on peut la quitter.
                 pathname === "/visite" ? (
-                  <Button href="/">Quitter la visite</Button>
+                  <Button href="/" aria-label="Quitter la visite">
+                    Quitter<span className="hidden sm:inline">&nbsp;la visite</span>
+                  </Button>
                 ) : (
                   <Button href="/visite" variant="primary">
                     Fais le tour

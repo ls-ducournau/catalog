@@ -1,15 +1,21 @@
-import { Film, Inbox, Swords } from "lucide-react";
+import { Film, Gift, Inbox, Sparkles, Star, Swords } from "lucide-react";
 import { Badge, Button, MonoMeta } from "@/components/ui";
 import {
   ArrowLink,
+  ClosingCall,
   DetailHeader,
   EmptyState,
   FeatureEyebrow,
   FeatureSection,
+  FeatureGrid,
   FeaturedRow,
+  HowItWorks,
   InfoTable,
+  PosterFan,
+  ReasonsSection,
   SectionHeading,
   ShardsBackdrop,
+  SiteFooter,
   SummaryCard,
   SummaryCards,
   TimelineSection,
@@ -127,6 +133,37 @@ export function SectionsDemo() {
           Une icône en cercle, une phrase, une action.
         </EmptyState>
       </div>
+
+      {/* Page d'arrivée (docs/audit/landing-visite-app-2026-11-07.md) : elle convainc, rien n'y écrit. */}
+      <PosterFan posters={["Un", "Deux", "Trois", "Quatre", "Cinq", "Six", "Sept"].map((name) => ({ name, posterUrl: null }))} label="PosterFan" />
+      <HowItWorks
+        id="demo-comment"
+        title="HowItWorks"
+        steps={[
+          { title: "Tu notes.", text: "Trois temps numérotés, chacun avec ses affiches (note, duel, recommandation).", href: "/visite?etape=notation", action: "Essayer la notation" },
+          { title: "Tu départages.", text: "Chaque temps mène à son étape de la visite.", href: "/visite?etape=duels", action: "Essayer les duels" },
+          { title: "On te conseille.", text: "Sans affiche, le temps garde son texte.", href: "/visite?etape=recos", action: "Voir des recommandations" },
+        ]}
+      />
+      <FeatureGrid
+        id="demo-parties"
+        title="FeatureGrid"
+        lead="Une tuile par partie de l'application, vers son étape de la visite."
+        items={[
+          { href: "/visite?etape=notation", icon: <Star size={18} aria-hidden="true" />, name: "Notation", line: "0 pour 💩, de 1 à 5 étoiles." },
+          { href: "/visite?etape=duels", icon: <Swords size={18} aria-hidden="true" />, name: "Duels", line: "Deux titres, tu gardes ton préféré." },
+        ]}
+      />
+      <ReasonsSection
+        id="demo-pourquoi"
+        title="ReasonsSection"
+        items={[
+          { icon: <Sparkles size={18} aria-hidden="true" />, title: "Une raison.", text: "Une phrase, validée avant d'être écrite." },
+          { icon: <Gift size={18} aria-hidden="true" />, title: "Une autre.", text: "Côte à côte dès 640 px." },
+        ]}
+      />
+      <ClosingCall title="ClosingCall" lead="Le dernier appel, au bas de la page d'arrivée." actions={<Button variant="primary">Fais le tour</Button>} />
+      <SiteFooter maker={{ name: "Yugen", href: "https://yugen-incubator.framer.website/" }} data={{ name: "TMDB", href: "https://www.themoviedb.org/" }} />
     </div>
   );
 }

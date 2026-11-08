@@ -689,7 +689,15 @@ export function BarreVisite({ avant, apres, garder: avecGarder = true }: { avant
         <div className="nav-glass flex items-center gap-2 p-2">
           {avant}
           <p className="min-w-0 flex-1 truncate px-1 text-sm text-muted sm:px-2" aria-live="polite">
-            {envoi ? `Je garde… ${envoi}` : montrer ? resume(bilan) : ""}
+            {envoi ? (
+              `Je garde… ${envoi}`
+            ) : montrer ? (
+              <>
+                {/* Au téléphone, la barre tient aussi Précédent et Suivant : le nombre de titres seul. */}
+                <span className="sm:hidden">{nombre(bilan.titres.length, "titre", "titres")}</span>
+                <span className="hidden sm:inline">{resume(bilan)}</span>
+              </>
+            ) : null}
           </p>
           {montrer && (
             <Button onClick={() => void garder()} loading={envoi !== null}>

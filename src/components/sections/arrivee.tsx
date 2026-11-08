@@ -70,11 +70,11 @@ function StepPicture({ visual }: { visual: StepVisual }) {
         </div>
       )}
       {visual.kind === "reco" && (
-        <div className="flex w-40 flex-col items-center gap-3">
+        <div className="flex w-56 flex-col items-center gap-3">
           <AfficheImage affiche={visual.affiche} className="w-28" />
-          <p className="flex max-w-full items-center gap-1.5 text-xs text-muted">
-            <Heart size={12} aria-hidden="true" className="shrink-0" />
-            <span className="truncate">Parce que tu as aimé {visual.parce}</span>
+          <p className="flex max-w-full items-start gap-1.5 text-xs text-muted">
+            <Heart size={12} aria-hidden="true" className="mt-0.5 shrink-0" />
+            <span className="line-clamp-2">Parce que tu as aimé {visual.parce}</span>
           </p>
         </div>
       )}
