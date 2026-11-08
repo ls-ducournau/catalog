@@ -50,6 +50,7 @@ pub fn app() -> Router {
         .route("/api/items", get(items::liste).post(ecriture::ajouter))
         .route("/api/items/{id}", get(items::fiche).patch(ecriture::modifier).delete(ecriture::retirer))
         .route("/api/tmdb/search", get(ecriture::recherche))
+        .route("/api/tmdb/title", get(decouverte::fiche))
         .route("/api/settings/subscriptions", get(reglages::lire_abonnements).put(reglages::ecrire_abonnements))
         .route("/api/providers", get(reglages::fournisseurs))
         .route("/api/recommendations", get(recommandations::recommandations))

@@ -328,6 +328,44 @@ pub fn rangees(items: &[Decouverte], couverts: &HashSet<i64>, annee_courante: f6
         .collect()
 }
 
+/// La fiche d'une carte de bienvenue (specs/bienvenue-v1.md, FR-4) : bande-annonce, où le voir, durée,
+/// réalisation et têtes d'affiche, tirées de la fiche TMDB gardée 7 jours.
+pub fn fiche_carte(d: &DonneesTitre) -> Value {
+    let noms = |cle: &str, n: usize| -> Vec<String> {
+        d.caracteristiques
+            .get(cle)
+            .and_then(Value::as_array)
+            .map(|l| l.iter().filter_map(|p| p.get("name").and_then(Value::as_str)).take(n).map(String::from).collect())
+            .unwrap_or_default()
+    };
+    json!({
+        "trailer": d.bande_annonce.get("trailer").cloned().unwrap_or(Value::Null),
+        "availability": d.disponibilite.clone(),
+        "runtime": d.caracteristiques.get("runtime").cloned().unwrap_or(Value::Null),
+        "directors": noms("directors", 2),
+        "cast": noms("cast", 4),
+    })
+}
+
+/// GET /api/tmdb/title?tmdbId=&type= : la fiche d'un titre hors bibliothèque. Publique, comme la vitrine
+/// (rien du compte) : un visiteur balaie des cartes sur la page d'arrivée.
+pub async fn fiche(Query(p): Query<HashMap<String, String>>) -> axum::response::Response {
+    use axum::{http::StatusCode, response::IntoResponse};
+    let type_: Option<&'static str> = match p.get("type").map(String::as_str) {
+        Some("Movie") => Some("Movie"),
+        Some("TV Series") => Some("TV Series"),
+        _ => None,
+    };
+    let tmdb_id = p.get("tmdbId").and_then(|v| v.parse::<i64>().ok()).filter(|n| *n > 0);
+    let (Some(type_), Some(tmdb_id)) = (type_, tmdb_id) else {
+        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "invalid" }))).into_response();
+    };
+    match donnees_externes(tmdb_id, type_).await {
+        Some(d) => Json(fiche_carte(&d)).into_response(),
+        None => (StatusCode::BAD_GATEWAY, Json(json!({ "error": "tmdb_unavailable" }))).into_response(),
+    }
+}
+
 /// GET /api/recommendations/discover?category=&limit=&onMyServices=1&rows=1
 pub async fn route(utilisateur: Utilisateur, Query(p): Query<HashMap<String, String>>) -> Result<Json<Value>, Erreur> {
     let maintenant = js::maintenant_ms();
@@ -351,6 +389,26 @@ pub async fn route(utilisateur: Utilisateur, Query(p): Query<HashMap<String, Str
 mod tests {
     //! Tests de src/lib/discoveryService.test.ts (AC-12, AC-13, AC-14 ; sorties-v1 AC-6), mêmes cas.
     use super::*;
+
+    #[test]
+    fn la_fiche_d_une_carte_garde_l_essentiel() {
+        let d = DonneesTitre {
+            caracteristiques: json!({
+                "runtime": 155,
+                "directors": [{ "id": 1, "name": "Denis Villeneuve" }],
+                "cast": [{ "id": 2, "name": "A" }, { "id": 3, "name": "B" }, { "id": 4, "name": "C" }, { "id": 5, "name": "D" }, { "id": 6, "name": "E" }],
+            }),
+            disponibilite: json!({ "link": null, "flatrate": [], "free": [], "ads": [], "rent": [], "buy": [], "fetchedAt": "2026-11-08" }),
+            sortie: Value::Null,
+            bande_annonce: json!({ "trailer": { "key": "abc", "language": "fr" }, "fetchedAt": "2026-11-08" }),
+        };
+        let f = fiche_carte(&d);
+        assert_eq!(f["runtime"], 155);
+        assert_eq!(f["directors"], json!(["Denis Villeneuve"]));
+        assert_eq!(f["cast"].as_array().unwrap().len(), 4);
+        assert_eq!(f["trailer"]["key"], "abc");
+        assert_eq!(f["availability"]["flatrate"], json!([]));
+    }
 
     fn resultat(tmdb_id: i64) -> Resultat {
         Resultat {

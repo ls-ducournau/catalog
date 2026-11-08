@@ -4,10 +4,55 @@ import { useRef, useState } from "react";
 import { Heart, Laugh, Rocket, Zap } from "lucide-react";
 import { Button, Chip, MonoMeta, SearchField, Select, Switch, Tabs, TextField } from "@/components/ui";
 import { StarRating } from "@/components/StarRating";
+import { JaugeDemarrage } from "@/components/swipe/Jauge";
+import { SwipeDeck } from "@/components/swipe/SwipeDeck";
+import type { CarteSwipe } from "@/lib/demarrage";
 import { DURATION, preset, prefersReducedMotion, useGSAP } from "@/lib/motion";
 
 // Démonstrations interactives du guide /design (spec design-system-v2 § 8.3). Aucune écriture :
 // les contrôles ne changent que leur état local.
+
+/** Bienvenue (specs/bienvenue-v1.md) : le paquet, sans affiche ni écriture, et la jauge à trois moments. */
+const CARTES_DEMO: CarteSwipe[] = ["Un film", "Une série", "Un documentaire"].map((name, i) => ({
+  cle: `Movie:${i + 1}`,
+  tmdbId: i + 1,
+  type: i === 1 ? "TV Series" : "Movie",
+  category: i === 1 ? "TV Series" : i === 2 ? "Documentary" : "Movie",
+  name,
+  year: "2026",
+  genres: ["Drame"],
+  overview: "Le synopsis tient sur deux lignes, discrètement, sous le titre ; la carte retournée le donne en entier.",
+  posterUrl: null,
+  voteAverage: 7.8,
+  trailer: null,
+  availability: null,
+  runtime: 112,
+}));
+
+export function BienvenueDemo() {
+  const [file, setFile] = useState(CARTES_DEMO);
+  const [retour, setRetour] = useState<string | null>(null);
+  return (
+    <div className="grid gap-10 md:grid-cols-2">
+      <SwipeDeck
+        cartes={file}
+        fiches={{}}
+        onRepondre={(c, r) => {
+          setFile((f) => [...f.slice(1), c]);
+          setRetour(`« ${c.name} » : ${r.kind === "envie" ? "ça me tente" : r.kind === "non" ? "pas pour moi" : "déjà vu"}`);
+        }}
+        retour={retour}
+        fin={null}
+        clavier="focus"
+      />
+      <div className="flex flex-col gap-8">
+        <JaugeDemarrage progression={{ titres: 3, notes: 1 }} />
+        <JaugeDemarrage progression={{ titres: 18, notes: 10 }} />
+        <JaugeDemarrage progression={{ titres: 30, notes: 12 }} />
+      </div>
+    </div>
+  );
+}
 
 export function ChipDemo() {
   const [picked, setPicked] = useState<string[]>(["intense"]);

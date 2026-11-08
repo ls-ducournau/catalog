@@ -101,7 +101,7 @@ const TEXTES: Record<Etape, Texte> = {
     nom: "Garder",
     titre: "Garde ce que tu as fait.",
     pourquoi:
-      "Tes titres, tes notes et tes duels deviennent ta bibliothèque. Ensuite, un e-mail et un mot de passe pour la retrouver partout, sans code de confirmation.",
+      "Tes titres, tes notes et tes duels deviennent ta bibliothèque. Ensuite, tu la remplis d'un geste ; un e-mail et un mot de passe quand tu veux la garder.",
   },
 };
 

@@ -23,7 +23,7 @@ import {
 } from "@/components/ui";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { CompatibilityChip } from "@/components/CompatibilityChip";
-import { ChipDemo, ControlsDemo, FieldDemo, MotionDemo, SwitchDemo } from "./Demos";
+import { BienvenueDemo, ChipDemo, ControlsDemo, FieldDemo, MotionDemo, SwitchDemo } from "./Demos";
 import { ArchetypesDemo, SectionsDemo } from "./Archetypes";
 import { CompteBoutonVue } from "@/components/CompteBouton";
 import { ConnexionForm } from "@/components/ConnexionForm";
@@ -356,8 +356,9 @@ export default function DesignPage() {
         </div>
       </Section>
 
-      <Section id="compte" title="Compte" lead="En ligne seulement. Dans la barre du haut : « Se connecter », puis l'initiale du compte. La page /connexion pose la fenêtre de commande sur le héros, comme les Duels.">
+      <Section id="compte" title="Compte" lead="En ligne seulement. Dans la barre du haut : « Tester » pour un visiteur, « Garder mon compte » pour un invité qui a des titres, puis l'initiale du compte. La page /connexion pose la fenêtre de commande sur le héros, comme les Duels.">
         <div className="flex flex-wrap items-center gap-3">
+          <CompteBoutonVue etat={{ connecte: false, anonyme: false, email: null }} visiteur />
           <CompteBoutonVue etat={{ connecte: true, anonyme: true, email: null }} />
           <CompteBoutonVue etat={{ connecte: true, anonyme: false, email: "louis@exemple.fr" }} />
         </div>
@@ -365,6 +366,10 @@ export default function DesignPage() {
           <ConnexionForm retour="/design" demo={{ connecte: true, anonyme: true, email: null }} />
           <ConnexionForm retour="/design" demo={{ connecte: true, anonyme: false, email: "louis@exemple.fr" }} />
         </div>
+      </Section>
+
+      <Section id="bienvenue" title="Bienvenue" lead="Le paquet de cartes : → ça me tente, ← pas pour moi, ↑ déjà vu puis une note ; un tap retourne la carte. La jauge : titres et notes, puis le prochain palier.">
+        <BienvenueDemo />
       </Section>
 
       <Section id="sections" title="Sections" lead="Blocs réutilisables relevés sur raycast.com ; un archétype les assemble.">

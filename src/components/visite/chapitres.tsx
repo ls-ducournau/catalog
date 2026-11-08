@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { ArrowRight, Check, Heart, Plus, Undo2 } from "lucide-react";
-import { useEtatCompte } from "@/components/CompteBouton";
 import { RatingKeys, ratedAs } from "@/components/RatingKeys";
 import { StarCount } from "@/components/StarRating";
 import { SegmentedControl as Tabs } from "@/components/SegmentedControl";
@@ -607,10 +606,12 @@ export function SortiesVisite({ sorties }: { sorties: ShowcaseTitle[] }) {
 
 // ---------- Garder ----------
 
-/** Verse la visite dans un compte : les titres (vus, envies), leurs notes, puis les duels. */
-function useGarder() {
+/**
+ * Verse la visite dans un compte : les titres (vus, envies), leurs notes, puis les duels ; ensuite, la
+ * bienvenue (specs/bienvenue-v1.md) pour remplir la bibliothèque. Aussi au bas du paquet de la page d'arrivée.
+ */
+export function useGarder() {
   const { etat, oublier } = useVisite();
-  const compte = useEtatCompte();
   const [envoi, setEnvoi] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const bilan = aGarder(etat);
@@ -647,9 +648,11 @@ function useGarder() {
       return;
     }
     oublier();
-    // Un invité garde maintenant son compte (e-mail et mot de passe) ; un compte durable va à sa bibliothèque.
-    const durable = compte && compte.connecte && !compte.anonyme;
-    window.location.href = compte && !durable ? "/connexion?retour=/library" : "/library";
+    // La suite : remplir la bibliothèque d'un geste. Un invité garde son compte (e-mail et mot de passe)
+    // quand il le veut, depuis la barre du haut ou la jauge prête. Un vrai rechargement : la session vient
+    // de s'ouvrir, toute la page (barre comprise) en dépend.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- rechargement complet voulu
+    window.location.href = "/bienvenue";
   }
 
   return { bilan, garder, envoi, erreur };
@@ -735,7 +738,7 @@ export function GarderVisite() {
           {envoi ? `Je garde… ${envoi}` : "Garder ce que j'ai fait"}
         </Button>
         <p role="alert" className="min-h-5 text-sm text-muted">
-          {erreur ?? (rien ? "Trie au moins un titre pour commencer ta bibliothèque." : "Tes titres, tes notes et tes duels deviennent ta bibliothèque. Sans code de confirmation.")}
+          {erreur ?? (rien ? "Trie au moins un titre pour commencer ta bibliothèque." : "Tes titres, tes notes et tes duels deviennent ta bibliothèque, sans rien remplir.")}
         </p>
       </div>
     </div>

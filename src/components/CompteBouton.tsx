@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { Button, buttonClass } from "@/components/ui/Button";
 
 // Le compte dans la barre du haut — spec: specs/accueil-vitrine-connexion-v1.md (§ 4). En ligne (v2)
 // seulement : la route /session/etat n'existe pas en local, le bouton reste alors invisible.
-// Visiteur ou invité : « Se connecter » ouvre /connexion. Compte durable : son initiale, qui ouvre un
-// menu (l'adresse, « Se déconnecter »).
+// Visiteur (pas de session, ou invité sans titre) : « Tester » ouvre la bienvenue (specs/bienvenue-v1.md),
+// « Se connecter » sur la bienvenue elle-même. Invité qui a des titres : « Garder mon compte » (/connexion).
+// Compte durable : son initiale, qui ouvre un menu (l'adresse, « Se déconnecter »).
 
 export type EtatCompte = { connecte: boolean; anonyme: boolean; email: string | null };
 
@@ -28,7 +30,19 @@ export function useEtatCompte(): EtatCompte | null | undefined {
 }
 
 /** Le bouton selon l'état du compte (sans appel réseau : la page /design montre chaque état). */
-export function CompteBoutonVue({ etat, onDeconnexion }: { etat: EtatCompte; onDeconnexion?: () => void }) {
+export function CompteBoutonVue({
+  etat,
+  visiteur = false,
+  chemin = "/",
+  onDeconnexion,
+}: {
+  etat: EtatCompte;
+  /** Pas encore de bibliothèque : on l'invite à tester. */
+  visiteur?: boolean;
+  /** La page ouverte (où revenir après la connexion). */
+  chemin?: string;
+  onDeconnexion?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement | null>(null);
   const toggle = useRef<HTMLButtonElement | null>(null);
@@ -52,7 +66,18 @@ export function CompteBoutonVue({ etat, onDeconnexion }: { etat: EtatCompte; onD
     };
   }, [open]);
 
-  if (!etat.connecte || etat.anonyme || !etat.email) {
+  if (visiteur && (!etat.connecte || etat.anonyme)) {
+    return chemin === "/bienvenue" ? <Button href="/connexion">Se connecter</Button> : <Button href="/bienvenue">Tester</Button>;
+  }
+  if (etat.connecte && etat.anonyme) {
+    return (
+      <Button href={`/connexion?retour=${encodeURIComponent(chemin)}`} aria-label="Garder mon compte">
+        <span className="sm:hidden">Mon compte</span>
+        <span className="hidden sm:inline">Garder mon compte</span>
+      </Button>
+    );
+  }
+  if (!etat.connecte || !etat.email) {
     return <Button href="/connexion">Se connecter</Button>;
   }
 
@@ -94,12 +119,15 @@ export function CompteBoutonVue({ etat, onDeconnexion }: { etat: EtatCompte; onD
   );
 }
 
-export function CompteBouton() {
+export function CompteBouton({ visiteur = false }: { visiteur?: boolean }) {
   const etat = useEtatCompte();
+  const chemin = usePathname();
   if (!etat) return null;
   return (
     <CompteBoutonVue
       etat={etat}
+      visiteur={visiteur}
+      chemin={chemin}
       onDeconnexion={async () => {
         await fetch("/session/deconnexion", { method: "POST" }).catch(() => null);
         // Tout l'écran dépend du compte : un vrai rechargement, depuis l'accueil.

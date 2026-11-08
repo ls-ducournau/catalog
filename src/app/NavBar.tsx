@@ -180,7 +180,7 @@ export default function NavBar({ visiteur = false }: { visiteur?: boolean }) {
             {!visiteur && <TopMenus pathname={pathname} lien={lien} />}
             <div className="ml-auto flex items-center gap-2">
               {/* En ligne seulement : « Se connecter », ou l'initiale du compte. */}
-              <CompteBouton />
+              <CompteBouton visiteur={visiteur} />
               {/* Un visiteur n'a ni réglages ni bibliothèque où ajouter (décision de Louis, 2026-11-06). */}
               {!visiteur && <SettingsMenu />}
               {/* Ajouter un titre, depuis n'importe quelle page : la fenêtre d'ajout de la

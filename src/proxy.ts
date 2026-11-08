@@ -32,8 +32,9 @@ import {
  */
 function sansSession(request: NextRequest): boolean {
   const { pathname } = request.nextUrl;
-  // L'accueil et la visite se regardent sans compte (specs/visite-interactive-v1.md).
-  if (pathname === "/" || pathname === "/visite") return true;
+  // L'accueil et la visite se regardent sans compte (specs/visite-interactive-v1.md) ; la bienvenue aussi :
+  // son premier geste ouvre la session (specs/bienvenue-v1.md).
+  if (pathname === "/" || pathname === "/visite" || pathname === "/bienvenue") return true;
   if (pathname.startsWith("/api/")) return request.method === "GET" || request.method === "HEAD";
   return request.headers.get("sec-fetch-dest") !== "document";
 }

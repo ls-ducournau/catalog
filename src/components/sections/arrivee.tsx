@@ -93,6 +93,18 @@ function Titre({ id, children, lead }: { id: string; children: ReactNode; lead?:
   );
 }
 
+/** Une section centrée : titre, précision, puis son contenu (le paquet à balayer de la page d'arrivée). */
+export function CenteredSection({ id, title, lead, children }: { id: string; title: ReactNode; lead?: ReactNode; children: ReactNode }) {
+  return (
+    <section id={id} aria-labelledby={`${id}-titre`} className="flex flex-col items-center gap-8">
+      <Titre id={`${id}-titre`} lead={lead}>
+        {title}
+      </Titre>
+      {children}
+    </section>
+  );
+}
+
 /** « Comment ça marche » : trois temps numérotés, chacun avec ses affiches et son étape de la visite. */
 export function HowItWorks({
   id,
