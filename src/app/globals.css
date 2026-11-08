@@ -1757,6 +1757,45 @@ html {
     }
   }
 
+  /* Dans la fenêtre de commande (la visite, une étape à l'écran) : la scène prend le cadre de la
+     fenêtre, sans second relief. */
+  .bezel-inner .feature-stage {
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* Page d'arrivée : les titres du moment en éventail sous le héros (affiches dominantes, aucune
+     commande). --i : écart au centre (signé), --d : sa valeur absolue. Au survol, l'affiche monte d'un
+     cran, sans ressort. */
+  .poster-fan {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-inline: 1rem;
+  }
+
+  .poster-fan > li {
+    --w: clamp(5.5rem, 15vw, 10rem);
+    width: var(--w);
+    flex-shrink: 0;
+    margin-inline: calc(var(--w) * -0.1);
+    z-index: calc(10 - var(--d));
+    transform: translateY(calc(var(--d) * 0.75rem)) rotate(calc(var(--i) * 3deg));
+    transition: transform var(--dur-base) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .poster-fan > li:hover {
+      transform: translateY(calc(var(--d) * 0.75rem - 0.5rem)) rotate(calc(var(--i) * 3deg));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .poster-fan > li {
+      transition: none;
+    }
+  }
+
   /* Lien d'une carte à actions : il couvre toute la carte ; les boutons passent au-dessus. */
   .showcase-card:has(.showcase-link:focus-visible) {
     outline: 2px solid var(--focus);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ShowcaseTitle } from "./showcase";
-import { aGarder, apresDuel, classement, cleTitre, ETAT_VIDE, pourCeSoir, prochainePaire, recommandations, versVisite, type EtatVisite } from "./visite";
+import { aGarder, apresDuel, classement, cleTitre, ETAT_VIDE, etapeDe, pourCeSoir, prochainePaire, recommandations, versVisite, type EtatVisite } from "./visite";
 
 // spec: specs/visite-interactive-v1.md
 
@@ -33,12 +33,20 @@ function titre(tmdbId: number, genres: string[], over: Partial<ShowcaseTitle> = 
 
 describe("visite", () => {
   it("envoie chaque page de l'application au bon chapitre", () => {
-    expect(versVisite("/library")).toBe("/visite#tri");
-    expect(versVisite("/tri?famille=seen")).toBe("/visite#notation");
-    expect(versVisite("/tri?famille=unseen")).toBe("/visite#tri");
-    expect(versVisite("/classement?vue=personnes")).toBe("/visite#classement");
-    expect(versVisite("/ce-soir")).toBe("/visite#ce-soir");
+    expect(versVisite("/library")).toBe("/visite");
+    expect(versVisite("/tri?famille=seen")).toBe("/visite?etape=notation");
+    expect(versVisite("/tri?famille=unseen")).toBe("/visite");
+    expect(versVisite("/classement?vue=personnes")).toBe("/visite?etape=classement");
+    expect(versVisite("/ce-soir")).toBe("/visite?etape=ce-soir");
     expect(versVisite("/")).toBe("/");
+  });
+
+  it("lit l'étape dans l'adresse, l'ancienne ancre comprise", () => {
+    expect(etapeDe("duels")).toBe("duels");
+    expect(etapeDe("#sorties")).toBe("sorties");
+    expect(etapeDe("garder")).toBe("garder");
+    expect(etapeDe("inconnue")).toBe("tri");
+    expect(etapeDe(null)).toBe("tri");
   });
 
   it("fait gagner des points au vainqueur d'un duel, autant que le perdant en cède", () => {

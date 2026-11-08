@@ -203,9 +203,14 @@ export default function NavBar({ visiteur = false }: { visiteur?: boolean }) {
                 </Button>
               )}
               {visiteur ? (
-                <Button href="/visite" aria-current={pathname === "/visite" ? "page" : undefined} variant="primary">
-                  Fais le tour
-                </Button>
+                // Dans la visite, la barre ne pousse plus à la visite : on peut la quitter.
+                pathname === "/visite" ? (
+                  <Button href="/">Quitter la visite</Button>
+                ) : (
+                  <Button href="/visite" variant="primary">
+                    Fais le tour
+                  </Button>
+                )
               ) : (
                 <Button
                   href="/ce-soir"

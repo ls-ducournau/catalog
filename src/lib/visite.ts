@@ -18,7 +18,7 @@ export type EtatVisite = {
 
 export const ETAT_VIDE: EtatVisite = { tri: {}, notes: {}, duels: [], elo: {} };
 
-/** Les chapitres, dans l'ordre de la visite (ancres de /visite). */
+/** Les chapitres, dans l'ordre de la visite : une étape à l'écran, `/visite?etape=<id>`. */
 export const CHAPITRES = [
   { id: "tri", nom: "Tri rapide" },
   { id: "notation", nom: "Notation" },
@@ -32,6 +32,21 @@ export const CHAPITRES = [
 
 export type Chapitre = (typeof CHAPITRES)[number]["id"];
 
+/** Les étapes de la visite : les huit chapitres, puis « Garder ». */
+export type Etape = Chapitre | "garder";
+export const ETAPES: Etape[] = [...CHAPITRES.map((c) => c.id), "garder"];
+
+/** L'adresse d'une étape (la première est la visite elle-même). */
+export function adresseEtape(etape: Etape): string {
+  return etape === CHAPITRES[0].id ? "/visite" : `/visite?etape=${etape}`;
+}
+
+/** L'étape demandée par l'adresse (`?etape=`, ou l'ancienne ancre `#`) ; sinon la première. */
+export function etapeDe(valeur: string | null | undefined): Etape {
+  const id = (valeur ?? "").replace(/^#/, "");
+  return (ETAPES as string[]).includes(id) ? (id as Etape) : CHAPITRES[0].id;
+}
+
 /** Clé d'un titre de la vitrine : « type:tmdbId » (la même que la bibliothèque). */
 export function cleTitre(t: ShowcaseTitle): string {
   return `${t.type}:${t.suggestion?.tmdbId ?? t.id}`;
@@ -40,7 +55,7 @@ export function cleTitre(t: ShowcaseTitle): string {
 /** Une page de l'application vue par un visiteur : le chapitre de la visite qui la présente. */
 export function versVisite(href: string): string {
   const [chemin, requete = ""] = href.split("?");
-  if (chemin === "/tri") return requete.includes("famille=seen") || requete.includes("famille=person") ? "/visite#notation" : "/visite#tri";
+  if (chemin === "/tri") return adresseEtape(requete.includes("famille=seen") || requete.includes("famille=person") ? "notation" : "tri");
   const ancres: Record<string, Chapitre> = {
     "/library": "tri",
     "/classement": "classement",
@@ -50,7 +65,7 @@ export function versVisite(href: string): string {
     "/sorties": "sorties",
     "/ce-soir": "ce-soir",
   };
-  return ancres[chemin] ? `/visite#${ancres[chemin]}` : href;
+  return ancres[chemin] ? adresseEtape(ancres[chemin]) : href;
 }
 
 const ELO_DEPART = 1500;
@@ -153,15 +168,6 @@ export function pourCeSoir(etat: EtatVisite, pool: ShowcaseTitle[], envie: Exclu
   const deja = (t: ShowcaseTitle) => etat.tri[cleTitre(t)] === "vu" || etat.tri[cleTitre(t)] === "pasvu";
   const uniques = [...new Map(pool.map((t) => [cleTitre(t), t])).values()].filter((t) => convient(t) && !deja(t));
   return [...uniques.filter((t) => etat.tri[cleTitre(t)] === "envie"), ...uniques.filter((t) => etat.tri[cleTitre(t)] !== "envie")].slice(0, n);
-}
-
-/** Où en est le visiteur, chapitre par chapitre (les chapitres à regarder seulement n'ont pas de seuil). */
-export function avancement(etat: EtatVisite): Partial<Record<Chapitre, boolean>> {
-  return {
-    tri: Object.keys(etat.tri).length >= 5,
-    notation: Object.keys(etat.notes).length >= 3,
-    duels: etat.duels.length >= 3,
-  };
 }
 
 /** Ce que « Garder ce que j'ai fait » versera dans le compte. */

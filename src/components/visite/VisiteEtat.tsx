@@ -1,12 +1,11 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { ETAT_VIDE, type EtatVisite } from "@/lib/visite";
+import { ETAT_VIDE, type EtatVisite, type Etape } from "@/lib/visite";
 
-// L'état de la visite (specs/visite-interactive-v1.md) : dans le navigateur du visiteur seulement.
-// `persistant` : gardé d'une page à l'autre (localStorage), sinon oublié au rechargement (les
-// démonstrations de l'accueil). Le stockage peut être refusé (navigation privée) : la visite marche alors
-// sans mémoire.
+// L'état de la visite (specs/visite-interactive-v1.md) : dans le navigateur du visiteur seulement, gardé
+// d'une page à l'autre (localStorage). Le stockage peut être refusé (navigation privée) : la visite marche
+// alors sans mémoire.
 
 const CLE = "catalog-visite-v1";
 
@@ -36,32 +35,31 @@ function ecrire(etat: EtatVisite | null) {
   }
 }
 
-export function VisiteProvider({ persistant = true, children }: { persistant?: boolean; children: ReactNode }) {
+export function VisiteProvider({ children }: { children: ReactNode }) {
   const [etat, setEtat] = useState<EtatVisite>(ETAT_VIDE);
 
   useEffect(() => {
-    if (!persistant) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- l'état gardé ne se lit qu'au navigateur
     setEtat(lire());
     const surStockage = (e: StorageEvent) => e.key === CLE && setEtat(lire());
     window.addEventListener("storage", surStockage);
     return () => window.removeEventListener("storage", surStockage);
-  }, [persistant]);
+  }, []);
 
   const maj = useCallback(
     (f: (etat: EtatVisite) => EtatVisite) =>
       setEtat((avant) => {
         const apres = f(avant);
-        if (persistant) ecrire(apres);
+        ecrire(apres);
         return apres;
       }),
-    [persistant]
+    []
   );
 
   const oublier = useCallback(() => {
-    if (persistant) ecrire(null);
+    ecrire(null);
     setEtat(ETAT_VIDE);
-  }, [persistant]);
+  }, []);
 
   const valeur = useMemo(() => ({ etat, maj, oublier }), [etat, maj, oublier]);
   return <Contexte.Provider value={valeur}>{children}</Contexte.Provider>;
@@ -71,4 +69,12 @@ export function useVisite(): Visite {
   const visite = useContext(Contexte);
   if (!visite) throw new Error("useVisite hors de VisiteProvider");
   return visite;
+}
+
+/** Passer à une étape de la visite (fourni par le parcours, une étape à l'écran). */
+const AllerContexte = createContext<((etape: Etape) => void) | null>(null);
+export const AllerProvider = AllerContexte.Provider;
+
+export function useAller(): ((etape: Etape) => void) | null {
+  return useContext(AllerContexte);
 }
