@@ -88,3 +88,21 @@ La bibliothèque se montre dans le chapitre 1 et à la fin : la pile qui s'est r
   aucun compte ; « Garder » crée l'invité et verse 6 titres avec statuts et notes, puis /connexion
   (compte de test supprimé). `tsc`, `eslint`, 261 tests, audit du système de design sans écart.
 
+
+## 9. Pas à pas et page d'arrivée distincte (2026-11-08)
+
+Suite de l'audit `docs/audit/landing-visite-app-2026-11-07.md` et des décisions de Louis (§ 5 de l'audit).
+
+- **Visite pas à pas** : une étape à l'écran (`/visite?etape=<id>`, l'ancienne ancre `#id` redirigée),
+  dans la fenêtre de commande de l'application ; « Étape n sur 8 » et un fil de huit traits ; Précédent et
+  Suivant (et les flèches ←, →) ; le retour du navigateur revient à l'étape précédente. Les touches d'un
+  chapitre marchent sans cliquer d'abord. Sous chaque étape, « Dans l'application, en plus : … ».
+- **Barre « Garder » fixe** en bas dès le premier titre trié (« 2 titres, 1 note ») : on garde à tout
+  moment ; la dernière étape reprend le bilan. Dans la barre du haut, « Quitter la visite » remplace
+  « Fais le tour ».
+- **La page d'arrivée ne joue plus la visite** : plus aucun chapitre ni commande qui écrit sur l'accueil
+  d'un visiteur (le § 5 ci-dessus est remplacé). Elle compte cinq blocs : héros et éventail des titres du
+  moment ; comment ça marche (noter, départager, recevoir des recommandations) ; les huit parties, chacune
+  vers son étape ; pourquoi Catalog (il apprend de tes notes ; gratuit pendant la bêta) ; dernier appel et
+  pied de page (un projet Yugen, attribution TMDB).
+- L'accueil d'un compte est inchangé : sa refonte est le prochain chantier.

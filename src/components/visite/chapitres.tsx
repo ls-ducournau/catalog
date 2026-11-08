@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { ArrowRight, Check, Heart, Plus, Undo2 } from "lucide-react";
 import { useEtatCompte } from "@/components/CompteBouton";
 import { RatingKeys, ratedAs } from "@/components/RatingKeys";
@@ -669,29 +669,34 @@ function resume(bilan: ReturnType<typeof aGarder>): string {
 }
 
 /**
- * La barre « Garder », fixée en bas dès le premier titre trié : on garde à tout moment, sans aller au
- * bout de la visite (docs/audit/landing-visite-app-2026-11-07.md, § 3).
+ * La barre de la visite, fixée en bas, à portée du pouce quelle que soit la longueur de l'étape :
+ * l'étape précédente (`avant`), ce qu'il y a à garder, l'étape suivante (`apres`). « Garder » paraît dès
+ * le premier titre trié : on garde à tout moment, sans aller au bout (audit 2026-11-07, § 3).
  */
-export function BarreGarder() {
+export function BarreVisite({ avant, apres, garder: avecGarder = true }: { avant?: ReactNode; apres?: ReactNode; garder?: boolean }) {
   const { bilan, garder, envoi, erreur } = useGarder();
-  if (bilan.titres.length === 0) return null;
+  const montrer = avecGarder && bilan.titres.length > 0;
   return (
     <>
       {/* La place de la barre, au bas de la page : elle ne cache jamais la fin d'une étape. */}
       <div aria-hidden="true" className="h-20 shrink-0" />
-      <div className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-xl flex-col gap-2">
+      <div className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-2xl flex-col gap-2">
         {erreur && (
           <p role="alert" className="nav-glass px-4 py-2 text-sm text-muted">
             {erreur}
           </p>
         )}
-        <div className="nav-glass flex items-center gap-3 py-2 pl-4 pr-2">
-          <p className="min-w-0 flex-1 truncate text-sm text-muted" aria-live="polite">
-            {envoi ? `Je garde… ${envoi}` : resume(bilan)}
+        <div className="nav-glass flex items-center gap-2 p-2">
+          {avant}
+          <p className="min-w-0 flex-1 truncate px-1 text-sm text-muted sm:px-2" aria-live="polite">
+            {envoi ? `Je garde… ${envoi}` : montrer ? resume(bilan) : ""}
           </p>
-          <Button variant="primary" onClick={() => void garder()} loading={envoi !== null}>
-            Garder ce que j&apos;ai fait
-          </Button>
+          {montrer && (
+            <Button onClick={() => void garder()} loading={envoi !== null}>
+              Garder<span className="hidden sm:inline">&nbsp;ce que j&apos;ai fait</span>
+            </Button>
+          )}
+          {apres}
         </div>
       </div>
     </>

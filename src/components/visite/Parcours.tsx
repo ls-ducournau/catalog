@@ -2,15 +2,15 @@
 
 import { useCallback, useEffect, useEffectEvent, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
-import { CalendarDays, Layers, ListVideo, Popcorn, Save, Sparkles, Star, Swords, Trophy, type LucideIcon } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Layers, ListVideo, Popcorn, Save, Sparkles, Star, Swords, Trophy, type LucideIcon } from "lucide-react";
 import { HeroLayout } from "@/components/layouts";
 import { CommandWindow } from "@/components/sections";
-import { MonoMeta, type Action } from "@/components/ui";
+import { Button, MonoMeta } from "@/components/ui";
 import type { ShowcaseTitle } from "@/lib/showcase";
 import { cn } from "@/lib/utils";
 import { adresseEtape, CHAPITRES, ETAPES, etapeDe, type Etape } from "@/lib/visite";
 import {
-  BarreGarder,
+  BarreVisite,
   CeSoirVisite,
   ClassementVisite,
   DuelsVisite,
@@ -25,9 +25,9 @@ import { AllerProvider } from "./VisiteEtat";
 
 // La visite pas à pas — specs/visite-interactive-v1.md, docs/audit/landing-visite-app-2026-11-07.md (§ 3).
 // Une étape à l'écran, dans la fenêtre de commande de l'application : « Étape n sur 8 », le pourquoi, le
-// geste, puis ce que l'application ajoute. Précédent et Suivant (et les flèches du clavier) ; l'adresse
-// suit l'étape (`?etape=`), le retour du navigateur revient à la précédente. La barre « Garder » reste
-// en bas dès le premier titre trié.
+// geste, puis ce que l'application ajoute. Précédent et Suivant dans la barre fixée en bas (et les flèches
+// du clavier) ; l'adresse suit l'étape (`?etape=`), le retour du navigateur revient à la précédente.
+// « Garder » rejoint la barre dès le premier titre trié.
 
 type Texte = {
   icone: LucideIcon;
@@ -201,11 +201,6 @@ export function ParcoursVisite({
     garder: <GarderVisite />,
   };
 
-  const primaire: Action | undefined = suivante
-    ? { label: suivante === "garder" ? "Garder" : "Suivant", keys: ["→"], onClick: () => aller(suivante) }
-    : undefined;
-  const secondaires: Action[] = [{ label: "Précédent", keys: ["←"], onClick: () => precedente && aller(precedente), disabled: !precedente }];
-
   return (
     <AllerProvider value={aller}>
       <HeroLayout
@@ -226,8 +221,6 @@ export function ParcoursVisite({
               <span className="truncate">{texte.nom}</span>
             </>
           }
-          primary={primaire}
-          secondary={secondaires}
         >
           <div key={etape}>{visuels[etape]}</div>
         </CommandWindow>
@@ -239,7 +232,29 @@ export function ParcoursVisite({
             </span>
           </p>
         )}
-        {etape !== "garder" && <BarreGarder />}
+        <BarreVisite
+          garder={etape !== "garder"}
+          avant={
+            <Button
+              variant="ghost"
+              icon
+              onClick={() => precedente && aller(precedente)}
+              disabled={!precedente}
+              aria-label="Étape précédente"
+              title="Étape précédente (←)"
+            >
+              <ArrowLeft size={16} aria-hidden="true" />
+            </Button>
+          }
+          apres={
+            suivante && (
+              <Button variant="primary" onClick={() => aller(suivante)} title={`${suivante === "garder" ? "Terminer" : "Étape suivante"} (→)`}>
+                {suivante === "garder" ? "Terminer" : "Suivant"}
+                <ArrowRight size={16} aria-hidden="true" />
+              </Button>
+            )
+          }
+        />
       </HeroLayout>
     </AllerProvider>
   );

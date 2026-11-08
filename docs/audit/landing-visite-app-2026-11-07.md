@@ -106,3 +106,15 @@ les démonstrations de duel, de liste et de sorties (elles vivent dans la visite
    FR-9) ; gratuit. Aucun ne sera écrit sans ton accord.
 3. La visite pas à pas (une étape à l'écran) plutôt que la longue page actuelle ?
 4. Le pied de page : quel nom et quel contact afficher ?
+
+### Décisions de Louis (2026-11-08)
+
+1. Les trois espaces : oui pour la page d'arrivée et la visite. L'accueil d'un compte sera redéfini dans le
+   prochain chantier (le lot 4 attend).
+2. « Pourquoi Catalog » : **il apprend de tes notes** ; **gratuit pendant la bêta**. « Sans publicité »
+   dépendra du modèle économique : non écrit.
+3. Visite pas à pas : oui.
+4. Pied de page : **Yugen**, https://yugen-incubator.framer.website/.
+
+Lots 1 à 3 réalisés le 2026-11-08 (voir `specs/visite-interactive-v1.md`, § 9).
+
