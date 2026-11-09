@@ -8,6 +8,7 @@ import { Card, Kbd, MetaRow } from "@/components/ui/primitives";
 import type { CarteSwipe, ReponseSwipe } from "@/lib/demarrage";
 import type { FicheCarte } from "@/lib/ficheCarte";
 import { genreLine } from "@/lib/genres";
+import { gesteAppris, noterGesteAppris, prochainIndice } from "@/lib/indice";
 import type { Category } from "@/lib/libraryItem";
 import { prefersReducedMotion, preset, useGSAP } from "@/lib/motion";
 import { timingLine } from "@/lib/playlistFormat";
@@ -17,15 +18,12 @@ import { cn } from "@/lib/utils";
 // à balayer : → ça me tente, ← pas pour moi, ↑ déjà vu (sans note : décision de Louis, 2026-11-09). Les
 // trois boutons et le clavier font la même chose. Un tap (ou « i ») retourne la carte : synopsis, durée,
 // réalisation, où le voir, bande-annonce. Mouvement : transform et opacité, 220 ms, sans ressort ; réduit,
-// la carte change sans voler. Tant qu'on n'a pas touché au paquet, la carte du dessus se balance une fois à
-// droite puis à gauche, avec son tampon, pour montrer le geste (FR-12).
+// la carte change sans voler. Tant qu'on n'a pas touché au paquet, la carte du dessus se balance à droite puis
+// à gauche, avec son tampon, pour montrer le geste : à l'arrivée à l'écran, puis à intervalles qui s'espacent
+// (FR-12, le rythme dans src/lib/indice.ts).
 
 const CATEGORIE: Record<Category, string> = { Movie: "Film", "TV Series": "Série", Documentary: "Documentaire" };
 const SORTIE_MS = 220;
-/** L'indice du geste : quand le paquet paraît, puis une fois encore si rien ne se passe. */
-const INDICE_DELAI_MS = 700;
-const INDICE_RELANCE_MS = 7000;
-const INDICES_MAX = 2;
 
 /** Où la carte s'en va, selon le geste. */
 type Sortie = { x: number; y: number; rot: number };
@@ -185,7 +183,9 @@ export function SwipeDeck({
   const carteDessus = useRef<HTMLElement | null>(null);
   const tamponOui = useRef<HTMLSpanElement | null>(null);
   const tamponNon = useRef<HTMLSpanElement | null>(null);
-  const indices = useRef(0);
+  // L'indice : passages joués depuis l'arrivée à l'écran ; le paquet est-il à l'écran ; un geste l'a-t-il arrêté.
+  const joues = useRef(0);
+  const aLEcran = useRef(false);
   const indiceFini = useRef(false);
   const relance = useRef<ReturnType<typeof setTimeout> | null>(null);
   const appui = useRef<{ id: number; x0: number; y0: number; t0: number; w: number; h: number; lx: number; ly: number; lt: number; vx: number; vy: number } | null>(null);
@@ -196,21 +196,29 @@ export function SwipeDeck({
   }, []);
 
   // ---------- l'indice du geste (FR-12) ----------
-  const jouerIndice = useCallback(() => {
-    if (indiceFini.current || indices.current >= INDICES_MAX || prefersReducedMotion()) return;
-    indices.current += 1;
-    setIndice(true);
+  /** Le prochain passage, selon le rythme (src/lib/indice.ts) ; rien si un geste l'a arrêté ou hors de l'écran. */
+  const planifierIndice = useCallback(() => {
+    if (relance.current) clearTimeout(relance.current);
+    relance.current = null;
+    const delai = prochainIndice(joues.current);
+    if (delai === null || indiceFini.current || !aLEcran.current || gesteAppris() || prefersReducedMotion()) return;
+    relance.current = setTimeout(() => {
+      if (indiceFini.current || !aLEcran.current || document.hidden) return;
+      joues.current += 1;
+      setIndice(true);
+    }, delai);
   }, []);
-  /** Le premier contact avec le paquet : plus jamais d'indice. */
-  const arreterIndice = useCallback(() => {
+  /** Un contact avec le paquet : plus d'indice ici ; un vrai balayage : plus d'indice de la séance. */
+  const arreterIndice = useCallback((appris = false) => {
     indiceFini.current = true;
+    if (appris) noterGesteAppris();
     if (relance.current) clearTimeout(relance.current);
     setIndice(false);
   }, []);
   const finIndice = useCallback(() => {
     setIndice(false);
-    if (!indiceFini.current && indices.current < INDICES_MAX) relance.current = setTimeout(jouerIndice, INDICE_RELANCE_MS);
-  }, [jouerIndice]);
+    planifierIndice();
+  }, [planifierIndice]);
   // Le balancement lui-même : un préréglage de mouvement ; arrêté (et la carte remise en place) dès que
   // l'indice cesse, par un geste ou un retournement.
   useGSAP(
@@ -220,21 +228,45 @@ export function SwipeDeck({
     },
     { dependencies: [indice], revertOnUpdate: true }
   );
-  // Il joue quand le paquet paraît à l'écran (sur la page d'arrivée, plus bas que le héros).
+  // À l'écran (60 % du paquet visible) : le compte repart de zéro, premier passage 1 s plus tard. Hors de
+  // l'écran (moins de 20 %) ou onglet caché : tout s'arrête ; au retour, ça recommence.
   useEffect(() => {
     const element = paquet.current;
     if (!element || typeof IntersectionObserver === "undefined") return;
+    const suspendre = () => {
+      if (relance.current) clearTimeout(relance.current);
+      relance.current = null;
+      setIndice(false);
+    };
     const observateur = new IntersectionObserver(
       (entrees) => {
-        if (!entrees.some((e) => e.isIntersecting)) return;
-        observateur.disconnect();
-        relance.current = setTimeout(jouerIndice, INDICE_DELAI_MS);
+        const ratio = entrees[entrees.length - 1]?.intersectionRatio ?? 0;
+        if (ratio >= 0.6 && !aLEcran.current) {
+          aLEcran.current = true;
+          joues.current = 0;
+          planifierIndice();
+        } else if (ratio < 0.2 && aLEcran.current) {
+          aLEcran.current = false;
+          suspendre();
+        }
       },
-      { threshold: 0.6 }
+      { threshold: [0, 0.2, 0.6] }
     );
     observateur.observe(element);
-    return () => observateur.disconnect();
-  }, [jouerIndice]);
+    const surVisibilite = () => {
+      if (!aLEcran.current) return;
+      if (document.hidden) suspendre();
+      else {
+        joues.current = 0;
+        planifierIndice();
+      }
+    };
+    document.addEventListener("visibilitychange", surVisibilite);
+    return () => {
+      observateur.disconnect();
+      document.removeEventListener("visibilitychange", surVisibilite);
+    };
+  }, [planifierIndice]);
 
   // Les affiches des cartes suivantes, chargées d'avance : la suivante apparaît sans attendre.
   const aPrecharger = cartes
@@ -320,7 +352,6 @@ export function SwipeDeck({
   function surAppui(e: ReactPointerEvent<HTMLElement>) {
     if (e.button !== 0 || !carte || sortie || verso) return;
     if ((e.target as Element).closest("button, a")) return;
-    arreterIndice();
     const boite = e.currentTarget.getBoundingClientRect();
     e.currentTarget.setPointerCapture(e.pointerId);
     const t = performance.now();
@@ -337,6 +368,8 @@ export function SwipeDeck({
     a.lx = e.clientX;
     a.ly = e.clientY;
     a.lt = t;
+    // La carte bouge vraiment sous le doigt (pas un défilement de la page qui part d'elle) : plus d'indice.
+    if (!indiceFini.current && Math.abs(e.clientX - a.x0) + Math.abs(e.clientY - a.y0) > 8) arreterIndice();
     setGlisse({ x: e.clientX - a.x0, y: Math.min(e.clientY - a.y0, 40), w: a.w });
   }
   function surLacher(e: ReactPointerEvent<HTMLElement>) {
@@ -357,6 +390,8 @@ export function SwipeDeck({
     }
     const versLeHaut = Math.abs(dy) > Math.abs(dx) && (dy < -a.h * 0.18 || (a.vy < -0.5 && dy < -30));
     const surLeCote = Math.abs(dx) > a.w * 0.28 || (Math.abs(a.vx) > 0.5 && Math.abs(dx) > 30);
+    // Un vrai balayage : le geste est appris, plus d'indice de la séance.
+    if (versLeHaut || surLeCote) arreterIndice(true);
     if (versLeHaut) partir({ kind: "vu" });
     else if (surLeCote) partir({ kind: dx > 0 ? "envie" : "non" });
     else setGlisse(null);

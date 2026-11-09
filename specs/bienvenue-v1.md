@@ -65,11 +65,29 @@ Décisions de Louis (2026-11-08) :
   sans 10 notes, pile vide, découverte sans titre bien noté, duels, classement, bibliothèque vide), l'action
   mène à la bienvenue : c'est le chemin le plus court vers des titres vus et notés.
 
-- **FR-12** (indice du geste, 2026-11-09, demande de Louis : « le swipe n'est pas évident au premier coup
-  d'œil ») — Quand le paquet paraît à l'écran, la carte du dessus se balance à droite (tampon « Ça me
-  tente ») puis à gauche (« Pas pour moi ») et revient ; une seconde fois 7 s plus tard si rien ne se passe ;
-  plus jamais dès le premier contact. Préréglage `preset.indice` (quatre mouvements de 400 ms, sans
-  dépassement) ; rien avec le mouvement réduit.
+- **FR-12** (indice du geste, 2026-11-09, demandes de Louis : « le swipe n'est pas évident au premier coup
+  d'œil », puis « une répétition quand on atteint la section, et après un certain délai quand on y reste,
+  le temps de récurrence choisi avec une logique UX ») — La carte du dessus se balance à droite (tampon « Ça
+  me tente ») puis à gauche (« Pas pour moi ») et revient : préréglage `preset.indice`, 1,6 s (quatre
+  mouvements de 400 ms, sans dépassement) ; rien avec le mouvement réduit. **Rythme** (`src/lib/indice.ts`) :
+  - **1 s** après que le paquet est à l'écran (60 % visible) : le temps d'y poser les yeux. Nielsen : 1 s est
+    la limite où le fil de la pensée reste continu ; plus tôt, l'animation se perd dans le défilement.
+  - Puis, sans geste, **8 s, 16 s, 32 s** d'écart. Le premier rappel tombe avant la limite d'attention de
+    10 s (Nielsen, au-delà « on pense à autre chose ») et dans les 10 premières secondes où un visiteur juge
+    une page ; l'écart double ensuite, car une animation qui revient trop souvent devient un bruit qu'on
+    ignore (NN/g, habituation ; changer le rythme d'un stimulus contre l'habituation) ; le dernier passage
+    tombe vers une minute, la durée moyenne d'une visite de page (NN/g).
+  - **Quatre passages au plus** par venue à l'écran, de 1,6 s chacun, sous les 5 s au-delà desquelles WCAG
+    2.2.2 exige un moyen de mettre en pause une animation automatique.
+  - **De nouveau** à chaque retour du paquet à l'écran (après en être sorti, moins de 20 % visible) ou de
+    l'onglet ; en pause tant que l'onglet est caché.
+  - **Plus jamais** sur ce paquet dès qu'on y touche (geste, bouton, carte retournée) ; plus de la séance dès
+    un vrai balayage (`sessionStorage`). Un défilement de la page qui part de la carte ne compte pas.
+  - Pas de chiffre « 8 secondes d'attention » : c'est un mythe (BBC 2017, King's College London 2022).
+  - Sources : nngroup.com « Response Time Limits » et « How Long Do Users Stay on Web Pages? », « Animation
+    for Attention and Comprehension » ; W3C « Understanding SC 2.2.2 Pause, Stop, Hide » ; Material « Gesture
+    education » (indice de mouvement qui s'arrête au premier geste). Aucune étude ne donne de délai standard :
+    à mesurer sur les premiers visiteurs (part de ceux qui balaient avant le deuxième passage).
 
 - **FR-13** (tout te suit, 2026-11-09) — Sans compte, rien ne s'écrit : le paquet, les sections jouables de la
   page d'arrivée (« Ça me tente ») et la visite gardent les choix dans le navigateur (un seul état).
@@ -92,3 +110,4 @@ Décisions de Louis (2026-11-08) :
 - 2026-11-09 : « Déjà vu » sans note, lien « Noter mes titres vus » dans la jauge ; FR-12 (`preset.indice`).
 - 2026-11-09 : audit du parcours visiteur ; FR-9 revu, FR-13 (`src/components/visite/verser.ts`,
   `BacSuggestions`, `ClavierLocal`) ; sections de l'accueil en version pour tous sur la page d'arrivée.
+- 2026-11-09 : rythme de l'indice (FR-12) : à chaque arrivée à l'écran, puis 8, 16, 32 s (`src/lib/indice.ts` + 1 test).
