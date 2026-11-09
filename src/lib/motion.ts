@@ -8,7 +8,7 @@
 // navigateur ; animations créées dans useGSAP() ou un gsap.context().
 //
 // Hors de ce fichier et de components/motion/, on n'écrit pas de tween : on appelle un préréglage
-// (`preset.enter`, `preset.swap`, `preset.slide`), pour que tout bouge de la même façon.
+// (`preset.enter`, `preset.swap`, `preset.slide`, `preset.indice`), pour que tout bouge de la même façon.
 
 import { gsap } from "gsap";
 import { CustomEase } from "gsap/CustomEase";
@@ -77,6 +77,25 @@ export const preset = {
   /** Un repère (pastille d'onglet, de lien) glisse jusqu'à sa cible. */
   slide: (targets: gsap.TweenTarget, to: gsap.TweenVars, config?: { duration?: number }): Tween =>
     gsap.effects.slide(targets, { to, ...config }),
+  /**
+   * L'indice d'un geste (specs/bienvenue-v1.md, FR-12) : la carte se balance à droite puis à gauche et
+   * revient, le tampon de chaque côté paraît avec elle. Quatre mouvements de 400 ms, courbe standard, sans
+   * dépassement. À créer dans useGSAP() : le contexte l'annule et rend la carte à sa place.
+   */
+  indice: (carte: Element, tampons: { droite: Element | null; gauche: Element | null }, onComplete?: () => void): gsap.core.Timeline => {
+    const visibles = [tampons.droite, tampons.gauche].filter((t): t is Element => t !== null);
+    const tl = gsap.timeline({ onComplete, defaults: { duration: DURATION.slow, ease: EASE.standard } });
+    tl.set(visibles, { autoAlpha: 0 });
+    tl.to(carte, { x: 44, rotation: 4 });
+    if (tampons.droite) tl.to(tampons.droite, { autoAlpha: 0.9, duration: DURATION.fast }, "<0.1");
+    tl.to(carte, { x: 0, rotation: 0 });
+    if (tampons.droite) tl.to(tampons.droite, { autoAlpha: 0, duration: DURATION.fast }, "<");
+    tl.to(carte, { x: -44, rotation: -4 });
+    if (tampons.gauche) tl.to(tampons.gauche, { autoAlpha: 0.9, duration: DURATION.fast }, "<0.1");
+    tl.to(carte, { x: 0, rotation: 0, clearProps: "transform" });
+    if (tampons.gauche) tl.to(tampons.gauche, { autoAlpha: 0, duration: DURATION.fast }, "<");
+    return tl;
+  },
 };
 
 export function prefersReducedMotion(): boolean {

@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useEffectEvent, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
 import { Eye, Heart, Info, Undo2, X, type LucideIcon } from "lucide-react";
-import { RatingKeys } from "@/components/RatingKeys";
 import { TrailerButton } from "@/components/TrailerButton";
 import { Button } from "@/components/ui/Button";
 import { Card, Kbd, MetaRow } from "@/components/ui/primitives";
@@ -10,18 +9,23 @@ import type { CarteSwipe, ReponseSwipe } from "@/lib/demarrage";
 import type { FicheCarte } from "@/lib/ficheCarte";
 import { genreLine } from "@/lib/genres";
 import type { Category } from "@/lib/libraryItem";
-import { prefersReducedMotion } from "@/lib/motion";
+import { prefersReducedMotion, preset, useGSAP } from "@/lib/motion";
 import { timingLine } from "@/lib/playlistFormat";
 import { cn } from "@/lib/utils";
 
-// Le paquet de cartes de Bienvenue — spec: specs/bienvenue-v1.md (FR-1 à FR-5). Une affiche en grand, à
-// balayer : → ça me tente, ← pas pour moi, ↑ déjà vu (puis une note d'une touche, de 💩 à 5 étoiles). Les
+// Le paquet de cartes de Bienvenue — spec: specs/bienvenue-v1.md (FR-1 à FR-5, FR-12). Une affiche en grand,
+// à balayer : → ça me tente, ← pas pour moi, ↑ déjà vu (sans note : décision de Louis, 2026-11-09). Les
 // trois boutons et le clavier font la même chose. Un tap (ou « i ») retourne la carte : synopsis, durée,
 // réalisation, où le voir, bande-annonce. Mouvement : transform et opacité, 220 ms, sans ressort ; réduit,
-// la carte change sans voler.
+// la carte change sans voler. Tant qu'on n'a pas touché au paquet, la carte du dessus se balance une fois à
+// droite puis à gauche, avec son tampon, pour montrer le geste (FR-12).
 
 const CATEGORIE: Record<Category, string> = { Movie: "Film", "TV Series": "Série", Documentary: "Documentaire" };
 const SORTIE_MS = 220;
+/** L'indice du geste : quand le paquet paraît, puis une fois encore si rien ne se passe. */
+const INDICE_DELAI_MS = 700;
+const INDICE_RELANCE_MS = 7000;
+const INDICES_MAX = 2;
 
 /** Où la carte s'en va, selon le geste. */
 type Sortie = { x: number; y: number; rot: number };
@@ -173,17 +177,64 @@ export function SwipeDeck({
   const paquet = useRef<HTMLDivElement | null>(null);
   const [glisse, setGlisse] = useState<{ x: number; y: number; w: number } | null>(null);
   const [sortie, setSortie] = useState<Sortie | null>(null);
-  // La note et le verso ne valent que pour la carte du dessus : une autre carte repart de zéro.
-  const [mode, setMode] = useState<{ cle: string; note: boolean; verso: boolean } | null>(null);
-  const enNote = mode?.cle === carte?.cle && mode?.note === true;
+  // Le verso ne vaut que pour la carte du dessus : une autre carte repart de l'affiche.
+  const [mode, setMode] = useState<{ cle: string; verso: boolean } | null>(null);
   const verso = mode?.cle === carte?.cle && mode?.verso === true;
-  const [touche, setTouche] = useState<string | null>(null);
   const minuterie = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [indice, setIndice] = useState(false);
+  const carteDessus = useRef<HTMLElement | null>(null);
+  const tamponOui = useRef<HTMLSpanElement | null>(null);
+  const tamponNon = useRef<HTMLSpanElement | null>(null);
+  const indices = useRef(0);
+  const indiceFini = useRef(false);
+  const relance = useRef<ReturnType<typeof setTimeout> | null>(null);
   const appui = useRef<{ id: number; x0: number; y0: number; t0: number; w: number; h: number; lx: number; ly: number; lt: number; vx: number; vy: number } | null>(null);
 
   useEffect(() => () => {
     if (minuterie.current) clearTimeout(minuterie.current);
+    if (relance.current) clearTimeout(relance.current);
   }, []);
+
+  // ---------- l'indice du geste (FR-12) ----------
+  const jouerIndice = useCallback(() => {
+    if (indiceFini.current || indices.current >= INDICES_MAX || prefersReducedMotion()) return;
+    indices.current += 1;
+    setIndice(true);
+  }, []);
+  /** Le premier contact avec le paquet : plus jamais d'indice. */
+  const arreterIndice = useCallback(() => {
+    indiceFini.current = true;
+    if (relance.current) clearTimeout(relance.current);
+    setIndice(false);
+  }, []);
+  const finIndice = useCallback(() => {
+    setIndice(false);
+    if (!indiceFini.current && indices.current < INDICES_MAX) relance.current = setTimeout(jouerIndice, INDICE_RELANCE_MS);
+  }, [jouerIndice]);
+  // Le balancement lui-même : un préréglage de mouvement ; arrêté (et la carte remise en place) dès que
+  // l'indice cesse, par un geste ou un retournement.
+  useGSAP(
+    () => {
+      if (!indice || !carteDessus.current) return;
+      preset.indice(carteDessus.current, { droite: tamponOui.current, gauche: tamponNon.current }, finIndice);
+    },
+    { dependencies: [indice], revertOnUpdate: true }
+  );
+  // Il joue quand le paquet paraît à l'écran (sur la page d'arrivée, plus bas que le héros).
+  useEffect(() => {
+    const element = paquet.current;
+    if (!element || typeof IntersectionObserver === "undefined") return;
+    const observateur = new IntersectionObserver(
+      (entrees) => {
+        if (!entrees.some((e) => e.isIntersecting)) return;
+        observateur.disconnect();
+        relance.current = setTimeout(jouerIndice, INDICE_DELAI_MS);
+      },
+      { threshold: 0.6 }
+    );
+    observateur.observe(element);
+    return () => observateur.disconnect();
+  }, [jouerIndice]);
 
   // Les affiches des cartes suivantes, chargées d'avance : la suivante apparaît sans attendre.
   const aPrecharger = cartes
@@ -199,14 +250,10 @@ export function SwipeDeck({
     }
   }, [aPrecharger]);
 
-  const presser = useCallback((k: string) => {
-    setTouche(k);
-    setTimeout(() => setTouche(null), 150);
-  }, []);
-
   const partir = useCallback(
     (reponse: ReponseSwipe) => {
       if (!carte || sortie) return;
+      arreterIndice();
       const boite = paquet.current?.getBoundingClientRect();
       if (prefersReducedMotion() || !boite) {
         setGlisse(null);
@@ -222,30 +269,18 @@ export function SwipeDeck({
         onRepondre(carte, reponse);
       }, SORTIE_MS);
     },
-    [carte, sortie, glisse, onRepondre]
+    [carte, sortie, glisse, onRepondre, arreterIndice]
   );
-
-  const commencerNote = useCallback(() => {
-    if (!carte || sortie) return;
-    setGlisse(null);
-    setMode({ cle: carte.cle, note: true, verso: false });
-    // Le bouton « Déjà vu » disparaît : le focus revient au paquet, pour noter au clavier.
-    if (clavier === "focus") paquet.current?.focus({ preventScroll: true });
-  }, [carte, sortie, clavier]);
 
   const retourner = useCallback(
     (v: boolean) => {
       if (!carte) return;
-      setMode({ cle: carte.cle, note: false, verso: v });
+      arreterIndice();
+      setMode({ cle: carte.cle, verso: v });
       if (clavier === "focus") paquet.current?.focus({ preventScroll: true });
     },
-    [carte, clavier]
+    [carte, clavier, arreterIndice]
   );
-
-  const noter = (n: number | null) => {
-    presser(n === null ? "Entrée" : String(n));
-    partir({ kind: "vu", note: n });
-  };
 
   // ---------- clavier ----------
   const surTouche = useEffectEvent((e: KeyboardEvent) => {
@@ -260,30 +295,15 @@ export function SwipeDeck({
       return;
     }
     if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || !carte) return;
-    if (enNote) {
-      if (/^[0-5]$/.test(e.key)) {
-        e.preventDefault();
-        noter(Number(e.key));
-      } else if (e.key === "Enter") {
-        e.preventDefault();
-        noter(null);
-      } else if (e.key === "Escape" || e.key === "ArrowDown") {
-        e.preventDefault();
-        retourner(false);
-      }
-      return;
-    }
     if (e.key === "ArrowRight") {
       e.preventDefault();
-      presser("→");
       partir({ kind: "envie" });
     } else if (e.key === "ArrowLeft") {
       e.preventDefault();
-      presser("←");
       partir({ kind: "non" });
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      commencerNote();
+      partir({ kind: "vu" });
     } else if (e.key.toLowerCase() === "i") {
       retourner(!verso);
     } else if (e.key === "Escape" && verso) {
@@ -298,8 +318,9 @@ export function SwipeDeck({
 
   // ---------- balayage (doigt ou souris) ----------
   function surAppui(e: ReactPointerEvent<HTMLElement>) {
-    if (e.button !== 0 || !carte || sortie || enNote || verso) return;
+    if (e.button !== 0 || !carte || sortie || verso) return;
     if ((e.target as Element).closest("button, a")) return;
+    arreterIndice();
     const boite = e.currentTarget.getBoundingClientRect();
     e.currentTarget.setPointerCapture(e.pointerId);
     const t = performance.now();
@@ -336,23 +357,21 @@ export function SwipeDeck({
     }
     const versLeHaut = Math.abs(dy) > Math.abs(dx) && (dy < -a.h * 0.18 || (a.vy < -0.5 && dy < -30));
     const surLeCote = Math.abs(dx) > a.w * 0.28 || (Math.abs(a.vx) > 0.5 && Math.abs(dx) > 30);
-    if (versLeHaut) commencerNote();
+    if (versLeHaut) partir({ kind: "vu" });
     else if (surLeCote) partir({ kind: dx > 0 ? "envie" : "non" });
     else setGlisse(null);
   }
 
   // Le tampon qui apparaît en glissant : son geste et sa netteté.
-  const tampon: { cls: string; label: string; opacite: number } | null = enNote
-    ? { cls: "is-vu", label: "Déjà vu", opacite: 1 }
-    : glisse
-      ? Math.abs(glisse.y) > Math.abs(glisse.x) && glisse.y < 0
-        ? { cls: "is-vu", label: "Déjà vu", opacite: Math.min(1, -glisse.y / (glisse.w * 0.35)) }
-        : { cls: glisse.x > 0 ? "is-envie" : "is-non", label: glisse.x > 0 ? "Ça me tente" : "Pas pour moi", opacite: Math.min(1, Math.abs(glisse.x) / (glisse.w * 0.3)) }
-      : sortie
-        ? sortie.y < 0 && sortie.x === 0
-          ? { cls: "is-vu", label: "Déjà vu", opacite: 1 }
-          : { cls: sortie.x > 0 ? "is-envie" : "is-non", label: sortie.x > 0 ? "Ça me tente" : "Pas pour moi", opacite: 1 }
-        : null;
+  const tampon: { cls: string; label: string; opacite: number } | null = glisse
+    ? Math.abs(glisse.y) > Math.abs(glisse.x) && glisse.y < 0
+      ? { cls: "is-vu", label: "Déjà vu", opacite: Math.min(1, -glisse.y / (glisse.w * 0.35)) }
+      : { cls: glisse.x > 0 ? "is-envie" : "is-non", label: glisse.x > 0 ? "Ça me tente" : "Pas pour moi", opacite: Math.min(1, Math.abs(glisse.x) / (glisse.w * 0.3)) }
+    : sortie
+      ? sortie.y < 0 && sortie.x === 0
+        ? { cls: "is-vu", label: "Déjà vu", opacite: 1 }
+        : { cls: sortie.x > 0 ? "is-envie" : "is-non", label: sortie.x > 0 ? "Ça me tente" : "Pas pour moi", opacite: 1 }
+      : null;
 
   const style: CSSProperties = sortie
     ? { transform: `translate(${sortie.x}px, ${sortie.y}px) rotate(${sortie.rot}deg)`, opacity: 0, transition: `transform ${SORTIE_MS}ms var(--ease-out), opacity ${SORTIE_MS}ms var(--ease-out)` }
@@ -383,6 +402,7 @@ export function SwipeDeck({
               <article
                 key={c.cle}
                 aria-label={`${c.name}${c.year ? `, ${c.year}` : ""}`}
+                ref={carteDessus}
                 className={cn("swipe-card", !balayageVertical && "is-pan-y")}
                 style={style}
                 onPointerDown={surAppui}
@@ -396,6 +416,16 @@ export function SwipeDeck({
                     {tampon.label}
                   </span>
                 )}
+                {indice && !verso && !tampon && (
+                  <>
+                    <span ref={tamponOui} aria-hidden="true" className="swipe-stamp is-envie" style={{ opacity: 0 }}>
+                      Ça me tente
+                    </span>
+                    <span ref={tamponNon} aria-hidden="true" className="swipe-stamp is-non" style={{ opacity: 0 }}>
+                      Pas pour moi
+                    </span>
+                  </>
+                )}
               </article>
             )
           ) : null
@@ -403,27 +433,11 @@ export function SwipeDeck({
         {!carte && <div className="swipe-card is-end">{fin}</div>}
       </div>
 
-      {carte && enNote ? (
-        <div className="flex w-full max-w-md flex-col items-center gap-3">
-          <p className="text-sm text-foreground">Ta note pour « {carte.name} » ?</p>
-          <RatingKeys onRate={(n) => noter(n)} disabled={false} pressed={touche} className="w-full" />
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <Button size="sm" onClick={() => noter(null)}>
-              Vu, sans note
-              <Kbd className="hidden md:inline-flex">Entrée</Kbd>
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => retourner(false)}>
-              Retour
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div className="grid w-full max-w-xl grid-cols-3 gap-2">
-          <Geste icon={X} label="Pas pour moi" touche="←" onClick={() => partir({ kind: "non" })} disabled={!carte} />
-          <Geste icon={Eye} label="Déjà vu" touche="↑" onClick={commencerNote} disabled={!carte} />
-          <Geste icon={Heart} label="Ça me tente" touche="→" onClick={() => partir({ kind: "envie" })} disabled={!carte} />
-        </div>
-      )}
+      <div className="grid w-full max-w-xl grid-cols-3 gap-2">
+        <Geste icon={X} label="Pas pour moi" touche="←" onClick={() => partir({ kind: "non" })} disabled={!carte} />
+        <Geste icon={Eye} label="Déjà vu" touche="↑" onClick={() => partir({ kind: "vu" })} disabled={!carte} />
+        <Geste icon={Heart} label="Ça me tente" touche="→" onClick={() => partir({ kind: "envie" })} disabled={!carte} />
+      </div>
 
       <div className="flex min-h-8 w-full max-w-md items-center justify-between gap-3 text-sm text-muted">
         <span aria-live="polite" className="min-w-0 truncate">

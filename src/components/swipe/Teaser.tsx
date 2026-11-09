@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { ratedAs } from "@/components/RatingKeys";
 import { Button } from "@/components/ui/Button";
 import { useGarder } from "@/components/visite/chapitres";
 import { useVisite } from "@/components/visite/VisiteEtat";
@@ -22,26 +21,14 @@ export function TeaserSwipe({ cartes }: { cartes: CarteSwipe[] }) {
   const fiches = useFiches(file);
 
   function repondre(carte: CarteSwipe, r: ReponseSwipe) {
-    maj((e) => {
-      const tri = { ...e.tri };
-      const notes = { ...e.notes };
-      if (r.kind === "envie") tri[carte.cle] = "envie";
-      else if (r.kind === "non") tri[carte.cle] = "pasvu";
-      else {
-        tri[carte.cle] = "vu";
-        if (r.note !== null) notes[carte.cle] = r.note;
-      }
-      return { ...e, tri, notes };
-    });
+    maj((e) => ({ ...e, tri: { ...e.tri, [carte.cle]: r.kind === "envie" ? "envie" : r.kind === "non" ? "pasvu" : "vu" } }));
     setHistorique((h) => [...h, carte]);
     setRetour(
       r.kind === "envie"
         ? `« ${carte.name} » te tente.`
         : r.kind === "non"
           ? `« ${carte.name} » : pas pour toi.`
-          : r.note === null
-            ? `« ${carte.name} » : vu.`
-            : `« ${carte.name} » ${ratedAs(r.note)}.`
+          : `« ${carte.name} » : déjà vu.`
     );
   }
 

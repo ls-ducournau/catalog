@@ -368,7 +368,7 @@ export default function DesignPage() {
         </div>
       </Section>
 
-      <Section id="bienvenue" title="Bienvenue" lead="Le paquet de cartes : → ça me tente, ← pas pour moi, ↑ déjà vu puis une note ; un tap retourne la carte. La jauge : titres et notes, puis le prochain palier.">
+      <Section id="bienvenue" title="Bienvenue" lead="Le paquet de cartes : → ça me tente, ← pas pour moi, ↑ déjà vu ; un tap retourne la carte ; la carte se balance une fois pour montrer le geste. La jauge : titres et notes, le prochain palier, et le lien pour noter ses titres vus.">
         <BienvenueDemo />
       </Section>
 

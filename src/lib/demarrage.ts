@@ -8,7 +8,7 @@ import type { Vitrine } from "./vitrine";
 
 // Bienvenue, le « Tinder du titre » — spec: specs/bienvenue-v1.md. Logique pure : les cartes, l'ordre du
 // paquet, la jauge de démarrage. Trois gestes : → ça me tente (dans ta pile), ← pas pour moi (écarté),
-// ↑ déjà vu (puis une note d'une touche).
+// ↑ déjà vu (sans note ; on note ensuite ses titres vus, dans le tri rapide).
 
 /** La jauge : assez de titres pour que l'application ait de quoi choisir, assez de notes pour les recos. */
 export const OBJECTIF_TITRES = DEMARRAGE_TITRES;
@@ -36,7 +36,7 @@ export type CarteSwipe = {
   raison?: string | null;
 };
 
-export type ReponseSwipe = { kind: "envie" } | { kind: "non" } | { kind: "vu"; note: number | null };
+export type ReponseSwipe = { kind: "envie" } | { kind: "non" } | { kind: "vu" };
 
 export function carteDepuisVitrine(t: ShowcaseTitle): CarteSwipe {
   const tmdbId = t.suggestion?.tmdbId ?? t.id;
@@ -122,14 +122,20 @@ export function ajouterAuBout(file: CarteSwipe[], nouvelles: CarteSwipe[], exclu
   return [...file, ...uniques(nouvelles, new Set([...exclues, ...file.map((c) => c.cle)]))];
 }
 
-export type Progression = { titres: number; notes: number };
+export type Progression = {
+  titres: number;
+  notes: number;
+  /** Titres vus pas encore notés : de quoi remplir la jauge des notes dans le tri rapide. */
+  vusSansNote: number;
+};
 
-/** Ce qu'une réponse ajoute à la jauge : un titre gardé (vu ou à voir), une note. */
+/** Ce qu'une réponse ajoute à la jauge : un titre gardé (vu ou à voir) ; un vu reste à noter. */
 export function apresReponse(p: Progression, r: ReponseSwipe, sens: 1 | -1 = 1): Progression {
   if (r.kind === "non") return p;
   return {
     titres: Math.max(0, p.titres + sens),
-    notes: Math.max(0, p.notes + (r.kind === "vu" && r.note !== null ? sens : 0)),
+    notes: p.notes,
+    vusSansNote: Math.max(0, p.vusSansNote + (r.kind === "vu" ? sens : 0)),
   };
 }
 
@@ -137,11 +143,14 @@ export const estPrete = (p: Progression) => p.titres >= OBJECTIF_TITRES && p.not
 
 const pluriel = (n: number, un: string, plusieurs: string) => `${n} ${n > 1 ? plusieurs : un}`;
 
-/** Le prochain palier de la jauge, en une phrase ; null quand la bibliothèque est prête. */
+/** Le prochain palier de la jauge, en une phrase ; null quand la bibliothèque est prête. Les titres d'abord. */
 export function prochainPalier(p: Progression): string | null {
-  const notes = OBJECTIF_NOTES - p.notes;
   const titres = OBJECTIF_TITRES - p.titres;
-  if (notes > 0) return `Encore ${pluriel(notes, "note", "notes")} pour tes recommandations.`;
-  if (titres > 0) return `Encore ${pluriel(titres, "titre", "titres")} : Ce soir et tes recommandations auront de quoi choisir.`;
+  const notes = OBJECTIF_NOTES - p.notes;
+  if (titres > 0) return `Encore ${pluriel(titres, "titre", "titres")} pour une bibliothèque bien remplie.`;
+  if (notes > 0) return `Note encore ${pluriel(notes, "titre vu", "titres vus")} pour tes recommandations.`;
   return null;
 }
+
+/** Les notes manquent et des titres vus attendent la leur : le tri rapide les présente un par un. */
+export const aNoter = (p: Progression) => p.notes < OBJECTIF_NOTES && p.vusSansNote > 0;

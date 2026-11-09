@@ -1,10 +1,12 @@
+import { ArrowLink } from "@/components/sections/feature";
 import { MonoMeta } from "@/components/ui/primitives";
-import { OBJECTIF_NOTES, OBJECTIF_TITRES, prochainPalier, type Progression } from "@/lib/demarrage";
+import { aNoter, OBJECTIF_NOTES, OBJECTIF_TITRES, prochainPalier, type Progression } from "@/lib/demarrage";
 import { cn } from "@/lib/utils";
 
 // La jauge de démarrage — spec: specs/bienvenue-v1.md (FR-6). Deux barres : les titres de la bibliothèque
 // (assez pour que l'application ait de quoi choisir) et les notes (assez pour les recommandations), puis le
-// prochain palier en une phrase. Achromatique : blanc sur gris, le libellé porte le sens.
+// prochain palier en une phrase. Les cartes ne notent pas (« Déjà vu » suffit) : quand des titres vus
+// attendent leur note, un lien mène au tri rapide qui les présente un par un. Achromatique.
 
 export function JaugeDemarrage({ progression, className }: { progression: Progression; className?: string }) {
   const barres = [
@@ -39,9 +41,14 @@ export function JaugeDemarrage({ progression, className }: { progression: Progre
           );
         })}
       </div>
-      <p aria-live="polite" className="text-sm text-muted">
-        {prochainPalier(progression) ?? "Ta bibliothèque est prête : toutes les fonctions ont de quoi choisir."}
-      </p>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <p aria-live="polite" className="text-sm text-muted">
+          {prochainPalier(progression) ?? "Ta bibliothèque est prête : toutes les fonctions ont de quoi choisir."}
+        </p>
+        {aNoter(progression) && (
+          <ArrowLink href="/tri?famille=seen">{`Noter mes titres vus (${progression.vusSansNote})`}</ArrowLink>
+        )}
+      </div>
     </div>
   );
 }

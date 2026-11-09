@@ -16,6 +16,8 @@ export const dynamic = "force-dynamic";
 export default async function Page() {
   const visiteur = await estVisiteur();
   const [donnees, vitrine] = await Promise.all([visiteur ? null : chargerAccueil(), chargerVitrine()]);
-  const depart = { titres: donnees?.stats?.total ?? 0, notes: donnees?.stats?.rated ?? 0 };
+  const stats = donnees?.stats;
+  // Vus sans note : ni à voir ni notés (une estimation, pour proposer de les noter).
+  const depart = { titres: stats?.total ?? 0, notes: stats?.rated ?? 0, vusSansNote: stats ? Math.max(0, stats.total - stats.toWatch - stats.rated) : 0 };
   return <Bienvenue vitrine={vitrine} depart={depart} />;
 }

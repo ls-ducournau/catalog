@@ -74,10 +74,10 @@ function PageArrivee({ vitrine }: { vitrine: Vitrine }) {
   const connus = avecAffiche(vitrine.rating);
   const [vu, a, b] = connus;
   const conseil = tendances.find((t) => ![vu, a, b].includes(t));
-  // Une petite histoire en trois images : tu notes un titre, tu en départages deux, on te conseille un
+  // Une petite histoire en trois images : tu balaies un titre, tu en départages deux, on te conseille un
   // titre du moment parce que tu as aimé le premier.
   const images: (StepVisual | undefined)[] = [
-    vu ? { kind: "note", affiche: vu, etoiles: 4 } : undefined,
+    vu ? { kind: "balaie", affiche: vu } : undefined,
     a && b ? { kind: "duel", affiches: [a, b] } : undefined,
     vu && conseil ? { kind: "reco", affiche: conseil, parce: vu.name } : undefined,
   ];
@@ -114,7 +114,7 @@ function PageArrivee({ vitrine }: { vitrine: Vitrine }) {
         <CenteredSection
           id="balaie"
           title="Ça te tente ?"
-          lead="À droite ça te tente, à gauche pas pour toi, « Déjà vu » pour le noter. Rien n'est enregistré tant que tu ne le gardes pas."
+          lead="Balaie à droite si ça te tente, à gauche si ce n'est pas pour toi, ou « Déjà vu ». Rien n'est enregistré tant que tu ne le gardes pas."
         >
           <VisiteProvider>
             <TeaserSwipe cartes={paquet} />
@@ -128,7 +128,7 @@ function PageArrivee({ vitrine }: { vitrine: Vitrine }) {
         steps={[
           {
             title: "Tu balaies.",
-            text: "Ça te tente, pas pour toi, déjà vu : un geste par titre, puis une note d'une touche.",
+            text: "Ça te tente, pas pour toi, déjà vu : un geste par titre, et ta bibliothèque se remplit.",
             href: "/bienvenue",
             action: "Tester",
             visual: images[0],
@@ -209,7 +209,7 @@ export default async function Home() {
   if (visiteur) return <PageArrivee vitrine={vitrine} />;
   // Un compte sans aucun titre commence par la bienvenue (specs/bienvenue-v1.md, FR-7).
   if (stats?.total === 0) redirect("/bienvenue");
-  const progression = stats ? { titres: stats.total, notes: stats.rated } : null;
+  const progression = stats ? { titres: stats.total, notes: stats.rated, vusSansNote: Math.max(0, stats.total - stats.toWatch - stats.rated) } : null;
   const enDemarrage = progression !== null && !estPrete(progression);
 
   const rated = stats?.rated ?? 0;

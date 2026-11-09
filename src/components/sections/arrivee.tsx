@@ -2,7 +2,6 @@ import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight, Heart } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
-import { StarCount } from "@/components/StarRating";
 import { IconCircle, Keycap } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 import { ArrowLink } from "./feature";
@@ -48,18 +47,19 @@ export function PosterFan({ posters, label }: { posters: Affiche[]; label: strin
 }
 
 export type StepVisual =
-  | { kind: "note"; affiche: Affiche; etoiles: number }
+  | { kind: "balaie"; affiche: Affiche }
   | { kind: "duel"; affiches: [Affiche, Affiche] }
   | { kind: "reco"; affiche: Affiche; parce: string };
 
-/** L'image d'un temps : une affiche notée, deux affiches face à face, une recommandation et sa raison. */
+/** L'image d'un temps : une affiche qu'on balaie, deux affiches face à face, une recommandation et sa raison. */
 function StepPicture({ visual }: { visual: StepVisual }) {
   return (
     <div aria-hidden="true" className="flex h-60 items-end justify-center gap-3">
-      {visual.kind === "note" && (
-        <div className="flex flex-col items-center gap-3">
+      {visual.kind === "balaie" && (
+        // La carte penche à droite, son tampon posé : le geste du paquet de la page d'arrivée.
+        <div className="relative w-28 translate-x-3 rotate-6">
           <AfficheImage affiche={visual.affiche} className="w-28" />
-          <StarCount value={visual.etoiles} size={16} />
+          <span className="swipe-stamp is-envie text-xs">Ça me tente</span>
         </div>
       )}
       {visual.kind === "duel" && (

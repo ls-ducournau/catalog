@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useEtatCompte } from "@/components/CompteBouton";
 import { HeroLayout } from "@/components/layouts";
-import { ratedAs } from "@/components/RatingKeys";
 import { Button } from "@/components/ui/Button";
 import {
   ajouterAuBout,
@@ -25,10 +24,10 @@ import { JaugeDemarrage } from "./Jauge";
 import { SwipeDeck, useFiches } from "./SwipeDeck";
 
 // Bienvenue — spec: specs/bienvenue-v1.md. Le premier écran d'un compte : des cartes à balayer qui
-// remplissent la bibliothèque (→ dans ta pile, ↑ vu et noté) et apprennent tes goûts (← écarté pour de bon),
+// remplissent la bibliothèque (→ dans ta pile, ↑ vu) et apprennent tes goûts (← écarté pour de bon),
 // avec la jauge de démarrage en haut. Chaque geste s'enregistre aussitôt, l'un après l'autre (en ligne, le
-// premier ouvre la session invitée) ; « Annuler » défait exactement le dernier. Dès tes premiers titres bien
-// notés, la découverte glisse des cartes plus personnelles dans la file.
+// premier ouvre la session invitée) ; « Annuler » défait exactement le dernier. Un compte qui a déjà des
+// titres bien notés reçoit aussi des cartes plus personnelles (la découverte) glissées dans la file.
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
 /** Après combien de réponses on redemande des cartes personnelles. */
@@ -49,13 +48,7 @@ async function ecrire(carte: CarteSwipe, reponse: ReponseSwipe): Promise<unknown
     const corps = (await res.json().catch(() => null)) as { item?: { id: number } } | null;
     const id = corps?.item?.id;
     if (!res.ok || typeof id !== "number") return null;
-    await fetch(`/api/items/${id}`, {
-      method: "PATCH",
-      headers: JSON_HEADERS,
-      body: JSON.stringify(
-        reponse.note === null ? { watchStatus: "Watched" } : { watchStatus: "Watched", rating: reponse.note === 0 ? "💩" : "⭐️".repeat(reponse.note) }
-      ),
-    });
+    await fetch(`/api/items/${id}`, { method: "PATCH", headers: JSON_HEADERS, body: JSON.stringify({ watchStatus: "Watched" }) });
     return { kind: "remove", itemId: id };
   }
   const res = await fetch("/api/triage/answer", {
@@ -70,7 +63,7 @@ async function ecrire(carte: CarteSwipe, reponse: ReponseSwipe): Promise<unknown
 function phrase(carte: CarteSwipe, r: ReponseSwipe): string {
   if (r.kind === "envie") return `« ${carte.name} » rejoint ta pile.`;
   if (r.kind === "non") return `« ${carte.name} » ne te sera plus proposé.`;
-  return r.note === null ? `« ${carte.name} » : vu.` : `« ${carte.name} » ${ratedAs(r.note)}.`;
+  return `« ${carte.name} » : déjà vu.`;
 }
 
 export function Bienvenue({ vitrine, depart }: { vitrine: Vitrine; depart: Progression }) {
@@ -148,11 +141,11 @@ export function Bienvenue({ vitrine, depart }: { vitrine: Vitrine; depart: Progr
       setRetour(phrase(carte, reponse));
       const annulation = (chaine.current = chaine.current.then(() => ecrire(carte, reponse)).catch(() => null));
       setHistorique((h) => [...h.slice(-29), { carte, reponse, annulation }]);
-      const aime = reponse.kind === "vu" && reponse.note !== null && reponse.note >= 4;
-      if (aime) void enrichir();
+      // La découverte part des titres vus bien notés : seulement pour un compte qui en a.
+      if (depart.notes > 0) void enrichir();
       if (file.length - 1 <= RESERVE) void chargerSuite();
     },
-    [enrichir, chargerSuite, file.length]
+    [enrichir, chargerSuite, file.length, depart.notes]
   );
 
   const annuler = useCallback(() => {

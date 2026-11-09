@@ -46,9 +46,9 @@ export function BienvenueDemo() {
         clavier="focus"
       />
       <div className="flex flex-col gap-8">
-        <JaugeDemarrage progression={{ titres: 3, notes: 1 }} />
-        <JaugeDemarrage progression={{ titres: 18, notes: 10 }} />
-        <JaugeDemarrage progression={{ titres: 30, notes: 12 }} />
+        <JaugeDemarrage progression={{ titres: 3, notes: 0, vusSansNote: 1 }} />
+        <JaugeDemarrage progression={{ titres: 30, notes: 6, vusSansNote: 12 }} />
+        <JaugeDemarrage progression={{ titres: 30, notes: 12, vusSansNote: 0 }} />
       </div>
     </div>
   );
