@@ -35,31 +35,37 @@ function ecrire(etat: EtatVisite | null) {
   }
 }
 
-export function VisiteProvider({ children }: { children: ReactNode }) {
+/**
+ * `persistant` (le paquet de la page d'arrivée) : gardé dans le navigateur, il suit le visiteur à la
+ * bienvenue. Sans (les démonstrations des sections) : un état à part, oublié au rechargement, qui ne change
+ * rien ailleurs sur la page (demande de Louis, 2026-11-09).
+ */
+export function VisiteProvider({ persistant = true, children }: { persistant?: boolean; children: ReactNode }) {
   const [etat, setEtat] = useState<EtatVisite>(ETAT_VIDE);
 
   useEffect(() => {
+    if (!persistant) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- l'état gardé ne se lit qu'au navigateur
     setEtat(lire());
     const surStockage = (e: StorageEvent) => e.key === CLE && setEtat(lire());
     window.addEventListener("storage", surStockage);
     return () => window.removeEventListener("storage", surStockage);
-  }, []);
+  }, [persistant]);
 
   const maj = useCallback(
     (f: (etat: EtatVisite) => EtatVisite) =>
       setEtat((avant) => {
         const apres = f(avant);
-        ecrire(apres);
+        if (persistant) ecrire(apres);
         return apres;
       }),
-    []
+    [persistant]
   );
 
   const oublier = useCallback(() => {
-    ecrire(null);
+    if (persistant) ecrire(null);
     setEtat(ETAT_VIDE);
-  }, []);
+  }, [persistant]);
 
   const valeur = useMemo(() => ({ etat, maj, oublier }), [etat, maj, oublier]);
   return <Contexte.Provider value={valeur}>{children}</Contexte.Provider>;

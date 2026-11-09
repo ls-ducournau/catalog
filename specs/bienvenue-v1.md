@@ -95,6 +95,29 @@ Décisions de Louis (2026-11-08) :
   titres, notes et duels dans la bibliothèque (un invité, ou un compte encore vide ; jamais la bibliothèque
   locale de Louis) et ne remontre pas les cartes déjà répondues.
 
+- **FR-14** (un seul parcours, 2026-11-09, demande de Louis : « fusionner l'UX flow de Tester et Faire un
+  tour ») — « Fais le tour » et « Tester » ne font plus qu'un : la bienvenue, en **quatre étapes** sur de
+  vraies données, que le balayage ouvre l'une après l'autre : **Balaie** (le paquet ; 30 titres), **Note**
+  (les titres vus sans note, d'une touche ; 10 notes ; fermée tant qu'aucun titre n'est vu), **Départage**
+  (les duels de l'application ; 5 duels ; fermée sous 2 titres notés), **Tes recos** (les trois premières,
+  puis Ce soir, Classement, Playlists, Sorties ; fermée sous 10 notes). L'adresse suit l'étape
+  (`/bienvenue?etape=note`). La progression : quatre étapes côte à côte, icône (cochée, ou cadenas avec la
+  raison), nom, barre ; « Étape n sur 4 · … » en dessous. En bout de ligne, l'étape suivante (pleine quand
+  l'objectif est atteint) ; à la fin, « Ouvrir Catalog ». `/visite` renvoie à l'étape la plus proche.
+- **FR-15** (tout dans l'écran) — La bienvenue tient exactement dans l'écran, sous la barre (`HeroLayout
+  stage plein`) : la zone de la carte prend la hauteur qui reste et la carte s'y inscrit au format 2:3
+  (unités de conteneur) ; les messages tiennent sur une ligne réservée. Quoi qu'il apparaisse, rien ne
+  pousse les gestes hors de l'écran.
+- **FR-16** (barre épurée) — Sur la page d'arrivée, la bienvenue, la visite et la connexion : ni menus, ni
+  barre d'onglets, ni réglages, ni « Ajouter », ni « Ce soir », sur ordinateur, tablette et téléphone, quel
+  que soit le compte.
+- **FR-17** (aperçus qui ne bougent pas) — Sur la page d'arrivée, les sections sont des aperçus plus
+  explicatifs que l'accueil d'un compte : ce que fait la fonction, comment (trois points), et **ce que les
+  gestes y changent** (« Ce que tu balaies « Déjà vu » arrive ici… ») ; plus de bouton d'ajout, et chaque
+  démonstration a son propre état : balayer le paquet ne change rien ailleurs sur la page. Seul le paquet
+  garde des choix (FR-13). « Comment ça marche » montre l'enchaînement : tu balaies, Catalog apprend tes
+  goûts, tout se règle sur toi. Un seul bouton principal : « Tester ».
+
 ## 3. Réalisé
 
 - `src/lib/demarrage.ts` (+ 4 tests) : cartes, paquet, insertion de la découverte, jauge, paliers.
@@ -111,3 +134,5 @@ Décisions de Louis (2026-11-08) :
 - 2026-11-09 : audit du parcours visiteur ; FR-9 revu, FR-13 (`src/components/visite/verser.ts`,
   `BacSuggestions`, `ClavierLocal`) ; sections de l'accueil en version pour tous sur la page d'arrivée.
 - 2026-11-09 : rythme de l'indice (FR-12) : à chaque arrivée à l'écran, puis 8, 16, 32 s (`src/lib/indice.ts` + 1 test).
+- 2026-11-09 : FR-14 à FR-17 (`Progression.tsx`, `Etapes.tsx`, `HeroLayout plein`, `SansAjout`,
+  `src/app/PageArrivee.tsx`) ; la visite redirige vers la bienvenue.

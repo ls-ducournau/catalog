@@ -91,3 +91,12 @@ reste dans le navigateur sur la page d'arrivée ; les touches d'un bloc n'agisse
    parcours guidé, en second ; on peut la retirer si la page d'arrivée suffit.
 2. **La longueur de la page d'arrivée** : sept sections de plus. À regarder sur les premiers visiteurs.
 3. **L'accueil d'un compte** : le prochain chantier.
+
+## 8. Suite du même jour : un seul parcours
+
+Décision de Louis : fusionner « Tester » et « Fais le tour ». La bienvenue devient le parcours unique, en
+quatre étapes que le balayage ouvre (balayer, noter, départager, tes recos) ; `/visite` y renvoie. La page
+d'arrivée n'a plus qu'un bouton principal, « Tester » ; ses sections expliquent ce que tes gestes y changent,
+sans bouger quand on balaie. La barre est épurée sur toute la page d'arrivée et le parcours. La question 1
+du § 7 est tranchée.
+

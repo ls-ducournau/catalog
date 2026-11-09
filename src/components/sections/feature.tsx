@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check, Layers } from "lucide-react";
 import { MonoMeta } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +41,8 @@ export function FeatureSection({
   title,
   lead,
   meta,
+  points,
+  apres,
   actions,
   visual,
   reverse = false,
@@ -51,6 +53,10 @@ export function FeatureSection({
   lead: ReactNode;
   /** Chiffres en Geist Mono sous l'explication. */
   meta?: ReactNode;
+  /** Comment ça marche, en quelques points (page d'arrivée : plus explicatif que dans l'application). */
+  points?: string[];
+  /** Ce que les gestes du visiteur y changent (le balayage ouvre la suite, specs/bienvenue-v1.md). */
+  apres?: ReactNode;
   actions?: ReactNode;
   visual: ReactNode;
   reverse?: boolean;
@@ -75,6 +81,22 @@ export function FeatureSection({
           </h2>
           <p className="text-base text-muted">{lead}</p>
         </div>
+        {points && points.length > 0 && (
+          <ul className="flex flex-col gap-2 text-sm text-muted">
+            {points.map((point) => (
+              <li key={point} className="flex items-start gap-2">
+                <Check size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-subtle" />
+                <span>{point}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {apres && (
+          <p className="flex items-start gap-2 border-l border-divider pl-3 text-sm text-foreground">
+            <Layers size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-subtle" />
+            <span>{apres}</span>
+          </p>
+        )}
         {meta && <MonoMeta>{meta}</MonoMeta>}
         {actions && <div className="flex flex-wrap items-center gap-x-6 gap-y-3">{actions}</div>}
       </div>

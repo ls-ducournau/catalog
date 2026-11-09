@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
 import { ArrowRight, Check, Heart, Plus, Undo2 } from "lucide-react";
 import { RatingKeys, ratedAs } from "@/components/RatingKeys";
 import { StarCount } from "@/components/StarRating";
@@ -620,84 +620,4 @@ export function SortiesVisite({ sorties }: { sorties: ShowcaseTitle[] }) {
 export function useBilan() {
   const { etat } = useVisite();
   return aGarder(etat);
-}
-
-const nombre = (n: number, un: string, plusieurs: string) => `${n} ${n > 1 ? plusieurs : un}`;
-
-/** Le bilan en une ligne : « 6 titres, 4 notes, 2 duels ». */
-function resume(bilan: ReturnType<typeof aGarder>): string {
-  return [
-    nombre(bilan.titres.length, "titre", "titres"),
-    bilan.notes > 0 && nombre(bilan.notes, "note", "notes"),
-    bilan.duels > 0 && nombre(bilan.duels, "duel", "duels"),
-  ]
-    .filter(Boolean)
-    .join(", ");
-}
-
-/**
- * La barre de la visite, fixée en bas, à portée du pouce quelle que soit la longueur de l'étape :
- * l'étape précédente (`avant`), ce que tu as fait, l'étape suivante (`apres`). « Continuer » paraît dès le
- * premier titre trié : on passe à la bienvenue à tout moment, ses titres avec soi (bienvenue-v1, FR-13).
- */
-export function BarreVisite({ avant, apres, garder: avecGarder = true }: { avant?: ReactNode; apres?: ReactNode; garder?: boolean }) {
-  const bilan = useBilan();
-  const montrer = avecGarder && bilan.titres.length > 0;
-  return (
-    <>
-      {/* La place de la barre, au bas de la page : elle ne cache jamais la fin d'une étape. */}
-      <div aria-hidden="true" className="h-20 shrink-0" />
-      <div className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-2xl flex-col gap-2">
-        <div className="nav-glass flex items-center gap-2 p-2">
-          {avant}
-          <p className="min-w-0 flex-1 truncate px-1 text-sm text-muted sm:px-2" aria-live="polite">
-            {montrer ? (
-              <>
-                {/* Au téléphone, la barre tient aussi Précédent et Suivant : le nombre de titres seul. */}
-                <span className="sm:hidden">{nombre(bilan.titres.length, "titre", "titres")}</span>
-                <span className="hidden sm:inline">{resume(bilan)}</span>
-              </>
-            ) : null}
-          </p>
-          {montrer && (
-            <Button href="/bienvenue">
-              <span className="sm:hidden">Continuer</span>
-              <span className="hidden sm:inline">Continuer avec mes titres</span>
-            </Button>
-          )}
-          {apres}
-        </div>
-      </div>
-    </>
-  );
-}
-
-export function GarderVisite() {
-  const bilan = useBilan();
-  const rien = bilan.titres.length === 0;
-  return (
-    <div className="feature-stage">
-      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          ["Vus", bilan.vus],
-          ["Envies", bilan.envies],
-          ["Notes", bilan.notes],
-          ["Duels", bilan.duels],
-        ].map(([label, n]) => (
-          <Card key={label} variant="tile" className="flex flex-col gap-1 p-3">
-            <dt className="text-xs text-muted">{label}</dt>
-            <dd className="font-heading text-heading-sm text-foreground">{n}</dd>
-          </Card>
-        ))}
-      </dl>
-      <div className="flex flex-col items-start gap-3">
-        <Button href="/bienvenue" variant="primary" size="lg">
-          {rien ? "Tester" : "Continuer avec mes titres"}
-        </Button>
-        <p className="min-h-5 text-sm text-muted">
-          {rien ? "Rien de trié pour l'instant : les cartes t'attendent." : "Tes titres, tes notes et tes duels deviennent ta bibliothèque, sans rien remplir."}
-        </p>
-      </div>
-    </div>
-  );
 }

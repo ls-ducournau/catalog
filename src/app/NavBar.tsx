@@ -127,10 +127,18 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/** Le parcours d'un nouveau venu : ni menus, ni onglets, ni réglages de l'application (specs/bienvenue-v1.md, FR-16). */
+const PAGES_EPUREES = ["/bienvenue", "/visite", "/connexion"];
+
 export default function NavBar({ visiteur = false }: { visiteur?: boolean }) {
   // Un visiteur découvre chaque partie dans la visite (specs/visite-interactive-v1.md), pas sur une page vide.
   const lien = (href: string) => (visiteur ? versVisite(href) : href);
   const pathname = usePathname();
+  // Page d'arrivée (visiteur), bienvenue, connexion : la barre épurée, quel que soit le compte.
+  const epure = visiteur || PAGES_EPUREES.includes(pathname);
+  useEffect(() => {
+    document.documentElement.toggleAttribute("data-epure", epure);
+  }, [epure]);
   const [moreOpen, setMoreOpen] = useState(false);
   const moreButton = useRef<HTMLButtonElement | null>(null);
   const firstMoreLink = useRef<HTMLAnchorElement | null>(null);
@@ -177,15 +185,15 @@ export default function NavBar({ visiteur = false }: { visiteur?: boolean }) {
                 prend le relais. */}
             {/* Un visiteur n'a pas encore de collection ni de goûts : pas de menus de l'application
                 (décision de Louis, 2026-11-06). */}
-            {!visiteur && <TopMenus pathname={pathname} lien={lien} />}
+            {!epure && <TopMenus pathname={pathname} lien={lien} />}
             <div className="ml-auto flex items-center gap-2">
               {/* En ligne seulement : « Se connecter », ou l'initiale du compte. */}
               <CompteBouton visiteur={visiteur} />
               {/* Un visiteur n'a ni réglages ni bibliothèque où ajouter (décision de Louis, 2026-11-06). */}
-              {!visiteur && <SettingsMenu />}
+              {!epure && <SettingsMenu />}
               {/* Ajouter un titre, depuis n'importe quelle page : la fenêtre d'ajout de la
                   bibliothèque s'ouvre (sur place si on y est déjà). */}
-              {!visiteur && (
+              {!epure && (
                 <Button
                   href="/library?ajouter=1"
                   onClick={(e) => {
@@ -202,9 +210,10 @@ export default function NavBar({ visiteur = false }: { visiteur?: boolean }) {
                   <span className="hidden xl:inline">Ajouter</span>
                 </Button>
               )}
-              {visiteur ? (
-                // Un seul bouton principal pour un visiteur, partout : « Tester » (audit 2026-11-09). La
-                // visite reste dans la page d'arrivée, en second ; le logo ramène à l'accueil.
+              {epure ? (
+                // Un seul bouton principal pour un visiteur, partout : « Tester » (audit 2026-11-09) ; rien de
+                // plus dans le parcours lui-même. Le logo ramène à l'accueil.
+                visiteur &&
                 pathname !== "/bienvenue" && (
                   <Button href="/bienvenue" variant="primary">
                     Tester
@@ -229,7 +238,7 @@ export default function NavBar({ visiteur = false }: { visiteur?: boolean }) {
       {/* Barre d'onglets, au pouce : téléphone et tablette. Sur téléphone, quatre onglets et
           « Plus » ; sur tablette, les sept. Sa hauteur est réservée en bas de page
           (--bottom-nav-h, globals.css). */}
-      {!visiteur && (
+      {!epure && (
         <nav
           aria-label="Navigation"
           className="nav-glass fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 mx-auto max-w-3xl lg:hidden"

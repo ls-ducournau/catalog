@@ -1809,14 +1809,110 @@ html {
     outline: none;
   }
 
-  /* La bienvenue : la jauge et la question au-dessus, les trois gestes dessous, tout dans l'écran. */
-  .swipe-deck.is-page {
-    width: min(100%, 24rem, max(14rem, calc((100svh - 21.5rem) * 0.6667)));
+  /* La bienvenue : la scène tient dans l'écran (HeroLayout plein) ; la zone de la carte prend la hauteur
+     qui reste, et la carte s'y inscrit au format 2:3, quoi qu'il apparaisse autour (FR-15). */
+  .swipe-zone {
+    display: grid;
+    place-items: center;
+    flex: 1 1 0%;
+    min-height: 0;
+    width: 100%;
+    container-type: size;
   }
 
-  @media (width >= 40rem) {
-    .swipe-deck.is-page {
-      width: min(100%, 24rem, max(14rem, calc((100svh - 27rem) * 0.6667)));
+  .swipe-deck.is-page {
+    width: min(24rem, 100cqw, calc(100cqh * 0.6667));
+  }
+
+  /* Les trois premières recommandations : trois affiches côte à côte, à la taille de la zone. */
+  .recos-trio {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    width: min(100cqw, 34rem, calc((100cqh - 3.5rem) * 0.6667 * 3 + 1.5rem));
+  }
+
+  /* Les étapes de la bienvenue : leur scène se plie à la hauteur disponible. */
+  .etape-scene .feature-stage {
+    min-height: 0;
+  }
+
+  /* La progression de la bienvenue (FR-14) : quatre étapes, chacune son icône, son nom et sa barre ; celle
+     en cours éclairée, les faites cochées, les fermées en retrait avec la raison au survol et au lecteur. */
+  .etape-progres {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.375rem;
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: var(--r-frame);
+    color: var(--muted);
+    font-size: 0.75rem;
+    text-align: left;
+    transition: background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+  }
+
+  .etape-progres:hover {
+    background: rgb(255 255 255 / 0.04);
+  }
+
+  .etape-progres.is-active {
+    background: var(--selection);
+    color: var(--foreground);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+  }
+
+  .etape-progres.is-locked {
+    opacity: 0.55;
+  }
+
+  .etape-progres-tete {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    font-weight: 500;
+  }
+
+  .etape-progres-icone {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    background: var(--surface-3);
+    color: var(--foreground);
+  }
+
+  .etape-progres.is-done .etape-progres-icone {
+    background: var(--foreground);
+    color: var(--background);
+  }
+
+  .etape-progres-barre {
+    display: block;
+    width: 100%;
+    height: 0.25rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--surface-3);
+  }
+
+  .etape-progres-barre > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--foreground);
+    transform-origin: left;
+    transition: transform var(--dur-slow) var(--ease-out);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .etape-progres-barre > span {
+      transition: none;
     }
   }
 
@@ -2399,7 +2495,8 @@ html {
 }
 
 /* Un visiteur (accueil, visite) n'a pas la barre d'onglets de l'application. */
-:root[data-visiteur] {
+:root[data-visiteur],
+:root[data-epure] {
   --bottom-nav-h: 0px;
 }
 

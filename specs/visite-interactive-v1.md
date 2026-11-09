@@ -114,3 +114,10 @@ titres »** : la visite n'écrit plus rien ; elle mène à la bienvenue, qui ver
 la bibliothèque à l'arrivée (`specs/bienvenue-v1.md`, FR-13). La barre du haut n'a plus « Quitter la visite » :
 le logo ramène à l'accueil, « Tester » reste le seul bouton principal.
 
+## 11. Fusion avec « Tester » (2026-11-09)
+
+Demande de Louis : « fusionner l'UX flow de Tester et Faire un tour ». La visite n'existe plus comme page :
+`/visite` renvoie à la bienvenue (`specs/bienvenue-v1.md`, FR-14), un parcours en quatre étapes sur de vraies
+données (balayer, noter, départager, tes recos). Ses chapitres restent les démonstrations des sections de la
+page d'arrivée (notation, duels, liste, sorties), chacune avec son état à part (FR-17).
+

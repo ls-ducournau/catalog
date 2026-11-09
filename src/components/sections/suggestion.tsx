@@ -1,10 +1,9 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
 import { Check, Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/primitives";
-import { useVisite } from "@/components/visite/VisiteEtat";
 import type { ShowcaseTitle } from "@/lib/showcase";
 
 // Suggestions de l'accueil — spec: specs/accueil-vitrine-connexion-v1.md (§ 3). Un titre tendance,
@@ -16,51 +15,28 @@ const JSON_HEADERS = { "Content-Type": "application/json" };
 export type Suggestions = {
   /** L'identifiant dans ta bibliothèque d'une suggestion ajoutée ; null sinon. */
   libraryIdOf: (title: ShowcaseTitle) => number | null;
-  /** Sans compte (page d'arrivée) : « Ça me tente » reste dans le navigateur, sans fiche à ouvrir. */
-  bac?: boolean;
-  inPile?: (title: ShowcaseTitle) => boolean;
+  /** Page d'arrivée : un aperçu, sans bouton d'ajout (seul le paquet à balayer garde des titres). */
+  masquer?: boolean;
   pending: number | null;
   message: string | null;
   toggle: (title: ShowcaseTitle) => Promise<void>;
 };
 
-const BacContexte = createContext<Suggestions | null>(null);
+const APERCU: Suggestions = { masquer: true, libraryIdOf: () => null, pending: null, message: null, toggle: async () => {} };
+const ApercuContexte = createContext(false);
 
 /**
- * La page d'arrivée (specs/bienvenue-v1.md, FR-13) : rien ne s'écrit sans compte. « Ça me tente » range le
- * titre dans l'état de la visite, dans le navigateur ; il suit le visiteur quand il continue.
+ * La page d'arrivée (specs/bienvenue-v1.md, FR-17) : ses sections sont des aperçus. Pas d'ajout d'un clic :
+ * seul le paquet à balayer garde des titres, et rien ne change ailleurs sur la page quand on balaie.
  */
-export function BacSuggestions({ children }: { children: ReactNode }) {
-  const { etat, maj } = useVisite();
-  const [message, setMessage] = useState<string | null>(null);
-  const valeur = useMemo<Suggestions>(() => {
-    const cle = (t: ShowcaseTitle) => `${t.type}:${t.suggestion?.tmdbId ?? t.id}`;
-    return {
-      bac: true,
-      libraryIdOf: () => null,
-      inPile: (t) => etat.tri[cle(t)] === "envie",
-      pending: null,
-      message,
-      toggle: async (t) => {
-        const k = cle(t);
-        const deja = etat.tri[k] === "envie";
-        maj((e) => {
-          const tri = { ...e.tri };
-          if (deja) delete tri[k];
-          else tri[k] = "envie";
-          return { ...e, tri };
-        });
-        setMessage(deja ? `« ${t.name} » retiré` : `« ${t.name} » te tente : il te suivra quand tu commenceras`);
-      },
-    };
-  }, [etat, maj, message]);
-  return <BacContexte.Provider value={valeur}>{children}</BacContexte.Provider>;
+export function SansAjout({ children }: { children: ReactNode }) {
+  return <ApercuContexte.Provider value={true}>{children}</ApercuContexte.Provider>;
 }
 
 export function useSuggestions(): Suggestions {
-  const bac = useContext(BacContexte);
+  const apercu = useContext(ApercuContexte);
   const reelles = useSuggestionsReelles();
-  return bac ?? reelles;
+  return apercu ? APERCU : reelles;
 }
 
 function useSuggestionsReelles(): Suggestions {
@@ -131,9 +107,10 @@ export function SuggestionButton({
   onImage?: boolean;
   compact?: boolean;
 }) {
-  const inPile = suggestions.inPile ? suggestions.inPile(title) : suggestions.libraryIdOf(title) !== null;
+  if (suggestions.masquer) return null;
+  const inPile = suggestions.libraryIdOf(title) !== null;
   const pending = suggestions.pending === title.id;
-  const ajouter = suggestions.bac ? "Ça me tente" : "Ajouter à ma pile";
+  const ajouter = "Ajouter à ma pile";
   const label = inPile ? "Dans ta pile" : ajouter;
   return (
     <Button
@@ -142,7 +119,7 @@ export function SuggestionButton({
       variant={onImage ? "overlay" : inPile ? "ghost" : "secondary"}
       loading={pending}
       onClick={() => void suggestions.toggle(title)}
-      aria-label={inPile ? `Retirer « ${title.name} » de ta pile` : suggestions.bac ? `« ${title.name} » me tente` : `Ajouter « ${title.name} » à ta pile`}
+      aria-label={inPile ? `Retirer « ${title.name} » de ta pile` : `Ajouter « ${title.name} » à ta pile`}
       title={inPile ? "Ajouté, cliquer pour retirer" : ajouter}
     >
       {!pending && (inPile ? <Check size={14} aria-hidden="true" /> : <Plus size={14} aria-hidden="true" />)}

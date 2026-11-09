@@ -42,6 +42,7 @@ export function HeroLayout({
   shards = true,
   compact = false,
   stage = false,
+  plein = false,
   className,
   surface,
 }: {
@@ -55,16 +56,26 @@ export function HeroLayout({
    * de commande posée sur le décor, dans le héros ; `children` reçoit la fenêtre et ses à-côtés.
    */
   stage?: boolean;
+  /**
+   * Scène pleine (la bienvenue) : la page tient exactement dans l'écran, sous la barre ; le contenu prend
+   * la hauteur qui reste et s'y adapte (jamais de défilement, quoi qu'il apparaisse).
+   */
+  plein?: boolean;
   className?: string;
   surface?: Surface;
 }) {
   if (stage) {
     return (
       <main data-impression-surface={surface} className={cn("flex flex-1 flex-col", className)}>
-        <section className="relative isolate flex flex-1 flex-col items-center gap-6 overflow-x-clip px-4 pb-16 pt-8 sm:px-6 sm:pt-10">
+        <section
+          className={cn(
+            "relative isolate flex flex-col items-center overflow-x-clip px-4 sm:px-6",
+            plein ? "h-[calc(100svh-3.75rem)] gap-3 overflow-y-clip pb-3 pt-4 lg:h-[calc(100svh-5.75rem)] lg:pt-6" : "flex-1 gap-6 pb-16 pt-8 sm:pt-10"
+          )}
+        >
           {shards && <ShardsBackdrop />}
           <div className="flex flex-col items-center gap-2 text-center">{hero}</div>
-          {children && <div className="frame flex w-full flex-col items-center gap-6">{children}</div>}
+          {children && <div className={cn("frame flex w-full flex-col items-center", plein ? "min-h-0 flex-1 gap-3" : "gap-6")}>{children}</div>}
         </section>
       </main>
     );

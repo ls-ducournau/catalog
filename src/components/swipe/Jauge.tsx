@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 // La jauge de démarrage — spec: specs/bienvenue-v1.md (FR-6). Deux barres : les titres de la bibliothèque
 // (assez pour que l'application ait de quoi choisir) et les notes (assez pour les recommandations), puis le
 // prochain palier en une phrase. Les cartes ne notent pas (« Déjà vu » suffit) : quand des titres vus
-// attendent leur note, un lien mène au tri rapide qui les présente un par un. Achromatique.
+// attendent leur note, un lien mène à l'étape Note de la bienvenue. Achromatique.
 
 export function JaugeDemarrage({ progression, className }: { progression: Progression; className?: string }) {
   const barres = [
@@ -46,7 +46,7 @@ export function JaugeDemarrage({ progression, className }: { progression: Progre
           {prochainPalier(progression) ?? "Ta bibliothèque est prête : toutes les fonctions ont de quoi choisir."}
         </p>
         {aNoter(progression) && (
-          <ArrowLink href="/tri?famille=seen">{`Noter mes titres vus (${progression.vusSansNote})`}</ArrowLink>
+          <ArrowLink href="/bienvenue?etape=note">{`Noter mes titres vus (${progression.vusSansNote})`}</ArrowLink>
         )}
       </div>
     </div>

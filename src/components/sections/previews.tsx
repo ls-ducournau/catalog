@@ -370,7 +370,7 @@ function DuelOption({
 }
 
 /** Une vraie paire de tes titres vus : choisis ton préféré (1, 2), passe (3), annule (Ctrl+Z). */
-export function DuelPreview({ initial }: { initial: Pair | null }) {
+export function DuelPreview({ initial, onDuel }: { initial: Pair | null; /** Un duel enregistré (la bienvenue le compte). */ onDuel?: () => void }) {
   const [pair, setPair] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [last, setLast] = useState<{ duelId: number; pair: Pair; choice: DuelChoice } | null>(null);
@@ -395,12 +395,14 @@ export function DuelPreview({ initial }: { initial: Pair | null }) {
         body: JSON.stringify({ itemAId: pair.a.id, itemBId: pair.b.id, result: choice }),
       }).catch(() => null);
       const body: { duelId?: number } | null = res?.ok ? await res.json().catch(() => null) : null;
-      if (typeof body?.duelId === "number") setLast({ duelId: body.duelId, pair, choice });
-      else setNotice("Le duel n'a pas été enregistré.");
+      if (typeof body?.duelId === "number") {
+        setLast({ duelId: body.duelId, pair, choice });
+        if (choice !== "skip") onDuel?.();
+      } else setNotice("Le duel n'a pas été enregistré.");
       await loadNext();
       setBusy(false);
     },
-    [pair, busy, press, loadNext]
+    [pair, busy, press, loadNext, onDuel]
   );
 
   const undoLast = useCallback(async () => {
