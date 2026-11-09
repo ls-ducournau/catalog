@@ -86,7 +86,8 @@ export function PageArrivee({ vitrine: brute }: { vitrine: Vitrine }) {
             <MonoMeta>Gratuit pendant la bêta | Sans inscription</MonoMeta>
           </div>
           {paquet.length > 0 && (
-            <div id="balaie" className="w-full">
+            // Le héros centre son texte : la carte, elle, s'aligne à gauche, comme partout.
+            <div id="balaie" className="w-full text-left">
               {/* Le seul état gardé de la page : il suit le visiteur à la bienvenue (FR-13). */}
               <VisiteProvider>
                 <TeaserSwipe cartes={paquet} />

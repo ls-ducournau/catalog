@@ -54,19 +54,24 @@ function versSortie(
   return { x: depuis?.x ?? 0, y: -hauteur * 1.2, rot: 0 };
 }
 
-/** Un des trois gestes en bouton : l'icône, le libellé et sa touche (sur ordinateur). */
+/**
+ * Un des trois gestes en bouton : l'icône, le libellé et sa touche (sur ordinateur). `compact` (la page
+ * d'arrivée, une colonne étroite) : l'icône au-dessus du libellé, sans touche, partout.
+ */
 function Geste({
   icon: Icon,
   label,
   touche,
   onClick,
   disabled,
+  compact = false,
 }: {
   icon: LucideIcon;
   label: string;
   touche: string;
   onClick: () => void;
   disabled?: boolean;
+  compact?: boolean;
 }) {
   return (
     <Card
@@ -75,13 +80,18 @@ function Geste({
       variant="tile"
       onClick={onClick}
       disabled={disabled}
-      className="flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-2 text-xs font-medium text-foreground disabled:opacity-40 sm:min-h-16 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
+      className={cn(
+        "flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-2 text-xs font-medium text-foreground disabled:opacity-40",
+        !compact && "sm:min-h-16 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm",
+      )}
     >
       <Icon size={16} aria-hidden="true" className="shrink-0" />
       <span className="whitespace-nowrap">{label}</span>
-      <Kbd aria-hidden="true" className="hidden md:inline-flex">
-        {touche}
-      </Kbd>
+      {!compact && (
+        <Kbd aria-hidden="true" className="hidden md:inline-flex">
+          {touche}
+        </Kbd>
+      )}
     </Card>
   );
 }
@@ -686,13 +696,14 @@ export function SwipeDeck({
         </div>,
       )}
 
-      <div className="grid w-full max-w-xl shrink-0 grid-cols-3 gap-2">
+      <div className={cn("grid w-full shrink-0 grid-cols-3 gap-2", plein ? "max-w-xl" : "max-w-[22rem]")}>
         <Geste
           icon={X}
           label="Pas pour moi"
           touche="←"
           onClick={() => partir({ kind: "non" })}
           disabled={!carte}
+          compact={!plein}
         />
         <Geste
           icon={Eye}
@@ -700,6 +711,7 @@ export function SwipeDeck({
           touche="↑"
           onClick={() => partir({ kind: "vu" })}
           disabled={!carte}
+          compact={!plein}
         />
         <Geste
           icon={Heart}
@@ -707,10 +719,11 @@ export function SwipeDeck({
           touche="→"
           onClick={() => partir({ kind: "envie" })}
           disabled={!carte}
+          compact={!plein}
         />
       </div>
 
-      <div className="flex h-9 w-full max-w-xl shrink-0 items-center justify-between gap-3 text-sm text-muted">
+      <div className={cn("flex h-9 w-full shrink-0 items-center justify-between gap-3 text-sm text-muted", plein ? "max-w-xl" : "max-w-[22rem]")}>
         <span aria-live="polite" className="min-w-0 truncate">
           {retour ?? ""}
         </span>
