@@ -47,13 +47,13 @@ export function PageArrivee({ vitrine: brute, titres = 0 }: { vitrine: Vitrine; 
   const paquet = composerPaquet(vitrine).slice(0, 10);
   const connus = avecAffiche(vitrine.rating);
   const [vu, a, b] = connus;
-  const conseil = tendances.find((t) => ![vu, a, b].includes(t));
+  const conseils = tendances.filter((t) => ![vu, a, b].includes(t));
   // Comment ça marche, en trois images : tu balaies un titre, tu en départages deux, on te conseille un titre
   // du moment parce que tu as aimé le premier.
   const images: (StepVisual | undefined)[] = [
-    vu ? { kind: "balaie", affiche: vu } : undefined,
+    vu ? { kind: "balaie", affiches: [vu, ...conseils.slice(3, 5)] } : undefined,
     a && b ? { kind: "duel", affiches: [a, b] } : undefined,
-    vu && conseil ? { kind: "reco", affiche: conseil, parce: vu.name } : undefined,
+    vu && conseils.length > 0 ? { kind: "reco", affiches: conseils.slice(0, 3), parce: vu.name } : undefined,
   ];
   // Les sections de l'accueil d'un compte, en version pour tous.
   const { moods, picks, lists } = composerAccueil(null, vitrine, null);

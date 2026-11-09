@@ -1,8 +1,9 @@
-import type { CSSProperties, ReactNode } from "react";
+import { Fragment, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronDown, Heart } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
-import { IconCircle, Keycap } from "@/components/ui/primitives";
+import { StarCount } from "@/components/StarRating";
+import { IconCircle, MonoMeta } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 import { ArrowLink } from "./feature";
 
@@ -11,7 +12,7 @@ import { ArrowLink } from "./feature";
 // écrit. Cinq blocs : le héros (et l'éventail d'affiches), comment ça marche, tout ce que tu y trouves,
 // pourquoi Catalog, le dernier appel et le pied de page.
 
-export type Affiche = { name: string; posterUrl: string | null };
+export type Affiche = { name: string; posterUrl: string | null; /** Variable CSS `--tint` tirée de l'affiche. */ tint?: string };
 
 function AfficheImage({ affiche, className }: { affiche: Affiche; className?: string }) {
   return (
@@ -47,32 +48,58 @@ export function PosterFan({ posters, label }: { posters: Affiche[]; label: strin
 }
 
 export type StepVisual =
-  | { kind: "balaie"; affiche: Affiche }
+  /** Le paquet : la carte du dessus penchée (« Ça me tente »), deux autres dessous. */
+  | { kind: "balaie"; affiches: Affiche[] }
+  /** Un titre noté face à un autre : la note, puis le duel. */
   | { kind: "duel"; affiches: [Affiche, Affiche] }
-  | { kind: "reco"; affiche: Affiche; parce: string };
+  /** Trois recommandations « Pour toi », et la raison de la première. */
+  | { kind: "reco"; affiches: Affiche[]; parce: string };
 
-/** L'image d'un temps : une affiche qu'on balaie, deux affiches face à face, une recommandation et sa raison. */
+/**
+ * L'image d'un temps, dans sa scène teintée par l'affiche principale : le paquet qu'on balaie, un titre noté
+ * contre un autre, des recommandations avec leur raison. Décorative : le texte dit tout.
+ */
 function StepPicture({ visual }: { visual: StepVisual }) {
   return (
-    <div aria-hidden="true" className="flex h-60 items-end justify-center gap-3">
+    <div aria-hidden="true" className="relative flex h-56 items-center justify-center">
       {visual.kind === "balaie" && (
-        // La carte penche à droite, son tampon posé : le geste du paquet de la page d'arrivée.
-        <div className="relative w-28 translate-x-3 rotate-6">
-          <AfficheImage affiche={visual.affiche} className="w-28" />
-          <span className="swipe-stamp is-envie text-xs">Ça me tente</span>
+        <div className="relative h-48 w-32">
+          {visual.affiches.slice(1, 3).map((a, i) => (
+            <div key={a.name} className="absolute inset-0" style={{ transform: `rotate(${i === 0 ? -7 : -2}deg) translateX(${i === 0 ? -18 : -8}px)`, opacity: i === 0 ? 0.45 : 0.7 }}>
+              <AfficheImage affiche={a} className="w-32" />
+            </div>
+          ))}
+          {visual.affiches[0] && (
+            <div className="absolute inset-0 translate-x-4 rotate-6">
+              <AfficheImage affiche={visual.affiches[0]} className="w-32" />
+              <span className="swipe-stamp is-envie text-xs">Ça me tente</span>
+            </div>
+          )}
         </div>
       )}
       {visual.kind === "duel" && (
-        <div className="flex items-center gap-3 pb-7">
-          <AfficheImage affiche={visual.affiches[0]} className="w-24" />
-          <span className="text-xs text-muted">ou</span>
-          <AfficheImage affiche={visual.affiches[1]} className="w-24" />
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <AfficheImage affiche={visual.affiches[0]} className="w-28" />
+            <span className="overlay-pill absolute bottom-2 left-1/2 -translate-x-1/2">
+              <StarCount value={4} size={12} />
+            </span>
+          </div>
+          <span className="flex size-8 items-center justify-center rounded-full bg-surface-3 text-xs text-muted">ou</span>
+          <AfficheImage affiche={visual.affiches[1]} className="w-28" />
         </div>
       )}
       {visual.kind === "reco" && (
-        <div className="flex w-56 flex-col items-center gap-3">
-          <AfficheImage affiche={visual.affiche} className="w-28" />
-          <p className="flex max-w-full items-start gap-1.5 text-xs text-muted">
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex items-end gap-2">
+            {visual.affiches.slice(0, 3).map((a, i) => (
+              <div key={a.name} className="relative">
+                <AfficheImage affiche={a} className={i === 0 ? "w-24" : "w-20 opacity-80"} />
+                {i === 0 && <span className="overlay-pill absolute left-1.5 top-1.5 text-xs">Pour toi</span>}
+              </div>
+            ))}
+          </div>
+          <p className="flex max-w-56 items-start gap-1.5 text-xs text-muted">
             <Heart size={12} aria-hidden="true" className="mt-0.5 shrink-0" />
             <span className="line-clamp-2">Parce que tu as aimé {visual.parce}</span>
           </p>
@@ -80,6 +107,12 @@ function StepPicture({ visual }: { visual: StepVisual }) {
       )}
     </div>
   );
+}
+
+/** La teinte de la scène d'un temps : celle de son affiche principale. */
+function teinte(visual: StepVisual | undefined): CSSProperties | undefined {
+  const tint = visual?.affiches[0]?.tint;
+  return tint ? ({ "--tint": tint } as CSSProperties) : undefined;
 }
 
 function Titre({ id, children, lead }: { id: string; children: ReactNode; lead?: ReactNode }) {
@@ -105,30 +138,45 @@ export function CenteredSection({ id, title, lead, children }: { id: string; tit
   );
 }
 
-/** « Comment ça marche » : trois temps numérotés, chacun avec ses affiches et son étape de la visite. */
+/**
+ * « Comment ça marche » : trois temps qui s'enchaînent (le balayage ouvre la suite). Chacun dans sa scène
+ * teintée, comme les sections du dessous : l'image, « Étape n », le titre, l'explication et son lien. Entre
+ * deux temps, une flèche (sur ordinateur) dit que l'un mène à l'autre.
+ */
 export function HowItWorks({
   id,
   title,
+  lead,
   steps,
 }: {
   id: string;
   title: ReactNode;
+  lead?: ReactNode;
   steps: { title: string; text: string; href: string; action: string; visual?: StepVisual }[];
 }) {
   return (
     <section id={id} aria-labelledby={`${id}-titre`} className="flex flex-col gap-10">
-      <Titre id={`${id}-titre`}>{title}</Titre>
-      <ol className="grid gap-12 md:grid-cols-3 md:gap-8">
+      <Titre id={`${id}-titre`} lead={lead}>
+        {title}
+      </Titre>
+      <ol className="grid items-stretch gap-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-3">
         {steps.map((step, i) => (
-          <li key={step.title} className="flex flex-col items-center gap-5 text-center">
-            {step.visual && <StepPicture visual={step.visual} />}
-            <div className="flex flex-col items-center gap-3">
-              <Keycap aria-hidden="true">{i + 1}</Keycap>
-              <h3 className="text-subheading text-foreground">{step.title}</h3>
-              <p className="max-w-xs text-sm text-muted">{step.text}</p>
-            </div>
-            <ArrowLink href={step.href}>{step.action}</ArrowLink>
-          </li>
+          <Fragment key={step.title}>
+            {i > 0 && (
+              <li aria-hidden="true" className="hidden items-center text-subtle md:flex">
+                <ArrowRight size={18} />
+              </li>
+            )}
+            <li className="chaine-etape" style={teinte(step.visual)}>
+              {step.visual && <StepPicture visual={step.visual} />}
+              <div className="flex flex-1 flex-col items-start gap-2">
+                <MonoMeta>{`Étape ${i + 1}`}</MonoMeta>
+                <h3 className="text-subheading text-foreground">{step.title}</h3>
+                <p className="text-sm text-muted">{step.text}</p>
+              </div>
+              <ArrowLink href={step.href}>{step.action}</ArrowLink>
+            </li>
+          </Fragment>
         ))}
       </ol>
     </section>
