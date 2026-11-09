@@ -406,7 +406,8 @@ export function ShowcaseCarousel({
         )}
       </div>
 
-      <div ref={reel} onScroll={measure} onKeyDown={onReelKey} className="reel">
+      {/* Défilable au clavier (WCAG 2.1.1, audit axe 2026-11-09). */}
+      <div ref={reel} onScroll={measure} onKeyDown={onReelKey} tabIndex={0} role="region" aria-label="Titres, à faire défiler" className="reel">
         {shown.map((t) => (
           <ShowcaseCard
             key={t.id}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   ArrowRight,
@@ -27,6 +28,7 @@ import {
   insererDansFile,
   OBJECTIF_NOTES,
   OBJECTIF_TITRES,
+  pourLaVitrine,
   type CarteSwipe,
   type Progression,
   type ReponseSwipe,
@@ -52,6 +54,8 @@ const JSON_HEADERS = { "Content-Type": "application/json" };
 const RELANCE = 8;
 /** Sous ce nombre de cartes, la page suivante est demandée : le paquet ne s'arrête pas (FR-10). */
 const RESERVE = 8;
+/** À ce nombre de titres, un invité se voit proposer de garder sa bibliothèque (e-mail et mot de passe). */
+const GARDER_A = 10;
 /** Assez de duels pour sentir le classement se préciser. */
 const DUELS_OBJECTIF = 5;
 
@@ -156,7 +160,7 @@ export function Bienvenue({
   const [file, setFile] = useState<CarteSwipe[]>(() => composerPaquet(vitrine));
   const [progression, setProgression] = useState<Progression>(depart);
   const [historique, setHistorique] = useState<Entree[]>([]);
-  const [retour, setRetour] = useState<string | null>(null);
+  const [retour, setRetour] = useState<ReactNode>(null);
   const [cherche, setCherche] = useState(false);
   const [suite, setSuite] = useState(false);
   const fiches = useFiches(file);
@@ -184,7 +188,7 @@ export function Bienvenue({
       page.current += 1;
       if (!res.ok || !corps) return;
       encore.current = corps.more !== false;
-      const nouvelles = (corps.items ?? []).map(carteDepuisVitrine);
+      const nouvelles = (corps.items ?? []).filter(pourLaVitrine).map(carteDepuisVitrine);
       setFile((f) => ajouterAuBout(f, nouvelles, repondues.current));
     } catch {
       // Réseau : on réessaiera au prochain geste.
@@ -265,7 +269,20 @@ export function Bienvenue({
       repondues.current.add(carte.cle);
       reponses.current += 1;
       setProgression((p) => apresReponse(p, reponse));
-      setRetour(phrase(carte, reponse));
+      // Dix titres pour un invité : le moment de lui proposer de garder sa bibliothèque (rétention, audit
+      // 2026-11-09), dans la ligne des messages, sans rien pousser hors de l'écran.
+      const avant = progression.titres;
+      const apres = avant + (reponse.kind === "non" ? 0 : 1);
+      if (importer && avant < GARDER_A && apres >= GARDER_A)
+        setRetour(
+          <>
+            {`${GARDER_A} titres déjà. `}
+            <Link href="/connexion?retour=/bienvenue" className="text-foreground underline decoration-divider underline-offset-4 hover:decoration-current">
+              Garde ta bibliothèque
+            </Link>
+          </>
+        );
+      else setRetour(phrase(carte, reponse));
       const annulation = (chaine.current = chaine.current
         .then(() => ecrire(carte, reponse))
         .catch(() => null));
@@ -274,7 +291,7 @@ export function Bienvenue({
       if (depart.notes > 0) void enrichir();
       if (file.length - 1 <= RESERVE) void chargerSuite();
     },
-    [enrichir, chargerSuite, file.length, depart.notes],
+    [enrichir, chargerSuite, file.length, depart.notes, importer, progression.titres],
   );
 
   const annuler = useCallback(() => {

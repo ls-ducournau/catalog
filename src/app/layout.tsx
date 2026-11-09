@@ -5,6 +5,7 @@ import { PlaylistDialogHost } from "@/components/playlists/PlaylistDialog";
 import { ImpressionTracker } from "@/components/ImpressionTracker";
 import { MotionRoot } from "@/components/MotionRoot";
 import { BackToTop } from "@/components/BackToTop";
+import { PARTAGE, SITE } from "@/lib/partage";
 import { estVisiteur } from "@/lib/visiteur";
 import "./globals.css";
 
@@ -27,9 +28,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Ce qu'affichent un moteur de recherche et un lien partagé (Reddit, Discord, WhatsApp, X) : la promesse, pas
+// la liste des fonctions (docs/audit/landing-ux-marketing-2026-11-09.md). L'aperçu : ./opengraph-image.tsx.
 export const metadata: Metadata = {
-  title: "Catalog",
-  description: "Tes films, séries et documentaires : duels, classement, recommandations, sorties et soirées.",
+  metadataBase: new URL(SITE),
+  title: PARTAGE.titre,
+  description: PARTAGE.description,
+  applicationName: "Catalog",
+  openGraph: { type: "website", locale: "fr_FR", siteName: "Catalog", title: PARTAGE.accroche, description: PARTAGE.description, url: "/" },
+  twitter: { card: "summary_large_image", title: PARTAGE.accroche, description: PARTAGE.description },
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

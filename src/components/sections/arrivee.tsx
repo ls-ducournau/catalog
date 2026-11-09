@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, Heart } from "lucide-react";
+import { ArrowRight, ChevronDown, Heart } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { IconCircle, Keycap } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
@@ -198,6 +198,29 @@ export function ReasonsSection({
   );
 }
 
+/**
+ * Les questions qu'on se pose avant d'essayer (audit 2026-11-09 : objections). Des réponses courtes et
+ * vérifiables ; chaque question s'ouvre sur place.
+ */
+export function FaqSection({ id, title, items }: { id: string; title: ReactNode; items: { q: string; r: string }[] }) {
+  return (
+    <section id={id} aria-labelledby={`${id}-titre`} className="flex flex-col gap-8">
+      <Titre id={`${id}-titre`}>{title}</Titre>
+      <div className="mx-auto flex w-full max-w-2xl flex-col divide-y divide-divider border-y border-divider">
+        {items.map((item) => (
+          <details key={item.q} className="faq group">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-base text-foreground">
+              {item.q}
+              <ChevronDown size={16} aria-hidden="true" className="shrink-0 text-subtle transition-transform group-open:rotate-180" />
+            </summary>
+            <p className="pb-4 text-sm text-muted">{item.r}</p>
+          </details>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /** Le dernier appel, au bas de la page d'arrivée. */
 export function ClosingCall({ title, lead, actions }: { title: ReactNode; lead?: ReactNode; actions: ReactNode }) {
   return (
@@ -209,7 +232,8 @@ export function ClosingCall({ title, lead, actions }: { title: ReactNode; lead?:
   );
 }
 
-const lienExterne = "text-foreground underline-offset-4 hover:underline";
+// Soulignés au repos : un lien dans un texte ne se reconnaît pas qu'à sa couleur (WCAG 1.4.1, audit axe).
+const lienExterne = "text-foreground underline decoration-divider underline-offset-4 hover:decoration-current";
 
 /** Pied de page : qui fait Catalog, d'où viennent les fiches (attribution exigée par TMDB). */
 export function SiteFooter({ maker, data }: { maker: { name: string; href: string }; data: { name: string; href: string } }) {

@@ -1,14 +1,12 @@
 import { CalendarDays, Gift, ListVideo, Sparkles, Star, Swords } from "lucide-react";
-import { Logo } from "@/components/brand/Logo";
 import { HeroLayout } from "@/components/layouts";
 import {
-  CenteredSection,
   ClosingCall,
+  FaqSection,
   FeatureEyebrow,
   FeatureSection,
   FeatureWall,
   HowItWorks,
-  PosterFan,
   ReasonsSection,
   RecommendationsWall,
   ShowcaseCarousel,
@@ -18,32 +16,36 @@ import {
 } from "@/components/sections";
 import { SansAjout } from "@/components/sections/suggestion";
 import { TeaserSwipe } from "@/components/swipe/Teaser";
-import { Button } from "@/components/ui";
+import { Button, MonoMeta } from "@/components/ui";
 import { DuelsVisite, NotationVisite, PlaylistVisite, SortiesVisite } from "@/components/visite/chapitres";
 import { ClavierLocal, VisiteProvider } from "@/components/visite/VisiteEtat";
 import { composerAccueil } from "@/lib/amorce";
-import { composerPaquet } from "@/lib/demarrage";
+import { composerPaquet, vitrineChoisie } from "@/lib/demarrage";
 import type { ShowcaseTitle } from "@/lib/showcase";
+import { cn } from "@/lib/utils";
 import { cleTitre } from "@/lib/visite";
 import type { Vitrine } from "@/lib/vitrine";
 
 // La page d'arrivée d'un visiteur — docs/audit/parcours-visiteur-2026-11-09.md, specs/bienvenue-v1.md.
 // Une idée, partout : **balayer remplit ta bibliothèque, et c'est elle qui rend tout le reste personnel.**
-// Le héros la dit ; le paquet la fait vivre ; « Comment ça marche » en montre l'enchaînement ; chaque section
-// dit ce que tes gestes y changent. Un seul bouton principal, « Tester » (le parcours de la bienvenue).
+// Le héros la dit et la fait essayer (le paquet y est, visible sans défiler) ; « Comment ça marche » en montre
+// l'enchaînement ; chaque section dit ce que tes gestes y changent ; les questions fréquentes lèvent les
+// doutes. Un seul bouton principal, « Tester » (le parcours de la bienvenue). Audit :
+// docs/audit/landing-ux-marketing-2026-11-09.md.
 //
 // Rien ne s'écrit sur le serveur ici. Seul le paquet garde tes choix (dans le navigateur ; ils te suivent à
 // la bienvenue) ; les sections sont des démonstrations à part, qui ne changent rien ailleurs sur la page
-// quand on balaie (FR-17). Cas limites : sans titres du moment (TMDB injoignable), le paquet cède la place à
-// « Tester » et les sections qui n'ont rien à montrer disparaissent ; la page garde son récit.
+// quand on balaie (FR-17). Cas limites : sans titres du moment (TMDB injoignable), le héros reste sur une
+// colonne avec « Tester » et les sections qui n'ont rien à montrer disparaissent ; la page garde son récit.
 
 const avecAffiche = (titres: ShowcaseTitle[]) => [...new Map(titres.filter((t) => t.posterUrl).map((t) => [cleTitre(t), t])).values()];
 
-export function PageArrivee({ vitrine }: { vitrine: Vitrine }) {
+export function PageArrivee({ vitrine: brute }: { vitrine: Vitrine }) {
+  // Ni talk-shows, ni actualités, ni téléréalité : une vitrine de films et de séries qui donne envie.
+  const vitrine = vitrineChoisie(brute);
   const tendances = avecAffiche([...vitrine.picks, ...vitrine.moods.flatMap((t) => t.titles)]);
-  const eventail = tendances.slice(0, 7);
-  // Le paquet à balayer : une dizaine de titres, sans ceux de l'éventail juste au-dessus.
-  const paquet = composerPaquet(vitrine, new Set(eventail.map(cleTitre))).slice(0, 10);
+  // Le paquet à balayer, dans le héros : la fonction d'appel, visible sans défiler (audit 2026-11-09).
+  const paquet = composerPaquet(vitrine).slice(0, 10);
   const connus = avecAffiche(vitrine.rating);
   const [vu, a, b] = connus;
   const conseil = tendances.find((t) => ![vu, a, b].includes(t));
@@ -67,43 +69,34 @@ export function PageArrivee({ vitrine }: { vitrine: Vitrine }) {
   return (
     <HeroLayout
       hero={
-        <div className="flex flex-col items-center gap-6">
-          <Logo variant="mark" title={null} className="size-12" />
-          <h1 className="max-w-3xl text-balance text-heading text-foreground sm:text-heading-lg">Balaie des titres. Catalog te dit quoi regarder.</h1>
-          <p className="max-w-md text-base text-muted">
-            Ça te tente, pas pour toi, déjà vu : un geste par titre remplit ta bibliothèque, et tout Catalog se règle sur tes goûts.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {tester}
-            <Button href="#comment" size="lg">
-              Comment ça marche
-            </Button>
+        // Le héros fait deux choses à la fois : il dit la promesse, et il la fait essayer. Sur ordinateur, le
+        // texte à gauche, le paquet à droite ; au téléphone, le paquet juste sous le bouton.
+        <div className={cn("grid w-full max-w-6xl items-center gap-10", paquet.length > 0 && "lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:gap-16")}>
+          <div className={cn("flex flex-col items-center gap-6", paquet.length > 0 && "lg:items-start lg:text-left")}>
+            <h1 className="max-w-3xl text-balance text-heading text-foreground sm:text-heading-lg">Balaie des titres. Catalog te dit quoi regarder.</h1>
+            <p className="max-w-md text-balance text-base text-muted">
+              À droite si ça te tente, à gauche si ce n&apos;est pas pour toi : ta bibliothèque se remplit, et Catalog te recommande ce qui va te plaire.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {tester}
+              <Button href="#comment" size="lg">
+                Comment ça marche
+              </Button>
+            </div>
+            <MonoMeta>Gratuit pendant la bêta | Sans inscription</MonoMeta>
           </div>
-          {eventail.length >= 5 && (
-            <div className="mt-6 w-full">
-              <PosterFan posters={eventail} label="Les titres du moment" />
+          {paquet.length > 0 && (
+            <div id="balaie" className="w-full">
+              {/* Le seul état gardé de la page : il suit le visiteur à la bienvenue (FR-13). */}
+              <VisiteProvider>
+                <TeaserSwipe cartes={paquet} />
+              </VisiteProvider>
             </div>
           )}
         </div>
       }
     >
       <ClavierLocal>
-        {paquet.length > 0 ? (
-          <CenteredSection
-            id="balaie"
-            title="Ça te tente ?"
-            lead="Balaie à droite si ça te tente, à gauche si ce n'est pas pour toi, ou « Déjà vu ». C'est tout : sans compte, tes choix te suivent quand tu continues."
-          >
-            {/* Le seul état gardé de la page : il suit le visiteur à la bienvenue (FR-13). */}
-            <VisiteProvider>
-              <TeaserSwipe cartes={paquet} />
-            </VisiteProvider>
-          </CenteredSection>
-        ) : (
-          <CenteredSection id="balaie" title="Ça te tente ?" lead="Des films et des séries, un par un : à droite s'ils te tentent, à gauche sinon. Ta bibliothèque se remplit en quelques gestes.">
-            {tester}
-          </CenteredSection>
-        )}
 
         <HowItWorks
           id="comment"
@@ -254,6 +247,28 @@ export function PageArrivee({ vitrine }: { vitrine: Vitrine }) {
             title: "Gratuit pendant la bêta.",
             text: "Catalog est en phase de test : toutes ses fonctions sont gratuites.",
           },
+        ]}
+      />
+
+      <FaqSection
+        id="questions"
+        title="Questions fréquentes"
+        items={[
+          { q: "C'est gratuit ?", r: "Oui, pendant la bêta : toutes les fonctions sont gratuites." },
+          {
+            q: "Faut-il créer un compte ?",
+            r: "Non. Tu balaies tout de suite : Catalog t'ouvre un compte invité, sans e-mail. Pour retrouver ta bibliothèque sur un autre appareil, ajoute un e-mail et un mot de passe quand tu veux, sans code de confirmation.",
+          },
+          {
+            q: "Comment Catalog connaît-il mes goûts ?",
+            r: "Il apprend de tes notes : genres, réalisateurs, acteurs. Ce qui te tente remplit ta pile, ce qui n'est pas pour toi ne revient plus. Dix notes suffisent pour tes premières recommandations.",
+          },
+          {
+            q: "D'où viennent les films et les séries ?",
+            r: "De TMDB, une base ouverte de films et de séries : affiches, résumés, bandes-annonces, et les plateformes où les regarder en France.",
+          },
+          { q: "Sur quels appareils ?", r: "Dans ton navigateur, sur ordinateur, tablette et téléphone, sans rien installer." },
+          { q: "Où sont mes données ?", r: "Tes titres et tes notes sont stockés en Europe, en Irlande (Supabase)." },
         ]}
       />
 

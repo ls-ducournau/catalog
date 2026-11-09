@@ -54,6 +54,16 @@ describe("bienvenue", () => {
     expect(composerPaquet(vitrine, new Set(["Movie:1"])).map((c) => c.tmdbId)).toEqual([2, 10, 11]);
   });
 
+  it("écarte des vitrines les talk-shows, l'actualité et la téléréalité", () => {
+    const vitrine: Vitrine = {
+      rating: [titre(1), titre(2, { genres: ["Talk"] })],
+      picks: [titre(10, { genres: ["Reality", "Drame"] }), titre(11)],
+      lists: [],
+      moods: [],
+    };
+    expect(composerPaquet(vitrine).map((c) => c.tmdbId)).toEqual([1, 11]);
+  });
+
   it("glisse les cartes de la découverte après les deux du dessus, une sur deux", () => {
     const file = [carte(1), carte(2), carte(3), carte(4)];
     const ordre = insererDansFile(file, [carte(20), carte(2), carte(21)], new Set(["Movie:21"])).map((c) => c.tmdbId);

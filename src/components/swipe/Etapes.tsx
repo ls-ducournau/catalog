@@ -208,9 +208,9 @@ export function NoteEtape({
               />
             )}
             <div className="swipe-card-scrim">
-              <h2 className="line-clamp-2 text-subheading text-foreground">
+              <p className="line-clamp-2 text-subheading text-foreground">
                 {courante.title}
-              </h2>
+              </p>
               <MetaRow>
                 <span>{CATEGORIE[courante.category]}</span>
                 {courante.year && <span>{courante.year}</span>}

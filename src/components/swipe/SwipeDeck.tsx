@@ -126,9 +126,9 @@ function Recto({
             <span className="truncate">{carte.raison}</span>
           </p>
         )}
-        <h2 className="line-clamp-2 text-subheading text-foreground">
+        <p className="line-clamp-2 text-subheading text-foreground">
           {carte.name}
-        </h2>
+        </p>
         <MetaRow>
           <span>{CATEGORIE[carte.category]}</span>
           {carte.year && <span>{carte.year}</span>}
@@ -178,7 +178,7 @@ function Verso({
           )}
         </div>
         <div className="flex min-w-0 flex-col gap-1.5">
-          <h2 className="text-subheading text-foreground">{carte.name}</h2>
+          <p className="text-subheading text-foreground">{carte.name}</p>
           <MetaRow>
             <span>{CATEGORIE[carte.category]}</span>
             {carte.year && <span>{carte.year}</span>}
@@ -237,7 +237,7 @@ export function SwipeDeck({
   onAnnuler?: () => void;
   peutAnnuler?: boolean;
   /** La phrase sous les gestes (« Dune » dans ta pile). */
-  retour?: string | null;
+  retour?: ReactNode;
   /** Ce qui remplace la carte quand la file est vide. */
   fin: ReactNode;
   /** `page` : les touches marchent partout (page dédiée) ; `focus` : seulement dans le paquet (page d'arrivée). */

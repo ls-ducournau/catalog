@@ -38,6 +38,19 @@ export type CarteSwipe = {
 
 export type ReponseSwipe = { kind: "envie" } | { kind: "non" } | { kind: "vu" };
 
+/**
+ * Ce qui ne donne pas envie dans une vitrine de films et de séries (audit 2026-11-09) : talk-shows,
+ * actualités, téléréalité, feuilletons, jeunesse. Genres TMDB bruts.
+ */
+const GENRES_ECARTES = new Set(["Talk", "News", "Reality", "Soap", "Kids"]);
+export const pourLaVitrine = (t: { genres: string[] }) => !t.genres.some((g) => GENRES_ECARTES.has(g));
+
+/** La vitrine sans ces titres, onglets vides retirés. */
+export function vitrineChoisie(v: Vitrine): Vitrine {
+  const onglets = (l: Vitrine["moods"]) => l.map((o) => ({ ...o, titles: o.titles.filter(pourLaVitrine) })).filter((o) => o.titles.length > 0);
+  return { moods: onglets(v.moods), picks: v.picks.filter(pourLaVitrine), lists: onglets(v.lists), rating: v.rating.filter(pourLaVitrine) };
+}
+
 export function carteDepuisVitrine(t: ShowcaseTitle): CarteSwipe {
   const tmdbId = t.suggestion?.tmdbId ?? t.id;
   return {
@@ -87,7 +100,8 @@ function uniques(cartes: CarteSwipe[], exclues: ReadonlySet<string>): CarteSwipe
  * Le paquet de départ, tiré de la vitrine : un titre que presque tout le monde a vu (à noter d'un geste),
  * puis un titre du moment (à garder pour plus tard), en alternance. Sans doublon, sans les clés exclues.
  */
-export function composerPaquet(vitrine: Vitrine, exclues: ReadonlySet<string> = new Set()): CarteSwipe[] {
+export function composerPaquet(brute: Vitrine, exclues: ReadonlySet<string> = new Set()): CarteSwipe[] {
+  const vitrine = vitrineChoisie(brute);
   const connus = uniques(vitrine.rating.map(carteDepuisVitrine), exclues);
   const frais = uniques(
     [...vitrine.picks, ...vitrine.lists.flatMap((t) => t.titles), ...vitrine.moods.flatMap((t) => t.titles)].map(carteDepuisVitrine),
