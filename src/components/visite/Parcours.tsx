@@ -98,8 +98,8 @@ const TEXTES: Record<Etape, Texte> = {
   },
   garder: {
     icone: Save,
-    nom: "Garder",
-    titre: "Garde ce que tu as fait.",
+    nom: "Continuer",
+    titre: "Continue avec ce que tu as fait.",
     pourquoi:
       "Tes titres, tes notes et tes duels deviennent ta bibliothèque. Ensuite, tu la remplis d'un geste ; un e-mail et un mot de passe quand tu veux la garder.",
   },

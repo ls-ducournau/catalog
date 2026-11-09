@@ -2,19 +2,20 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { useGarder } from "@/components/visite/chapitres";
+import { useBilan } from "@/components/visite/chapitres";
 import { useVisite } from "@/components/visite/VisiteEtat";
 import type { CarteSwipe, ReponseSwipe } from "@/lib/demarrage";
 import { SwipeDeck, useFiches } from "./SwipeDeck";
 
-// Le paquet de la page d'arrivée — spec: specs/bienvenue-v1.md (FR-8). Le même geste que la bienvenue, sur
-// une dizaine de titres, sans compte : les réponses restent dans le navigateur (l'état de la visite) jusqu'à
-// « Continuer » qui les garde et ouvre la bienvenue. Au doigt, la page défile à la verticale : « Déjà vu »
-// passe par son bouton ; au clavier, les flèches n'agissent que dans le paquet.
+// Le paquet de la page d'arrivée — spec: specs/bienvenue-v1.md (FR-8, FR-13). Le même geste que la
+// bienvenue, sur une dizaine de titres, sans compte : les réponses restent dans le navigateur (l'état de la
+// visite, partagé avec les sections de la page). « Continuer » mène à la bienvenue, qui les verse dans le
+// compte. Au doigt, la page défile à la verticale : « Déjà vu » passe par son bouton ; au clavier, les
+// flèches n'agissent que dans le paquet.
 
 export function TeaserSwipe({ cartes }: { cartes: CarteSwipe[] }) {
   const { etat, maj } = useVisite();
-  const { bilan, garder, envoi, erreur } = useGarder();
+  const bilan = useBilan();
   const [historique, setHistorique] = useState<CarteSwipe[]>([]);
   const [retour, setRetour] = useState<string | null>(null);
   const file = cartes.filter((c) => !etat.tri[c.cle]);
@@ -24,11 +25,7 @@ export function TeaserSwipe({ cartes }: { cartes: CarteSwipe[] }) {
     maj((e) => ({ ...e, tri: { ...e.tri, [carte.cle]: r.kind === "envie" ? "envie" : r.kind === "non" ? "pasvu" : "vu" } }));
     setHistorique((h) => [...h, carte]);
     setRetour(
-      r.kind === "envie"
-        ? `« ${carte.name} » te tente.`
-        : r.kind === "non"
-          ? `« ${carte.name} » : pas pour toi.`
-          : `« ${carte.name} » : déjà vu.`
+      r.kind === "envie" ? `« ${carte.name} » te tente.` : r.kind === "non" ? `« ${carte.name} » : pas pour toi.` : `« ${carte.name} » : déjà vu.`
     );
   }
 
@@ -48,27 +45,22 @@ export function TeaserSwipe({ cartes }: { cartes: CarteSwipe[] }) {
 
   const gardes = bilan.titres.length;
   const continuer = (
-    <Button variant="primary" onClick={() => void garder()} loading={envoi !== null} disabled={gardes === 0}>
-      {gardes > 0 ? `Garder mes ${gardes} titre${gardes > 1 ? "s" : ""} et continuer` : "Garder et continuer"}
+    <Button href="/bienvenue" variant="primary">
+      {gardes > 0 ? `Continuer avec mes ${gardes} titre${gardes > 1 ? "s" : ""}` : "Tester"}
     </Button>
   );
 
-  const fin =
-    gardes > 0 ? (
-      <>
-        <p className="text-subheading text-foreground">À toi de continuer.</p>
-        <p className="text-sm text-muted">Garde ces titres : la suite de la pile t&apos;attend, et Catalog apprend tes goûts à chaque geste.</p>
-        {continuer}
-      </>
-    ) : (
-      <>
-        <p className="text-subheading text-foreground">Rien ne t&apos;a tenté ?</p>
-        <p className="text-sm text-muted">La pile continue avec d&apos;autres titres, plus près de tes goûts.</p>
-        <Button href="/bienvenue" variant="primary">
-          Tester
-        </Button>
-      </>
-    );
+  const fin = (
+    <>
+      <p className="text-subheading text-foreground">{gardes > 0 ? "À toi de continuer." : "Rien ne t'a tenté ?"}</p>
+      <p className="text-sm text-muted">
+        {gardes > 0
+          ? "La suite du paquet t'attend : tes titres te suivent, et Catalog apprend tes goûts à chaque geste."
+          : "La suite du paquet continue avec d'autres titres."}
+      </p>
+      {continuer}
+    </>
+  );
 
   return (
     <div className="flex w-full flex-col items-center gap-4">
@@ -83,12 +75,7 @@ export function TeaserSwipe({ cartes }: { cartes: CarteSwipe[] }) {
         clavier="focus"
         balayageVertical={false}
       />
-      {file.length > 0 && gardes > 0 && <div className="flex flex-col items-center gap-2">{continuer}</div>}
-      {erreur && (
-        <p role="alert" className="text-sm text-muted">
-          {erreur}
-        </p>
-      )}
+      {file.length > 0 && gardes > 0 && continuer}
     </div>
   );
 }

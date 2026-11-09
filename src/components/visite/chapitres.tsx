@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { ArrowRight, Check, Heart, Plus, Undo2 } from "lucide-react";
 import { RatingKeys, ratedAs } from "@/components/RatingKeys";
 import { StarCount } from "@/components/StarRating";
@@ -25,14 +25,13 @@ import {
   type Gagnant,
   type Tri,
 } from "@/lib/visite";
-import { useAller, useVisite } from "./VisiteEtat";
+import { useAller, useClavierLocal, useVisite } from "./VisiteEtat";
 
 // Les chapitres jouables de la visite (specs/visite-interactive-v1.md § 4), une étape à l'écran. Chaque
 // chapitre : le geste de l'application, sur de vrais titres, sans compte ; l'état vit dans le navigateur
 // (VisiteEtat) jusqu'à « Garder ce que j'ai fait ».
 
 const CATEGORY_LABEL: Record<Category, string> = { Movie: "Film", "TV Series": "Série", Documentary: "Documentaire" };
-const JSON_HEADERS = { "Content-Type": "application/json" };
 
 function Poster({ url, className }: { url: string | null; className?: string }) {
   // eslint-disable-next-line @next/next/no-img-element
@@ -56,11 +55,16 @@ function usePressed(): [string | null, (key: string) => void] {
 }
 
 /**
- * Les touches d'un chapitre, où que soit le focus : une seule étape est à l'écran. Jamais pendant une
- * saisie, ni pour une touche maintenue.
+ * Les touches d'un chapitre : partout quand une seule étape est à l'écran (la visite) ; seulement dans la
+ * `zone` qui a le focus quand plusieurs chapitres se côtoient (la page d'arrivée, `ClavierLocal`). Jamais
+ * pendant une saisie, ni pour une touche maintenue.
  */
-function useTouches(surTouche: (e: KeyboardEvent) => void) {
-  const ecouter = useEffectEvent(surTouche);
+function useTouches(zone: RefObject<HTMLElement | null>, surTouche: (e: KeyboardEvent) => void) {
+  const local = useClavierLocal();
+  const ecouter = useEffectEvent((e: KeyboardEvent) => {
+    if (local && !zone.current?.contains(document.activeElement)) return;
+    surTouche(e);
+  });
   useEffect(() => {
     const surClavier = (e: KeyboardEvent) => {
       if (e.defaultPrevented || e.altKey || e.repeat) return;
@@ -135,6 +139,7 @@ export function TriVisite({ titres }: { titres: ShowcaseTitle[] }) {
   const { etat, maj } = useVisite();
   const [dernier, setDernier] = useState<string | null>(null);
   const [pressed, press] = usePressed();
+  const zone = useRef<HTMLDivElement | null>(null);
   const file = titres.filter((t) => !etat.tri[cleTitre(t)]);
   const courant = file[0] ?? null;
   const tries = titres.length - file.length;
@@ -160,7 +165,7 @@ export function TriVisite({ titres }: { titres: ShowcaseTitle[] }) {
     setDernier(null);
   }
 
-  useTouches((e) => {
+  useTouches(zone, (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
       e.preventDefault();
       annuler();
@@ -176,7 +181,7 @@ export function TriVisite({ titres }: { titres: ShowcaseTitle[] }) {
   const vus = Object.values(etat.tri).filter((t) => t === "vu").length;
   const envies = Object.values(etat.tri).filter((t) => t === "envie").length;
   return (
-    <div className="feature-stage" style={courant?.tint ? ({ "--tint": courant.tint } as CSSProperties) : undefined}>
+    <div ref={zone} tabIndex={-1} className="feature-stage outline-none" style={courant?.tint ? ({ "--tint": courant.tint } as CSSProperties) : undefined}>
       {courant ? (
         <>
           <div className="flex items-center gap-5 sm:gap-6">
@@ -240,6 +245,7 @@ export function NotationVisite({ titres }: { titres: ShowcaseTitle[] }) {
   const { etat, maj } = useVisite();
   const [dernier, setDernier] = useState<{ cle: string; nom: string; note: number } | null>(null);
   const [pressed, press] = usePressed();
+  const zone = useRef<HTMLDivElement | null>(null);
   // Les titres vus à noter d'abord ; sans eux, les titres connus pas encore triés : chaque chapitre se
   // joue seul (décision de Louis, 2026-11-06), noter un titre le marque vu.
   const aNoter = titres.filter((t) => etat.tri[cleTitre(t)] === "vu" && etat.notes[cleTitre(t)] === undefined);
@@ -260,7 +266,7 @@ export function NotationVisite({ titres }: { titres: ShowcaseTitle[] }) {
     maj((e) => ({ ...e, tri: { ...e.tri, [cle]: "pasvu" } }));
   };
 
-  useTouches((e) => {
+  useTouches(zone, (e) => {
     if (!e.ctrlKey && !e.metaKey && /^[0-5]$/.test(e.key)) {
       e.preventDefault();
       noter(Number(e.key));
@@ -268,7 +274,7 @@ export function NotationVisite({ titres }: { titres: ShowcaseTitle[] }) {
   });
 
   return (
-    <div className="feature-stage" style={courant?.tint ? ({ "--tint": courant.tint } as CSSProperties) : undefined}>
+    <div ref={zone} tabIndex={-1} className="feature-stage outline-none" style={courant?.tint ? ({ "--tint": courant.tint } as CSSProperties) : undefined}>
       {courant ? (
         <>
           <div className="flex items-center gap-5 sm:gap-6">
@@ -307,6 +313,7 @@ export function DuelsVisite({ titres }: { titres: ShowcaseTitle[] }) {
   const { etat, maj } = useVisite();
   const parCle = useParCle(titres);
   const [pressed, press] = usePressed();
+  const zone = useRef<HTMLDivElement | null>(null);
   // Tant qu'il n'y a pas deux titres notés, on départage des titres connus (jamais de chapitre bloqué).
   const connus = titres.map(cleTitre).filter((cle) => etat.tri[cle] !== "pasvu").slice(0, 8);
   const sansNotes = prochainePaire(etat) === null;
@@ -320,7 +327,7 @@ export function DuelsVisite({ titres }: { titres: ShowcaseTitle[] }) {
     maj((e) => apresDuel(e, paire[0], paire[1], gagnant));
   };
 
-  useTouches((e) => {
+  useTouches(zone, (e) => {
     if (e.ctrlKey || e.metaKey) return;
     if (e.key === "1" || e.key === "2") {
       e.preventDefault();
@@ -332,7 +339,7 @@ export function DuelsVisite({ titres }: { titres: ShowcaseTitle[] }) {
     ? [...new Set(etat.duels.flatMap((d) => [d.a, d.b]))].sort((x, y) => eloDe(etat, y) - eloDe(etat, x)).slice(0, 3)
     : [];
   return (
-    <div className="feature-stage">
+    <div ref={zone} tabIndex={-1} className="feature-stage outline-none">
       {a && b ? (
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           {[a, b].map((t, i) => (
@@ -607,55 +614,12 @@ export function SortiesVisite({ sorties }: { sorties: ShowcaseTitle[] }) {
 // ---------- Garder ----------
 
 /**
- * Verse la visite dans un compte : les titres (vus, envies), leurs notes, puis les duels ; ensuite, la
- * bienvenue (specs/bienvenue-v1.md) pour remplir la bibliothèque. Aussi au bas du paquet de la page d'arrivée.
+ * Ce qu'on a fait sans compte (visite, page d'arrivée) : « Continuer » mène à la bienvenue, qui le verse
+ * dans le compte à l'arrivée (specs/bienvenue-v1.md, FR-13). Rien n'est écrit avant.
  */
-export function useGarder() {
-  const { etat, oublier } = useVisite();
-  const [envoi, setEnvoi] = useState<string | null>(null);
-  const [erreur, setErreur] = useState<string | null>(null);
-  const bilan = aGarder(etat);
-
-  async function garder() {
-    setErreur(null);
-    const ids = new Map<string, number>();
-    try {
-      // L'une après l'autre : en ligne, la première écriture ouvre la session invitée.
-      for (const [i, cle] of bilan.titres.entries()) {
-        setEnvoi(`${i + 1} sur ${bilan.titres.length}`);
-        const [type, tmdbId] = [cle.slice(0, cle.lastIndexOf(":")), Number(cle.slice(cle.lastIndexOf(":") + 1))];
-        const res = await fetch("/api/items", { method: "POST", headers: JSON_HEADERS, body: JSON.stringify({ tmdbId, type, source: "home" }) });
-        const corps = (await res.json().catch(() => null)) as { item?: { id: number } } | null;
-        if (!res.ok || typeof corps?.item?.id !== "number") continue;
-        ids.set(cle, corps.item.id);
-        if (etat.tri[cle] === "vu") {
-          const note = etat.notes[cle];
-          await fetch(`/api/items/${corps.item.id}`, {
-            method: "PATCH",
-            headers: JSON_HEADERS,
-            body: JSON.stringify(note === undefined ? { watchStatus: "Watched" } : { watchStatus: "Watched", rating: note === 0 ? "💩" : "⭐️".repeat(note) }),
-          });
-        }
-      }
-      for (const duel of etat.duels) {
-        const [itemAId, itemBId] = [ids.get(duel.a), ids.get(duel.b)];
-        if (itemAId === undefined || itemBId === undefined) continue;
-        await fetch("/api/duels/result", { method: "POST", headers: JSON_HEADERS, body: JSON.stringify({ itemAId, itemBId, result: duel.gagnant }) });
-      }
-    } catch {
-      setEnvoi(null);
-      setErreur("La connexion a coupé : réessaie, ce qui est déjà gardé ne sera pas doublé.");
-      return;
-    }
-    oublier();
-    // La suite : remplir la bibliothèque d'un geste. Un invité garde son compte (e-mail et mot de passe)
-    // quand il le veut, depuis la barre du haut ou la jauge prête. Un vrai rechargement : la session vient
-    // de s'ouvrir, toute la page (barre comprise) en dépend.
-    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- rechargement complet voulu
-    window.location.href = "/bienvenue";
-  }
-
-  return { bilan, garder, envoi, erreur };
+export function useBilan() {
+  const { etat } = useVisite();
+  return aGarder(etat);
 }
 
 const nombre = (n: number, un: string, plusieurs: string) => `${n} ${n > 1 ? plusieurs : un}`;
@@ -673,28 +637,21 @@ function resume(bilan: ReturnType<typeof aGarder>): string {
 
 /**
  * La barre de la visite, fixée en bas, à portée du pouce quelle que soit la longueur de l'étape :
- * l'étape précédente (`avant`), ce qu'il y a à garder, l'étape suivante (`apres`). « Garder » paraît dès
- * le premier titre trié : on garde à tout moment, sans aller au bout (audit 2026-11-07, § 3).
+ * l'étape précédente (`avant`), ce que tu as fait, l'étape suivante (`apres`). « Continuer » paraît dès le
+ * premier titre trié : on passe à la bienvenue à tout moment, ses titres avec soi (bienvenue-v1, FR-13).
  */
 export function BarreVisite({ avant, apres, garder: avecGarder = true }: { avant?: ReactNode; apres?: ReactNode; garder?: boolean }) {
-  const { bilan, garder, envoi, erreur } = useGarder();
+  const bilan = useBilan();
   const montrer = avecGarder && bilan.titres.length > 0;
   return (
     <>
       {/* La place de la barre, au bas de la page : elle ne cache jamais la fin d'une étape. */}
       <div aria-hidden="true" className="h-20 shrink-0" />
       <div className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-2xl flex-col gap-2">
-        {erreur && (
-          <p role="alert" className="nav-glass px-4 py-2 text-sm text-muted">
-            {erreur}
-          </p>
-        )}
         <div className="nav-glass flex items-center gap-2 p-2">
           {avant}
           <p className="min-w-0 flex-1 truncate px-1 text-sm text-muted sm:px-2" aria-live="polite">
-            {envoi ? (
-              `Je garde… ${envoi}`
-            ) : montrer ? (
+            {montrer ? (
               <>
                 {/* Au téléphone, la barre tient aussi Précédent et Suivant : le nombre de titres seul. */}
                 <span className="sm:hidden">{nombre(bilan.titres.length, "titre", "titres")}</span>
@@ -703,9 +660,9 @@ export function BarreVisite({ avant, apres, garder: avecGarder = true }: { avant
             ) : null}
           </p>
           {montrer && (
-            <Button onClick={() => void garder()} loading={envoi !== null}>
-              <span className="sm:hidden">Garder</span>
-              <span className="hidden sm:inline">Garder ce que j&apos;ai fait</span>
+            <Button href="/bienvenue">
+              <span className="sm:hidden">Continuer</span>
+              <span className="hidden sm:inline">Continuer avec mes titres</span>
             </Button>
           )}
           {apres}
@@ -716,7 +673,7 @@ export function BarreVisite({ avant, apres, garder: avecGarder = true }: { avant
 }
 
 export function GarderVisite() {
-  const { bilan, garder, envoi, erreur } = useGarder();
+  const bilan = useBilan();
   const rien = bilan.titres.length === 0;
   return (
     <div className="feature-stage">
@@ -734,11 +691,11 @@ export function GarderVisite() {
         ))}
       </dl>
       <div className="flex flex-col items-start gap-3">
-        <Button variant="primary" size="lg" onClick={() => void garder()} loading={envoi !== null} disabled={rien}>
-          {envoi ? `Je garde… ${envoi}` : "Garder ce que j'ai fait"}
+        <Button href="/bienvenue" variant="primary" size="lg">
+          {rien ? "Tester" : "Continuer avec mes titres"}
         </Button>
-        <p role="alert" className="min-h-5 text-sm text-muted">
-          {erreur ?? (rien ? "Trie au moins un titre pour commencer ta bibliothèque." : "Tes titres, tes notes et tes duels deviennent ta bibliothèque, sans rien remplir.")}
+        <p className="min-h-5 text-sm text-muted">
+          {rien ? "Rien de trié pour l'instant : les cartes t'attendent." : "Tes titres, tes notes et tes duels deviennent ta bibliothèque, sans rien remplir."}
         </p>
       </div>
     </div>

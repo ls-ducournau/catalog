@@ -106,3 +106,11 @@ Suite de l'audit `docs/audit/landing-visite-app-2026-11-07.md` et des décisions
   vers son étape ; pourquoi Catalog (il apprend de tes notes ; gratuit pendant la bêta) ; dernier appel et
   pied de page (un projet Yugen, attribution TMDB).
 - L'accueil d'un compte est inchangé : sa refonte est le prochain chantier.
+
+## 10. Continuer plutôt que garder (2026-11-09)
+
+Audit `docs/audit/parcours-visiteur-2026-11-09.md`. « Garder ce que j'ai fait » devient **« Continuer avec mes
+titres »** : la visite n'écrit plus rien ; elle mène à la bienvenue, qui verse ses titres, notes et duels dans
+la bibliothèque à l'arrivée (`specs/bienvenue-v1.md`, FR-13). La barre du haut n'a plus « Quitter la visite » :
+le logo ramène à l'accueil, « Tester » reste le seul bouton principal.
+

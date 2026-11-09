@@ -7,8 +7,9 @@ import { Button, buttonClass } from "@/components/ui/Button";
 
 // Le compte dans la barre du haut — spec: specs/accueil-vitrine-connexion-v1.md (§ 4). En ligne (v2)
 // seulement : la route /session/etat n'existe pas en local, le bouton reste alors invisible.
-// Visiteur (pas de session, ou invité sans titre) : « Tester » ouvre la bienvenue (specs/bienvenue-v1.md),
-// « Se connecter » sur la bienvenue elle-même. Invité qui a des titres : « Garder mon compte » (/connexion).
+// Visiteur (pas de session, ou invité sans titre) : « Se connecter », discret ; le bouton principal
+// « Tester » est dans la barre (docs/audit/parcours-visiteur-2026-11-09.md). Invité qui a des titres :
+// « Garder mon compte » (/connexion).
 // Compte durable : son initiale, qui ouvre un menu (l'adresse, « Se déconnecter »).
 
 export type EtatCompte = { connecte: boolean; anonyme: boolean; email: string | null };
@@ -67,7 +68,11 @@ export function CompteBoutonVue({
   }, [open]);
 
   if (visiteur && (!etat.connecte || etat.anonyme)) {
-    return chemin === "/bienvenue" ? <Button href="/connexion">Se connecter</Button> : <Button href="/bienvenue">Tester</Button>;
+    return (
+      <Button href="/connexion" variant="ghost">
+        Se connecter
+      </Button>
+    );
   }
   if (etat.connecte && etat.anonyme) {
     return (

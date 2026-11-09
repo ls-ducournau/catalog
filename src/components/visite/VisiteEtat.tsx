@@ -65,11 +65,25 @@ export function VisiteProvider({ children }: { children: ReactNode }) {
   return <Contexte.Provider value={valeur}>{children}</Contexte.Provider>;
 }
 
+/** L'état gardé, lu hors d'un fournisseur (la bienvenue, qui le verse dans le compte). */
+export const lireEtatVisite = lire;
+export const oublierEtatVisite = () => ecrire(null);
+
 export function useVisite(): Visite {
   const visite = useContext(Contexte);
   if (!visite) throw new Error("useVisite hors de VisiteProvider");
   return visite;
 }
+
+/**
+ * Plusieurs chapitres à l'écran (la page d'arrivée) : leurs touches n'agissent que dans le chapitre qui a
+ * le focus. Une étape à l'écran (la visite) : partout.
+ */
+const ClavierLocalContexte = createContext(false);
+export function ClavierLocal({ children }: { children: ReactNode }) {
+  return <ClavierLocalContexte.Provider value={true}>{children}</ClavierLocalContexte.Provider>;
+}
+export const useClavierLocal = () => useContext(ClavierLocalContexte);
 
 /** Passer à une étape de la visite (fourni par le parcours, une étape à l'écran). */
 const AllerContexte = createContext<((etape: Etape) => void) | null>(null);

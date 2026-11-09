@@ -5,6 +5,8 @@ import { Loader2 } from "lucide-react";
 import { useEtatCompte } from "@/components/CompteBouton";
 import { HeroLayout } from "@/components/layouts";
 import { Button } from "@/components/ui/Button";
+import { lireEtatVisite, oublierEtatVisite } from "@/components/visite/VisiteEtat";
+import { verserVisite } from "@/components/visite/verser";
 import {
   ajouterAuBout,
   apresReponse,
@@ -19,6 +21,7 @@ import {
 } from "@/lib/demarrage";
 import type { DiscoveredItem } from "@/lib/discoveryService";
 import type { ShowcaseTitle } from "@/lib/showcase";
+import { aGarder } from "@/lib/visite";
 import type { Vitrine } from "@/lib/vitrine";
 import { JaugeDemarrage } from "./Jauge";
 import { SwipeDeck, useFiches } from "./SwipeDeck";
@@ -27,7 +30,8 @@ import { SwipeDeck, useFiches } from "./SwipeDeck";
 // remplissent la bibliothèque (→ dans ta pile, ↑ vu) et apprennent tes goûts (← écarté pour de bon),
 // avec la jauge de démarrage en haut. Chaque geste s'enregistre aussitôt, l'un après l'autre (en ligne, le
 // premier ouvre la session invitée) ; « Annuler » défait exactement le dernier. Un compte qui a déjà des
-// titres bien notés reçoit aussi des cartes plus personnelles (la découverte) glissées dans la file.
+// titres bien notés reçoit aussi des cartes plus personnelles (la découverte) glissées dans la file. Ce qu'on
+// a fait sans compte (visite, page d'arrivée) entre dans la bibliothèque à l'arrivée (FR-13).
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
 /** Après combien de réponses on redemande des cartes personnelles. */
@@ -66,7 +70,7 @@ function phrase(carte: CarteSwipe, r: ReponseSwipe): string {
   return `« ${carte.name} » : déjà vu.`;
 }
 
-export function Bienvenue({ vitrine, depart }: { vitrine: Vitrine; depart: Progression }) {
+export function Bienvenue({ vitrine, depart, importer }: { vitrine: Vitrine; depart: Progression; importer: boolean }) {
   const [file, setFile] = useState<CarteSwipe[]>(() => composerPaquet(vitrine));
   const [progression, setProgression] = useState<Progression>(depart);
   const [historique, setHistorique] = useState<Entree[]>([]);
@@ -131,6 +135,29 @@ export function Bienvenue({ vitrine, depart }: { vitrine: Vitrine; depart: Progr
   useEffect(() => {
     if (depart.notes > 0) void enrichir();
   }, [depart.notes, enrichir]);
+
+  // Ce qu'il a fait sans compte le suit (FR-13) : les cartes déjà répondues ne reviennent pas ; ses titres,
+  // ses notes et ses duels entrent dans la bibliothèque (un invité, ou un compte encore vide). Une seule fois.
+  const importe = useRef(false);
+  useEffect(() => {
+    if (importe.current) return;
+    importe.current = true;
+    const etat = lireEtatVisite();
+    const deja = Object.keys(etat.tri);
+    if (deja.length === 0) return;
+    for (const cle of deja) repondues.current.add(cle);
+    setFile((f) => f.filter((c) => !repondues.current.has(c.cle)));
+    if (!importer || aGarder(etat).titres.length === 0) return;
+    setRetour("Je range tes titres d'avant…");
+    chaine.current = chaine.current
+      .then(async () => {
+        const verse = await verserVisite(etat);
+        oublierEtatVisite();
+        setProgression((p) => ({ titres: p.titres + verse.titres, notes: p.notes + verse.notes, vusSansNote: p.vusSansNote + verse.vusSansNote }));
+        setRetour(verse.titres > 0 ? `Tes ${verse.titres} titre${verse.titres > 1 ? "s" : ""} d'avant ${verse.titres > 1 ? "sont" : "est"} dans ta bibliothèque.` : null);
+      })
+      .catch(() => setRetour(null));
+  }, [importer]);
 
   const repondre = useCallback(
     (carte: CarteSwipe, reponse: ReponseSwipe) => {

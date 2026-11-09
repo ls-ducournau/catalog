@@ -53,8 +53,9 @@ Décisions de Louis (2026-11-08) :
   réponses restent dans le navigateur (l'état de la visite). « Garder mes N titres et continuer » les verse
   dans un compte et ouvre la bienvenue. Au doigt, la page défile à la verticale (« Déjà vu » par son bouton) ;
   au clavier, les flèches n'agissent que dans le paquet.
-- **FR-9** (compte) — Barre du haut : « Tester » pour un visiteur, « Se connecter » sur la bienvenue,
-  « Garder mon compte » pour un invité qui a des titres.
+- **FR-9** (compte, revu le 2026-11-09, `docs/audit/parcours-visiteur-2026-11-09.md`) — Barre du haut d'un
+  visiteur : « Se connecter » (discret) et **« Tester »**, le seul bouton principal (absent sur la bienvenue) ;
+  « Fais le tour » n'y est plus. « Garder mon compte » pour un invité qui a des titres.
 
 - **FR-10** (sans fin, 2026-11-09) — Le paquet ne s'arrête pas : sous 8 cartes, la page suivante arrive
   (`GET /api/welcome/cards?page=N`, 1 à 20, publique ; avec un compte, sans ses titres ni ceux qu'il a
@@ -70,6 +71,12 @@ Décisions de Louis (2026-11-08) :
   plus jamais dès le premier contact. Préréglage `preset.indice` (quatre mouvements de 400 ms, sans
   dépassement) ; rien avec le mouvement réduit.
 
+- **FR-13** (tout te suit, 2026-11-09) — Sans compte, rien ne s'écrit : le paquet, les sections jouables de la
+  page d'arrivée (« Ça me tente ») et la visite gardent les choix dans le navigateur (un seul état).
+  « Continuer avec mes N titres » mène à la bienvenue ; à l'arrivée, d'où qu'on vienne, la bienvenue verse
+  titres, notes et duels dans la bibliothèque (un invité, ou un compte encore vide ; jamais la bibliothèque
+  locale de Louis) et ne remontre pas les cartes déjà répondues.
+
 ## 3. Réalisé
 
 - `src/lib/demarrage.ts` (+ 4 tests) : cartes, paquet, insertion de la découverte, jauge, paliers.
@@ -83,3 +90,5 @@ Décisions de Louis (2026-11-08) :
 - 2026-11-09 : FR-10 (`serveur/src/bienvenue.rs` + 1 test, `src/lib/cartesBienvenue.ts` + 1 test, même ordre ;
   `ajouterAuBout` + 1 test ; préchargement des affiches) et FR-11.
 - 2026-11-09 : « Déjà vu » sans note, lien « Noter mes titres vus » dans la jauge ; FR-12 (`preset.indice`).
+- 2026-11-09 : audit du parcours visiteur ; FR-9 revu, FR-13 (`src/components/visite/verser.ts`,
+  `BacSuggestions`, `ClavierLocal`) ; sections de l'accueil en version pour tous sur la page d'arrivée.

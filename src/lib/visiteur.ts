@@ -28,3 +28,14 @@ export const estVisiteur = cache(async (): Promise<boolean> => {
     return false;
   }
 });
+
+/**
+ * Pas de compte durable : pas de session, ou une session invitée (en ligne). Ce qu'il a fait sans compte
+ * (visite, page d'arrivée) peut alors entrer dans sa bibliothèque (specs/bienvenue-v1.md, FR-13). En local
+ * (v1), jamais : c'est la bibliothèque de Louis.
+ */
+export const estInvite = cache(async (): Promise<boolean> => {
+  if (!estV2() || !process.env.CATALOG_API_URL) return false;
+  const jeton = (await headers()).get(ENTETE_JETON);
+  return !jeton || revendications(jeton)?.is_anonymous === true;
+});
