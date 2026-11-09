@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Bienvenue } from "@/components/swipe/Bienvenue";
 import { chargerAccueil, chargerVitrine } from "@/lib/accueilDonnees";
-import { estInvite, estVisiteur } from "@/lib/visiteur";
+import { estInvite } from "@/lib/visiteur";
 
 // Bienvenue — spec: specs/bienvenue-v1.md. Le « Tinder du titre » : le premier écran d'un compte, et ce
 // qu'ouvre « Tester ». Des cartes à balayer et la jauge de démarrage. Un visiteur n'a pas encore de compte :
@@ -14,8 +14,8 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const visiteur = await estVisiteur();
-  const [donnees, vitrine] = await Promise.all([visiteur ? null : chargerAccueil(), chargerVitrine()]);
+  // Ses compteurs dès qu'il a une session (un invité qui revient reprend là où il en était) ; sans session, rien.
+  const [donnees, vitrine] = await Promise.all([chargerAccueil(), chargerVitrine()]);
   const stats = donnees?.stats;
   // Vus sans note : ni à voir ni notés (une estimation, pour proposer de les noter).
   const depart = { titres: stats?.total ?? 0, notes: stats?.rated ?? 0, vusSansNote: stats ? Math.max(0, stats.total - stats.toWatch - stats.rated) : 0 };

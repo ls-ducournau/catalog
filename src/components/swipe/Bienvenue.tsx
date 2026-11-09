@@ -389,18 +389,26 @@ export function Bienvenue({
       {suivante.nom}
       <ArrowRight size={14} aria-hidden="true" />
     </Button>
-  ) : (
+  ) : notes >= OBJECTIF_NOTES ? (
     <>
       {anonyme && (
         <Button size="sm" href="/connexion?retour=/" variant="ghost">
           Garder mon compte
         </Button>
       )}
-      <Button size="sm" href="/" variant="primary">
+      <Button
+        size="sm"
+        variant="primary"
+        onClick={() => {
+          // Un vrai rechargement : la découverte est finie, la barre du haut devient celle de l'application.
+          // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- rechargement complet voulu
+          window.location.href = "/";
+        }}
+      >
         Ouvrir Catalog
       </Button>
     </>
-  );
+  ) : null;
 
   const fin =
     cherche || suite ? (

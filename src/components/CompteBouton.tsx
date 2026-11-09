@@ -34,12 +34,15 @@ export function useEtatCompte(): EtatCompte | null | undefined {
 export function CompteBoutonVue({
   etat,
   visiteur = false,
+  enCours = false,
   chemin = "/",
   onDeconnexion,
 }: {
   etat: EtatCompte;
   /** Pas encore de bibliothèque : on l'invite à tester. */
   visiteur?: boolean;
+  /** Un invité qui a commencé sa bibliothèque : il a de quoi garder. */
+  enCours?: boolean;
   /** La page ouverte (où revenir après la connexion). */
   chemin?: string;
   onDeconnexion?: () => void;
@@ -68,7 +71,12 @@ export function CompteBoutonVue({
   }, [open]);
 
   if (visiteur && (!etat.connecte || etat.anonyme)) {
-    return (
+    return enCours && etat.connecte ? (
+      <Button href={`/connexion?retour=${encodeURIComponent(chemin)}`} variant="ghost" aria-label="Garder mon compte">
+        <span className="sm:hidden">Garder</span>
+        <span className="hidden sm:inline">Garder mon compte</span>
+      </Button>
+    ) : (
       <Button href="/connexion" variant="ghost">
         Se connecter
       </Button>
@@ -124,7 +132,7 @@ export function CompteBoutonVue({
   );
 }
 
-export function CompteBouton({ visiteur = false }: { visiteur?: boolean }) {
+export function CompteBouton({ visiteur = false, enCours = false }: { visiteur?: boolean; enCours?: boolean }) {
   const etat = useEtatCompte();
   const chemin = usePathname();
   if (!etat) return null;
@@ -132,6 +140,7 @@ export function CompteBouton({ visiteur = false }: { visiteur?: boolean }) {
     <CompteBoutonVue
       etat={etat}
       visiteur={visiteur}
+      enCours={enCours}
       chemin={chemin}
       onDeconnexion={async () => {
         await fetch("/session/deconnexion", { method: "POST" }).catch(() => null);

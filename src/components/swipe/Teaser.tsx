@@ -10,8 +10,9 @@ import { SwipeDeck, useFiches } from "./SwipeDeck";
 // Le paquet de la page d'arrivée — spec: specs/bienvenue-v1.md (FR-8, FR-13). Le même geste que la
 // bienvenue, sur une dizaine de titres, sans compte : les réponses restent dans le navigateur (l'état de la
 // visite, partagé avec les sections de la page). « Continuer » mène à la bienvenue, qui les verse dans le
-// compte. Au doigt, la page défile à la verticale : « Déjà vu » passe par son bouton ; au clavier, les
-// flèches n'agissent que dans le paquet.
+// compte. Au doigt, les trois gestes marchent sur la carte, vers le haut compris (demande de Louis,
+// 2026-11-09) ; au téléphone, la carte est plus étroite pour qu'on fasse défiler la page à côté. Au clavier,
+// les flèches n'agissent que dans le paquet.
 
 export function TeaserSwipe({ cartes }: { cartes: CarteSwipe[] }) {
   const { etat, maj } = useVisite();
@@ -73,7 +74,6 @@ export function TeaserSwipe({ cartes }: { cartes: CarteSwipe[] }) {
         retour={retour}
         fin={fin}
         clavier="focus"
-        balayageVertical={false}
       />
       {file.length > 0 && gardes > 0 && continuer}
     </div>

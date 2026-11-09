@@ -130,7 +130,14 @@ function isActive(pathname: string, href: string): boolean {
 /** Le parcours d'un nouveau venu : ni menus, ni onglets, ni réglages de l'application (specs/bienvenue-v1.md, FR-16). */
 const PAGES_EPUREES = ["/bienvenue", "/visite", "/connexion"];
 
-export default function NavBar({ visiteur = false }: { visiteur?: boolean }) {
+export default function NavBar({
+  visiteur = false,
+  enCours = false,
+}: {
+  visiteur?: boolean;
+  /** Un invité qui a commencé sa bibliothèque sans la finir : « Continuer » plutôt que « Tester ». */
+  enCours?: boolean;
+}) {
   // Un visiteur découvre chaque partie dans la visite (specs/visite-interactive-v1.md), pas sur une page vide.
   const lien = (href: string) => (visiteur ? versVisite(href) : href);
   const pathname = usePathname();
@@ -188,7 +195,7 @@ export default function NavBar({ visiteur = false }: { visiteur?: boolean }) {
             {!epure && <TopMenus pathname={pathname} lien={lien} />}
             <div className="ml-auto flex items-center gap-2">
               {/* En ligne seulement : « Se connecter », ou l'initiale du compte. */}
-              <CompteBouton visiteur={visiteur} />
+              <CompteBouton visiteur={visiteur} enCours={enCours} />
               {/* Un visiteur n'a ni réglages ni bibliothèque où ajouter (décision de Louis, 2026-11-06). */}
               {!epure && <SettingsMenu />}
               {/* Ajouter un titre, depuis n'importe quelle page : la fenêtre d'ajout de la
@@ -216,7 +223,7 @@ export default function NavBar({ visiteur = false }: { visiteur?: boolean }) {
                 visiteur &&
                 pathname !== "/bienvenue" && (
                   <Button href="/bienvenue" variant="primary">
-                    Tester
+                    {enCours ? "Continuer" : "Tester"}
                   </Button>
                 )
               ) : (

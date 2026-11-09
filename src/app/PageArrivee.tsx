@@ -22,7 +22,6 @@ import { ClavierLocal, VisiteProvider } from "@/components/visite/VisiteEtat";
 import { composerAccueil } from "@/lib/amorce";
 import { composerPaquet, vitrineChoisie } from "@/lib/demarrage";
 import type { ShowcaseTitle } from "@/lib/showcase";
-import { cn } from "@/lib/utils";
 import { cleTitre } from "@/lib/visite";
 import type { Vitrine } from "@/lib/vitrine";
 
@@ -40,7 +39,7 @@ import type { Vitrine } from "@/lib/vitrine";
 
 const avecAffiche = (titres: ShowcaseTitle[]) => [...new Map(titres.filter((t) => t.posterUrl).map((t) => [cleTitre(t), t])).values()];
 
-export function PageArrivee({ vitrine: brute }: { vitrine: Vitrine }) {
+export function PageArrivee({ vitrine: brute, titres = 0 }: { vitrine: Vitrine; /** Un invité en cours de découverte : ses titres. */ titres?: number }) {
   // Ni talk-shows, ni actualités, ni téléréalité : une vitrine de films et de séries qui donne envie.
   const vitrine = vitrineChoisie(brute);
   const tendances = avecAffiche([...vitrine.picks, ...vitrine.moods.flatMap((t) => t.titles)]);
@@ -60,19 +59,21 @@ export function PageArrivee({ vitrine: brute }: { vitrine: Vitrine }) {
   const { moods, picks, lists } = composerAccueil(null, vitrine, null);
   const tous = [...new Map([...vitrine.rating, ...vitrine.picks, ...moods.flatMap((t) => t.titles), ...lists.flatMap((t) => t.titles)].map((t) => [cleTitre(t), t])).values()];
   const cinema = vitrine.lists.find((t) => t.value === "cinema")?.titles ?? [];
+  // Un invité qui a commencé : « Continuer » le ramène à son parcours, là où il l'a laissé (FR-18).
+  const action = titres > 0 ? "Continuer" : "Tester";
   const tester = (
     <Button href="/bienvenue" variant="primary" size="lg">
-      Tester
+      {action}
     </Button>
   );
 
   return (
     <HeroLayout
       hero={
-        // Le héros fait deux choses à la fois : il dit la promesse, et il la fait essayer. Sur ordinateur, le
-        // texte à gauche, le paquet à droite ; au téléphone, le paquet juste sous le bouton.
-        <div className={cn("grid w-full max-w-6xl items-center gap-10", paquet.length > 0 && "lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:gap-16")}>
-          <div className={cn("flex flex-col items-center gap-6", paquet.length > 0 && "lg:items-start lg:text-left")}>
+        // Le héros fait deux choses à la fois : il dit la promesse, et il la fait essayer. Centré (demande de
+        // Louis, 2026-11-09), le paquet juste sous le bouton : son haut se voit dès l'arrivée.
+        <div className="flex w-full max-w-6xl flex-col items-center gap-8">
+          <div className="flex flex-col items-center gap-6">
             <h1 className="max-w-3xl text-balance text-heading text-foreground sm:text-heading-lg">Balaie des titres. Catalog te dit quoi regarder.</h1>
             <p className="max-w-md text-balance text-base text-muted">
               À droite si ça te tente, à gauche si ce n&apos;est pas pour toi : ta bibliothèque se remplit, et Catalog te recommande ce qui va te plaire.
@@ -83,7 +84,7 @@ export function PageArrivee({ vitrine: brute }: { vitrine: Vitrine }) {
                 Comment ça marche
               </Button>
             </div>
-            <MonoMeta>Gratuit pendant la bêta | Sans inscription</MonoMeta>
+            <MonoMeta>{titres > 0 ? `${titres} titre${titres > 1 ? "s" : ""} dans ta bibliothèque | Gratuit pendant la bêta` : "Gratuit pendant la bêta | Sans inscription"}</MonoMeta>
           </div>
           {paquet.length > 0 && (
             // Le héros centre son texte : la carte, elle, s'aligne à gauche, comme partout.
@@ -107,7 +108,7 @@ export function PageArrivee({ vitrine: brute }: { vitrine: Vitrine }) {
               title: "Tu balaies.",
               text: "Un geste par titre : ce qui te tente, ce que tu as vu. Ta bibliothèque se remplit, c'est le point de départ.",
               href: "/bienvenue",
-              action: "Tester",
+              action,
               visual: images[0],
             },
             {

@@ -1809,6 +1809,14 @@ html {
     outline: none;
   }
 
+  /* La page d'arrivée au téléphone : la carte capte les trois gestes (vers le haut compris) ; plus étroite,
+     elle laisse de chaque côté de quoi faire défiler la page au pouce. */
+  @media (width < 40rem) {
+    .swipe-deck:not(.is-page) {
+      width: min(74vw, 18rem);
+    }
+  }
+
   /* La bienvenue : la scène tient dans l'écran (HeroLayout plein) ; la zone de la carte prend la hauteur
      qui reste, et la carte s'y inscrit au format 2:3, quoi qu'il apparaisse autour (FR-15). */
   .swipe-zone {

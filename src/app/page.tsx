@@ -21,7 +21,7 @@ import { Button, MonoMeta } from "@/components/ui";
 import { chargerAccueil, chargerVitrine } from "@/lib/accueilDonnees";
 import { composerAccueil, NOTES_POUR_RECOS } from "@/lib/amorce";
 import { estPrete } from "@/lib/demarrage";
-import { estVisiteur } from "@/lib/visiteur";
+import { etatVisiteur } from "@/lib/visiteur";
 import { PageArrivee } from "./PageArrivee";
 
 // Accueil — spec: specs/design-system-v2-raycast.md (§ 7, HeroLayout). Deux pages distinctes
@@ -37,10 +37,11 @@ import { PageArrivee } from "./PageArrivee";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  // Un visiteur (ou un invité qui n'a encore rien gardé) voit la page d'arrivée : les données d'un compte ne
-  // sont même pas demandées.
-  if (await estVisiteur())
-    return <PageArrivee vitrine={await chargerVitrine()} />;
+  // Un visiteur, ou un invité qui n'a pas fini sa découverte (moins de 10 notes), voit la page d'arrivée :
+  // « Continuer » le ramène à son parcours (specs/bienvenue-v1.md, FR-18).
+  const visite = await etatVisiteur();
+  if (visite.visiteur)
+    return <PageArrivee vitrine={await chargerVitrine()} titres={visite.titres} />;
 
   const [donnees, vitrine] = await Promise.all([
     chargerAccueil(),

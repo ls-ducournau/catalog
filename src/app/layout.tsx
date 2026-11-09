@@ -6,7 +6,7 @@ import { ImpressionTracker } from "@/components/ImpressionTracker";
 import { MotionRoot } from "@/components/MotionRoot";
 import { BackToTop } from "@/components/BackToTop";
 import { PARTAGE, SITE } from "@/lib/partage";
-import { estVisiteur } from "@/lib/visiteur";
+import { etatVisiteur } from "@/lib/visiteur";
 import "./globals.css";
 
 // Polices (choix de l'utilisateur, 2026-09-28) : Work Sans pour le texte, Bricolage Grotesque en
@@ -40,9 +40,9 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  // En ligne, un visiteur (sans session, ou invité sans aucun titre) n'a ni réglages ni « Ajouter » dans la
-  // barre, et ses liens mènent à la visite. En local, jamais de visiteur.
-  const visiteur = await estVisiteur();
+  // En ligne, un visiteur (sans session, ou invité qui n'a pas fini sa découverte) a la barre épurée : ni menus,
+  // ni réglages, ni « Ajouter » (src/lib/visiteur.ts). En local, jamais de visiteur.
+  const { visiteur, titres } = await etatVisiteur();
   return (
     <html
       lang="fr"
@@ -52,7 +52,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <MotionRoot />
-        <NavBar visiteur={visiteur} />
+        <NavBar visiteur={visiteur} enCours={visiteur && titres > 0} />
         {children}
         {/* playlists-v2 FR-1 : la fenêtre « Ajouter à une playlist », ouverte depuis n'importe quelle carte. */}
         <PlaylistDialogHost />
