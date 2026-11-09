@@ -24,15 +24,16 @@ Décisions de Louis (2026-11-08) :
 
 - **FR-1** (gestes) — Une carte à la fois, la suivante dessous. Balayer à droite : le titre rejoint ta pile
   (`POST /api/triage/answer`, famille « à découvrir », « like ») ; à gauche : il est écarté pour de bon
-  (« dislike ») ; vers le haut : « Déjà vu », puis une note de 💩 à 5 étoiles ou « Vu, sans note »
-  (`POST /api/items`, source « triage », puis `PATCH` vu et note). Trois boutons et les flèches du clavier
-  font la même chose ; 0 à 5 et Entrée pour la note.
+  (« dislike ») ; vers le haut : « Déjà vu » (`POST /api/items`, source « triage », puis `PATCH` vu),
+  **sans note** (décision de Louis, 2026-11-09 : on note ensuite ses titres vus dans le tri rapide). Trois
+  boutons et les flèches du clavier font la même chose.
 - **FR-2** (annuler) — « Annuler » (Ctrl+Z) défait exactement le dernier geste (`POST /api/triage/undo`) et
   remet la carte sur le dessus.
 - **FR-3** (ordre des cartes) — Le paquet de départ vient de la vitrine : un titre que presque tout le
   monde a vu (à noter d'un geste), puis un titre du moment, en alternance, sans doublon ni titre déjà dans
   la bibliothèque. Dès un titre noté 4 étoiles ou plus (et toutes les 8 réponses), la découverte
-  (`/api/recommendations/discover`) glisse des cartes plus personnelles, « Parce que tu as aimé … ».
+  (`/api/recommendations/discover`) glisse des cartes plus personnelles, « Parce que tu as aimé … » (pour un
+  compte qui a déjà des titres vus bien notés).
 - **FR-4** (la carte) — L'affiche en plein cadre ; en bas, sur un dégradé : titre, type, année, genres et
   deux lignes de synopsis. En haut : la bande-annonce (le lecteur de l'application) et « Plus d'infos ». Un
   tap, « i » ou « Plus d'infos » retourne la carte : synopsis complet, durée, note TMDB, réalisation,
@@ -41,7 +42,8 @@ Décisions de Louis (2026-11-08) :
 - **FR-5** (mouvement) — La carte suit le doigt, penche, affiche le tampon du geste (blanc, jamais en
   couleur) et part en 220 ms (transform et opacité, sans ressort). Mouvement réduit : elle change sans voler.
 - **FR-6** (jauge) — Deux barres : titres (objectif 30, le seuil d'une bibliothèque qui « démarre ») et notes
-  (objectif 10, le minimum des recommandations), et le prochain palier en une phrase. En haut de la
+  (objectif 10, le minimum des recommandations), et le prochain palier en une phrase, les titres d'abord.
+  Les cartes ne notant pas, « Noter mes titres vus (N) » mène au tri rapide des titres vus. En haut de la
   bienvenue, et sur l'accueil d'un compte tant qu'elle n'est pas pleine (avec « Remplir ma bibliothèque »).
   Pleine : « Voir mes recommandations », et « Garder mon compte » pour un invité.
 - **FR-7** (premier écran) — `/bienvenue`. « Tester » y mène ; « Garder ce que j'ai fait » (visite, page
@@ -62,6 +64,12 @@ Décisions de Louis (2026-11-08) :
   sans 10 notes, pile vide, découverte sans titre bien noté, duels, classement, bibliothèque vide), l'action
   mène à la bienvenue : c'est le chemin le plus court vers des titres vus et notés.
 
+- **FR-12** (indice du geste, 2026-11-09, demande de Louis : « le swipe n'est pas évident au premier coup
+  d'œil ») — Quand le paquet paraît à l'écran, la carte du dessus se balance à droite (tampon « Ça me
+  tente ») puis à gauche (« Pas pour moi ») et revient ; une seconde fois 7 s plus tard si rien ne se passe ;
+  plus jamais dès le premier contact. Préréglage `preset.indice` (quatre mouvements de 400 ms, sans
+  dépassement) ; rien avec le mouvement réduit.
+
 ## 3. Réalisé
 
 - `src/lib/demarrage.ts` (+ 4 tests) : cartes, paquet, insertion de la découverte, jauge, paliers.
@@ -74,3 +82,4 @@ Décisions de Louis (2026-11-08) :
   bienvenue.
 - 2026-11-09 : FR-10 (`serveur/src/bienvenue.rs` + 1 test, `src/lib/cartesBienvenue.ts` + 1 test, même ordre ;
   `ajouterAuBout` + 1 test ; préchargement des affiches) et FR-11.
+- 2026-11-09 : « Déjà vu » sans note, lien « Noter mes titres vus » dans la jauge ; FR-12 (`preset.indice`).
