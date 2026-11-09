@@ -1811,7 +1811,7 @@ html {
 
   /* La bienvenue : la jauge et la question au-dessus, les trois gestes dessous, tout dans l'écran. */
   .swipe-deck.is-page {
-    width: min(100%, 24rem, max(14rem, calc((100svh - 20rem) * 0.6667)));
+    width: min(100%, 24rem, max(14rem, calc((100svh - 21.5rem) * 0.6667)));
   }
 
   @media (width >= 40rem) {
