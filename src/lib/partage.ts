@@ -24,4 +24,6 @@ export const PALETTE_PARTAGE = {
   bleu: "#143ca3",
   arete: "rgba(255, 255, 255, 0.12)",
   voile: "rgba(0, 0, 0, 0.55)",
+  /** Les éclats du héros, en dégradé (une image d'aperçu ne floute pas) : le bleu en haut, le corail en bas. */
+  degrade: "linear-gradient(150deg, #0d2a73 0%, #07122e 28%, #040506 55%, #2a0d10 85%, #4a1416 100%)",
 };

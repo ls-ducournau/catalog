@@ -58,9 +58,7 @@ function Carte({ rotation, x, y, opacite, tampon }: { rotation: number; x: numbe
 export default function Image() {
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", background: P.fond, position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", left: 60, top: -420, width: 1100, height: 1100, background: `radial-gradient(circle, ${P.bleu} 0%, transparent 60%)`, opacity: 0.55 }} />
-        <div style={{ position: "absolute", left: 560, top: 300, width: 800, height: 260, background: `radial-gradient(ellipse, ${P.marque} 0%, transparent 65%)`, opacity: 0.4, transform: "rotate(-28deg)" }} />
+      <div style={{ width: "100%", height: "100%", display: "flex", background: P.degrade, position: "relative", overflow: "hidden" }}>
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 72px", width: 680, height: "100%" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <div style={{ width: 52, height: 52, borderRadius: 14, background: P.marque, display: "flex", alignItems: "center", justifyContent: "center", color: P.texte, fontSize: 32, fontWeight: 800 }}>
