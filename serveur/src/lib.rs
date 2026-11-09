@@ -4,6 +4,7 @@
 pub mod accueil;
 pub mod auth;
 pub mod bd;
+pub mod bienvenue;
 pub mod catalogue;
 pub mod ce_soir;
 pub mod classement;
@@ -51,6 +52,7 @@ pub fn app() -> Router {
         .route("/api/items/{id}", get(items::fiche).patch(ecriture::modifier).delete(ecriture::retirer))
         .route("/api/tmdb/search", get(ecriture::recherche))
         .route("/api/tmdb/title", get(decouverte::fiche))
+        .route("/api/welcome/cards", get(bienvenue::cartes))
         .route("/api/settings/subscriptions", get(reglages::lire_abonnements).put(reglages::ecrire_abonnements))
         .route("/api/providers", get(reglages::fournisseurs))
         .route("/api/recommendations", get(recommandations::recommandations))

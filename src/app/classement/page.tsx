@@ -269,7 +269,18 @@ function TitlesRanking({
 
         {ranking && total === 0 && (
           <Card>
-            <EmptyState icon={<Star size={20} aria-hidden="true" />} title="Rien à classer">
+            <EmptyState
+              icon={<Star size={20} aria-hidden="true" />}
+              title="Rien à classer"
+              action={
+                category ? undefined : (
+                  // Une bibliothèque qui démarre : « Déjà vu » et une note, sur les cartes de bienvenue.
+                  <Button href="/bienvenue" variant="primary">
+                    Noter des titres
+                  </Button>
+                )
+              }
+            >
               Aucun titre vu et noté {category ? "dans cette catégorie" : "pour l'instant"}.
             </EmptyState>
           </Card>

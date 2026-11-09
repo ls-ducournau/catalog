@@ -117,6 +117,11 @@ export function insererDansFile(file: CarteSwipe[], nouvelles: CarteSwipe[], exc
   return [...tete, ...melange];
 }
 
+/** La suite du paquet (page suivante de /api/welcome/cards), au bout de la file, sans doublon ni carte répondue. */
+export function ajouterAuBout(file: CarteSwipe[], nouvelles: CarteSwipe[], exclues: ReadonlySet<string> = new Set()): CarteSwipe[] {
+  return [...file, ...uniques(nouvelles, new Set([...exclues, ...file.map((c) => c.cle)]))];
+}
+
 export type Progression = { titres: number; notes: number };
 
 /** Ce qu'une réponse ajoute à la jauge : un titre gardé (vu ou à voir), une note. */

@@ -7,8 +7,10 @@ import { HeroLayout } from "@/components/layouts";
 import { ratedAs } from "@/components/RatingKeys";
 import { Button } from "@/components/ui/Button";
 import {
+  ajouterAuBout,
   apresReponse,
   carteDepuisDecouverte,
+  carteDepuisVitrine,
   composerPaquet,
   estPrete,
   insererDansFile,
@@ -17,6 +19,7 @@ import {
   type ReponseSwipe,
 } from "@/lib/demarrage";
 import type { DiscoveredItem } from "@/lib/discoveryService";
+import type { ShowcaseTitle } from "@/lib/showcase";
 import type { Vitrine } from "@/lib/vitrine";
 import { JaugeDemarrage } from "./Jauge";
 import { SwipeDeck, useFiches } from "./SwipeDeck";
@@ -30,6 +33,8 @@ import { SwipeDeck, useFiches } from "./SwipeDeck";
 const JSON_HEADERS = { "Content-Type": "application/json" };
 /** Après combien de réponses on redemande des cartes personnelles. */
 const RELANCE = 8;
+/** Sous ce nombre de cartes, la page suivante est demandée : le paquet ne s'arrête pas (FR-10). */
+const RESERVE = 8;
 
 type Entree = { carte: CarteSwipe; reponse: ReponseSwipe; annulation: Promise<unknown> };
 
@@ -74,6 +79,7 @@ export function Bienvenue({ vitrine, depart }: { vitrine: Vitrine; depart: Progr
   const [historique, setHistorique] = useState<Entree[]>([]);
   const [retour, setRetour] = useState<string | null>(null);
   const [cherche, setCherche] = useState(false);
+  const [suite, setSuite] = useState(false);
   const fiches = useFiches(file);
   const compte = useEtatCompte();
   // Les écritures passent l'une après l'autre ; les clés déjà répondues ne reviennent pas.
@@ -81,6 +87,35 @@ export function Bienvenue({ vitrine, depart }: { vitrine: Vitrine; depart: Progr
   const repondues = useRef(new Set<string>());
   const reponses = useRef(0);
   const derniereRelance = useRef<number | null>(null);
+  const page = useRef(1);
+  const encore = useRef(true);
+  const enCharge = useRef(false);
+
+  // La suite du paquet : des titres très vus et populaires, page après page, quand la vitrine s'épuise.
+  const chargerSuite = useCallback(async () => {
+    if (enCharge.current || !encore.current) return;
+    enCharge.current = true;
+    setSuite(true);
+    try {
+      const res = await fetch(`/api/welcome/cards?page=${page.current}`);
+      const corps = (await res.json().catch(() => null)) as { items?: ShowcaseTitle[]; more?: boolean } | null;
+      page.current += 1;
+      if (!res.ok || !corps) return;
+      encore.current = corps.more !== false;
+      const nouvelles = (corps.items ?? []).map(carteDepuisVitrine);
+      setFile((f) => ajouterAuBout(f, nouvelles, repondues.current));
+    } catch {
+      // Réseau : on réessaiera au prochain geste.
+    } finally {
+      enCharge.current = false;
+      setSuite(false);
+    }
+  }, []);
+
+  // Une vitrine maigre (TMDB lent, bibliothèque qui en couvre déjà une partie) : la suite tout de suite.
+  useEffect(() => {
+    if (composerPaquet(vitrine).length <= RESERVE) void chargerSuite();
+  }, [vitrine, chargerSuite]);
 
   const enrichir = useCallback(async () => {
     if (derniereRelance.current !== null && reponses.current - derniereRelance.current < RELANCE) return;
@@ -114,9 +149,10 @@ export function Bienvenue({ vitrine, depart }: { vitrine: Vitrine; depart: Progr
       const annulation = (chaine.current = chaine.current.then(() => ecrire(carte, reponse)).catch(() => null));
       setHistorique((h) => [...h.slice(-29), { carte, reponse, annulation }]);
       const aime = reponse.kind === "vu" && reponse.note !== null && reponse.note >= 4;
-      if (aime || file.length <= 6) void enrichir();
+      if (aime) void enrichir();
+      if (file.length - 1 <= RESERVE) void chargerSuite();
     },
-    [enrichir, file.length]
+    [enrichir, chargerSuite, file.length]
   );
 
   const annuler = useCallback(() => {
@@ -139,7 +175,7 @@ export function Bienvenue({ vitrine, depart }: { vitrine: Vitrine; depart: Progr
   const prete = estPrete(progression);
   const anonyme = compte?.connecte === true && compte.anonyme;
 
-  const fin = cherche ? (
+  const fin = cherche || suite ? (
     <p className="flex items-center gap-2 text-sm text-muted">
       <Loader2 size={16} aria-hidden="true" className="animate-spin" />
       Je cherche des titres à ton goût…

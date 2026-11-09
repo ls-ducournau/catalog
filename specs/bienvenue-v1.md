@@ -54,6 +54,14 @@ Décisions de Louis (2026-11-08) :
 - **FR-9** (compte) — Barre du haut : « Tester » pour un visiteur, « Se connecter » sur la bienvenue,
   « Garder mon compte » pour un invité qui a des titres.
 
+- **FR-10** (sans fin, 2026-11-09) — Le paquet ne s'arrête pas : sous 8 cartes, la page suivante arrive
+  (`GET /api/welcome/cards?page=N`, 1 à 20, publique ; avec un compte, sans ses titres ni ceux qu'il a
+  écartés) : des titres très vus (deux films pour une série) et des titres populaires du moment, en
+  alternance, gardés six heures par page. Les affiches des quatre cartes suivantes sont chargées d'avance.
+- **FR-11** (états vides, 2026-11-09) — Là où une bibliothèque qui démarre n'a encore rien (recommandations
+  sans 10 notes, pile vide, découverte sans titre bien noté, duels, classement, bibliothèque vide), l'action
+  mène à la bienvenue : c'est le chemin le plus court vers des titres vus et notés.
+
 ## 3. Réalisé
 
 - `src/lib/demarrage.ts` (+ 4 tests) : cartes, paquet, insertion de la découverte, jauge, paliers.
@@ -64,3 +72,5 @@ Décisions de Louis (2026-11-08) :
 - Page d'arrivée : titre « Balaie des titres. Catalog te dit quoi regarder. », « Tester », « J'ai déjà un
   compte », l'avant-goût sous l'éventail. Accueil d'un compte : la jauge. Visite : « Garder » mène à la
   bienvenue.
+- 2026-11-09 : FR-10 (`serveur/src/bienvenue.rs` + 1 test, `src/lib/cartesBienvenue.ts` + 1 test, même ordre ;
+  `ajouterAuBout` + 1 test ; préchargement des affiches) et FR-11.

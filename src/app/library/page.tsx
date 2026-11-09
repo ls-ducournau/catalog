@@ -651,22 +651,37 @@ export default function LibraryPage() {
         <EmptyState
           className="mt-6"
           icon={<Search size={20} aria-hidden="true" />}
-          title={q ? `Aucun titre pour « ${q} »` : "Aucun titre avec ces filtres"}
+          title={q ? `Aucun titre pour « ${q} »` : activeFilterCount > 0 ? "Aucun titre avec ces filtres" : "Ta bibliothèque est vide"}
           action={
             activeFilterCount > 0 ? (
               <Button onClick={resetFilters} size="sm">
                 <RotateCcw size={13} aria-hidden="true" />
                 Réinitialiser {activeFilterCount} filtre{activeFilterCount > 1 ? "s" : ""}
               </Button>
-            ) : (
+            ) : q ? (
               <Button onClick={() => setShowAddModal(true)} variant="primary" size="sm">
                 <Plus size={14} aria-hidden="true" />
                 Ajouter un titre
               </Button>
+            ) : (
+              // Rien du tout : la bienvenue la remplit d'un geste (bienvenue-v1 FR-11).
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button href="/bienvenue" variant="primary" size="sm">
+                  Remplir ma bibliothèque
+                </Button>
+                <Button onClick={() => setShowAddModal(true)} size="sm">
+                  <Plus size={14} aria-hidden="true" />
+                  Ajouter un titre
+                </Button>
+              </div>
             )
           }
         >
-          {q ? "Il n'est peut-être pas encore dans ta bibliothèque : ajoute-le depuis TMDB." : "Élargis les filtres pour retrouver tes titres."}
+          {q
+            ? "Il n'est peut-être pas encore dans ta bibliothèque : ajoute-le depuis TMDB."
+            : activeFilterCount > 0
+              ? "Élargis les filtres pour retrouver tes titres."
+              : "Balaie des films et des séries : ce qui te tente et ce que tu as vu s'y rangent."}
         </EmptyState>
       )}
 

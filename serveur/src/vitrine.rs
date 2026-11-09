@@ -41,7 +41,7 @@ fn nombre(n: &Option<serde_json::Number>) -> Value {
 }
 
 /// `toSuggestion` : les clés et les valeurs de `ShowcaseTitle`, plus `suggestion`.
-fn suggestion(r: &tmdb::Resultat) -> Value {
+pub(crate) fn suggestion(r: &tmdb::Resultat) -> Value {
     json!({
         "id": identifiant_suggestion(r.type_, r.tmdb_id),
         "name": r.titre,
@@ -68,17 +68,17 @@ fn suggestion(r: &tmdb::Resultat) -> Value {
 }
 
 /// Une affiche et un synopsis, ou rien (comme `presentable` en v1).
-fn presentable(r: &tmdb::Resultat) -> bool {
+pub(crate) fn presentable(r: &tmdb::Resultat) -> bool {
     r.affiche.as_deref().is_some_and(|a| !a.is_empty()) && !r.synopsis.trim().is_empty()
 }
 
-fn unique(lignes: Vec<tmdb::Resultat>) -> Vec<tmdb::Resultat> {
+pub(crate) fn unique(lignes: Vec<tmdb::Resultat>) -> Vec<tmdb::Resultat> {
     let mut vus = HashSet::new();
     lignes.into_iter().filter(|r| vus.insert(cle(r.type_, r.tmdb_id))).collect()
 }
 
 /// `alternate` : [a0, b0, a1, b1, …].
-fn alterner<T>(a: Vec<T>, b: Vec<T>) -> Vec<T> {
+pub(crate) fn alterner<T>(a: Vec<T>, b: Vec<T>) -> Vec<T> {
     let mut sortie = Vec::with_capacity(a.len() + b.len());
     let (mut a, mut b) = (a.into_iter(), b.into_iter());
     loop {

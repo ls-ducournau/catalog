@@ -510,6 +510,14 @@ function PairDuels({
                 ? "Pas encore assez d'acteurs pour un duel"
                 : `Pas assez de titres vus pour ${category ? `un duel sur ${categoryLabel.plural}` : "un duel"}`
             }
+            action={
+              mode !== "people" && !category ? (
+                // Une bibliothèque qui démarre : « Déjà vu » sur les cartes de bienvenue (bienvenue-v1 FR-11).
+                <Button href="/bienvenue" variant="primary">
+                  Ajouter des titres vus
+                </Button>
+              ) : undefined
+            }
           >
             {mode === "people"
               ? `Un acteur entre en duel dès qu'il apparaît dans au moins 3 de tes titres vus. Éligibles : ${notEnough}.`

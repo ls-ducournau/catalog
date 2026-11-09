@@ -185,6 +185,20 @@ export function SwipeDeck({
     if (minuterie.current) clearTimeout(minuterie.current);
   }, []);
 
+  // Les affiches des cartes suivantes, chargées d'avance : la suivante apparaît sans attendre.
+  const aPrecharger = cartes
+    .slice(2, 6)
+    .map((c) => c.posterUrl)
+    .filter((u): u is string => Boolean(u))
+    .join("|");
+  useEffect(() => {
+    for (const url of aPrecharger.split("|")) {
+      if (!url) continue;
+      const image = new Image();
+      image.src = url;
+    }
+  }, [aPrecharger]);
+
   const presser = useCallback((k: string) => {
     setTouche(k);
     setTimeout(() => setTouche(null), 150);

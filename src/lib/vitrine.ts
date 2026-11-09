@@ -74,7 +74,7 @@ export function toSuggestion(r: TmdbSearchResult): ShowcaseTitle {
 }
 
 /** Un aperçu montre une affiche et un synopsis : les titres qui n'en ont pas n'y entrent pas. */
-const presentable = (r: TmdbSearchResult) => Boolean(r.posterPath && r.overview.trim());
+export const presentable = (r: TmdbSearchResult) => Boolean(r.posterPath && r.overview.trim());
 
 function matchesMood(r: TmdbSearchResult, mood: Exclude<Mood, "any">): boolean {
   if (mood === "think" && r.isDocumentary) return true;
@@ -82,7 +82,7 @@ function matchesMood(r: TmdbSearchResult, mood: Exclude<Mood, "any">): boolean {
 }
 
 /** Sans doublon (un titre peut être à la fois tendance et à l'affiche), dans l'ordre d'arrivée. */
-function unique(rows: TmdbSearchResult[]): TmdbSearchResult[] {
+export function unique(rows: TmdbSearchResult[]): TmdbSearchResult[] {
   const seen = new Set<string>();
   return rows.filter((r) => {
     const key = titleKey(r.type, r.tmdbId);

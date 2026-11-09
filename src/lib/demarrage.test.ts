@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { apresReponse, composerPaquet, estPrete, insererDansFile, OBJECTIF_NOTES, OBJECTIF_TITRES, prochainPalier, type CarteSwipe } from "./demarrage";
+import { ajouterAuBout, apresReponse, composerPaquet, estPrete, insererDansFile, OBJECTIF_NOTES, OBJECTIF_TITRES, prochainPalier, type CarteSwipe } from "./demarrage";
 import type { ShowcaseTitle } from "./showcase";
 import type { Vitrine } from "./vitrine";
 
@@ -58,6 +58,11 @@ describe("bienvenue", () => {
     const file = [carte(1), carte(2), carte(3), carte(4)];
     const ordre = insererDansFile(file, [carte(20), carte(2), carte(21)], new Set(["Movie:21"])).map((c) => c.tmdbId);
     expect(ordre).toEqual([1, 2, 20, 3, 4]);
+  });
+
+  it("met la page suivante au bout de la file, sans les cartes déjà là ni déjà répondues", () => {
+    const ordre = ajouterAuBout([carte(1), carte(2)], [carte(2), carte(3), carte(4)], new Set(["Movie:4"])).map((c) => c.tmdbId);
+    expect(ordre).toEqual([1, 2, 3]);
   });
 
   it("remplit la jauge : un titre par geste gardé, une note par note posée", () => {

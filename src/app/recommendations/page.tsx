@@ -537,7 +537,8 @@ export default function RecommendationsPage() {
             icon={<Sparkles size={20} aria-hidden="true" />}
             title="Encore quelques notes, et les recommandations arrivent"
             action={
-              <Button href="/library" variant="primary">
+              // Les cartes de bienvenue proposent des titres très vus, à noter d'un geste (bienvenue-v1 FR-11).
+              <Button href="/bienvenue" variant="primary">
                 Noter des titres
               </Button>
             }
@@ -679,8 +680,8 @@ export default function RecommendationsPage() {
                 Réinitialiser les filtres
               </Button>
             ) : (
-              <Button size="sm" variant="primary" href="/library?ajouter=1">
-                Ajouter des titres
+              <Button size="sm" variant="primary" href="/bienvenue">
+                Remplir ma pile
               </Button>
             )
           }
@@ -806,7 +807,7 @@ export default function RecommendationsPage() {
                 icon={<Compass size={20} aria-hidden="true" />}
                 title="Aucun titre ne peut encore servir de point de départ"
                 action={
-                  <Button href="/tri?famille=seen" variant="primary">
+                  <Button href="/bienvenue" variant="primary">
                     Noter des titres vus
                   </Button>
                 }
