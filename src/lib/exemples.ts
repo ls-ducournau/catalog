@@ -11,17 +11,17 @@ const AFFINITES = [4.4, 3.6, 4.1, 3.2, 3.9, 3.5];
 /**
  * Un profil de goûts d'exemple sur les genres les plus présents parmi `titres` (six au plus), et la pile
  * qui va avec : combien de ces titres portent chaque genre. Les puces du radar filtrent alors la liste
- * sans jamais la vider. Null sous trois genres : le radar n'aurait pas de forme.
+ * sans jamais la vider. Les genres combinés des séries (« Sci-Fi & Fantasy ») restent dehors : ils
+ * doubleraient leurs voisins. Null sous trois genres : le radar n'aurait pas de forme.
  */
-export function goutsExemple(
-  titres: ShowcaseTitle[],
-): {
+export function goutsExemple(titres: ShowcaseTitle[]): {
   profile: RecommendationProfile;
   pileGenres: Record<string, number>;
 } | null {
   const pileGenres: Record<string, number> = {};
   for (const t of titres)
-    for (const g of new Set(t.genres)) pileGenres[g] = (pileGenres[g] ?? 0) + 1;
+    for (const g of new Set(t.genres))
+      if (!g.includes("&")) pileGenres[g] = (pileGenres[g] ?? 0) + 1;
   const genres = Object.entries(pileGenres)
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, AFFINITES.length);

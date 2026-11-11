@@ -117,6 +117,15 @@ Décisions de Louis (2026-11-08) :
   démonstration a son propre état : balayer le paquet ne change rien ailleurs sur la page. Seul le paquet
   garde des choix (FR-13). « Comment ça marche » montre l'enchaînement : tu balaies, Catalog apprend tes
   goûts, tout se règle sur toi. Un seul bouton principal : « Tester ».
+- **FR-18** (l'invité qui découvre) — Un invité (compte anonyme) reste un visiteur tant qu'il a moins de 10
+  notes : l'accueil lui montre la page d'arrivée, barre épurée (FR-16), avec « Continuer » (au lieu de
+  « Tester ») et « N titres dans ta bibliothèque » ; « Garder mon compte » remplace « Se connecter ».
+  « Ouvrir Catalog » n'apparaît dans la bienvenue qu'à 10 notes. Le héros est centré, le paquet dessous ;
+  au téléphone, la carte se balaie aussi vers le haut au doigt, sans faire défiler la page.
+- **FR-19** (exemples signalés) — La page d'arrivée montre aussi, en **exemples signalés « Exemple »**, le
+  radar « Tes goûts » (sur les genres des tendances, dont les puces filtrent les tendances sur place, avec
+  « Lire le radar » à côté) et la bibliothèque en chiffres (titres des onglets, types qui filtrent sur
+  place, notes à lire). Aucune donnée d'une vraie personne ; aucune requête.
 
 ## 3. Réalisé
 
@@ -136,3 +145,8 @@ Décisions de Louis (2026-11-08) :
 - 2026-11-09 : rythme de l'indice (FR-12) : à chaque arrivée à l'écran, puis 8, 16, 32 s (`src/lib/indice.ts` + 1 test).
 - 2026-11-09 : FR-14 à FR-17 (`Progression.tsx`, `Etapes.tsx`, `HeroLayout plein`, `SansAjout`,
   `src/app/PageArrivee.tsx`) ; la visite redirige vers la bienvenue.
+- 2026-11-09 : FR-18 (`etatVisiteur` dans `src/lib/visiteur.ts`, `NavBar`, `CompteBouton`) ; « Comment ça
+  marche » en trois scènes teintées.
+- 2026-11-10 : FR-19 (`src/lib/exemples.ts` + 3 tests, `TasteRadar exemple`, `LectureRadar`,
+  `LibraryStatsPanel exemple`) ; audit des points de rupture téléphone et tablette
+  (`docs/audit/landing-breakpoints-2026-11-10.md`).

@@ -29,6 +29,17 @@ describe("goutsExemple", () => {
       expect(titres.some((t) => t.genres.includes(e.name))).toBe(true);
   });
 
+  it("laisse dehors les genres combinés des séries", () => {
+    const g = goutsExemple([
+      titre(1, ["Fantasy", "Sci-Fi & Fantasy"]),
+      titre(2, ["Drama", "Sci-Fi & Fantasy"]),
+      titre(3, ["Comedy"]),
+    ]);
+    expect(g!.profile.genres.map((e) => e.name)).not.toContain(
+      "Sci-Fi & Fantasy",
+    );
+  });
+
   it("renonce sous trois genres", () => {
     expect(
       goutsExemple([titre(1, ["Drama"]), titre(2, ["Drama", "Crime"])]),
