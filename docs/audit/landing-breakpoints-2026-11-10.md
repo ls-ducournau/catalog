@@ -44,9 +44,22 @@ Aucun défilement horizontal, aucun texte sous 12 px ; la bienvenue ne défile j
    titres des onglets (les types filtrent sur place). Toujours marqués « Exemple » : aucune note n'appartient
    à quelqu'un.
 
+## Après corrections (mêmes six formats)
+
+- Aucun défilement horizontal, aucun texte sous 12 px ; la bienvenue tient dans l'écran aux six formats.
+- Logo et liens fléchés : plus signalés sous 40 px. « Plus tard » (barre d'actions de la connexion) et la
+  ligne des messages du paquet passent à 40 px au doigt.
+- « Comment ça marche » : trois colonnes de 377 px sur ordinateur ; couché (772 × 272) sur tablette ;
+  empilé au téléphone ; plus aucune image hors de son panneau.
+- Exemples : le radar (« Exemple », six genres) filtre les tendances sur place (9 titres, puis 3 en
+  horreur) ; la bibliothèque d'exemple (12 titres) filtre par type (« 9 titres · Films ») ; aucune requête
+  à `/api/recommendations` ni `/api/items`, aucune erreur, aux trois formats.
+
 ## Reste à décider ou à faire
 
 - Le bouton « Revenir en haut » recouvre un peu le contenu en bas à droite au téléphone (mineur).
+- Les boutons des démonstrations (« Vu », « Pas vu », « … me tente ») restent à 32 px au doigt : c'est la
+  taille `sm` du système de design sur écran tactile.
 - Les petits boutons de l'application (hors page d'arrivée et bienvenue) restent à 28 px : conformes au
   minimum WCAG 2.5.8 (24 px), en deçà du confort au doigt (40 à 44 px). À traiter avec la refonte de
   l'accueil d'un compte.

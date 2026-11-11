@@ -723,7 +723,7 @@ export function SwipeDeck({
         />
       </div>
 
-      <div className={cn("flex h-9 w-full shrink-0 items-center justify-between gap-3 text-sm text-muted", plein ? "max-w-xl" : "max-w-[22rem]")}>
+      <div className={cn("flex h-9 w-full shrink-0 items-center justify-between gap-3 text-sm text-muted [@media(pointer:coarse)]:h-10", plein ? "max-w-xl" : "max-w-[22rem]")}>
         <span aria-live="polite" className="min-w-0 truncate">
           {retour ?? ""}
         </span>

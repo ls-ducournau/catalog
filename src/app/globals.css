@@ -844,6 +844,13 @@ html {
     transition: background-color var(--dur-instant) var(--ease-standard);
   }
 
+  /* Au doigt, une cible de 40 px (audit des points de rupture, 2026-11-10). */
+  @media (pointer: coarse) {
+    .action-bar-action {
+      height: 2.5rem;
+    }
+  }
+
   @media (hover: hover) {
     .action-bar-action:hover {
       background: var(--selection);
