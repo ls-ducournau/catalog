@@ -181,7 +181,7 @@ export function NoteEtape({
               : "Balaie « Déjà vu » sur les titres que tu connais : ils arrivent ici, à noter d'une touche."
           }
           action={
-            <Button size="sm" onClick={versBalaie}>
+            <Button onClick={versBalaie}>
               Balayer des titres
             </Button>
           }
@@ -231,7 +231,7 @@ export function NoteEtape({
         retour={retour}
         pied={
           <>
-            <Button size="sm" variant="ghost" onClick={passer}>
+            <Button variant="ghost" onClick={passer}>
               Passer
             </Button>
             {pied}
@@ -284,7 +284,7 @@ export function DepartageEtape({
           titre="Il faut deux titres notés."
           texte="Un duel départage deux titres que tu as vus et notés : note-en au moins deux."
           action={
-            <Button size="sm" onClick={versNote}>
+            <Button onClick={versNote}>
               Noter mes titres vus
             </Button>
           }
@@ -353,7 +353,7 @@ export function RecosEtape({
           titre="Tes recommandations arrivent avec tes notes."
           texte={`Encore ${Array.isArray(recos) ? "quelques" : recos.manque} notes sur des titres vus, et Catalog range ta pile selon tes goûts.`}
           action={
-            <Button size="sm" onClick={versNote}>
+            <Button onClick={versNote}>
               Noter mes titres vus
             </Button>
           }

@@ -185,7 +185,7 @@ export default function NavBar({
       <header className="sticky top-0 z-40 pt-3 lg:pt-4">
         <div className="frame px-4 sm:px-6">
           <nav aria-label="Navigation principale" className="nav-glass relative flex h-12 items-center gap-4 pl-3 pr-2 lg:h-19 lg:px-8">
-            <Link href="/" aria-label="Catalog, accueil" className="flex shrink-0 items-center rounded-md text-foreground">
+            <Link href="/" aria-label="Catalog, accueil" className="flex min-h-10 shrink-0 items-center rounded-md text-foreground">
               <Logo className="h-7 w-auto" title="Catalog, accueil" />
             </Link>
             {/* Les menus ne tiennent qu'à partir de 1024 px : en dessous, la barre d'onglets du bas

@@ -61,7 +61,7 @@ export type StepVisual =
  */
 function StepPicture({ visual }: { visual: StepVisual }) {
   return (
-    <div aria-hidden="true" className="relative flex h-56 items-center justify-center">
+    <div aria-hidden="true" className="relative flex h-56 items-center justify-center md:max-lg:w-72 md:max-lg:shrink-0">
       {visual.kind === "balaie" && (
         <div className="relative h-48 w-32">
           {visual.affiches.slice(1, 3).map((a, i) => (
@@ -72,7 +72,7 @@ function StepPicture({ visual }: { visual: StepVisual }) {
           {visual.affiches[0] && (
             <div className="absolute inset-0 translate-x-4 rotate-6">
               <AfficheImage affiche={visual.affiches[0]} className="w-32" />
-              <span className="swipe-stamp is-envie text-xs">Ça me tente</span>
+              <span className="swipe-stamp is-envie whitespace-nowrap text-xs">Ça me tente</span>
             </div>
           )}
         </div>
@@ -159,22 +159,25 @@ export function HowItWorks({
       <Titre id={`${id}-titre`} lead={lead}>
         {title}
       </Titre>
-      <ol className="grid items-stretch gap-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-3">
+      {/* Trois colonnes dès 1024 px ; sur tablette, chaque temps couché (l'image à gauche) ; au téléphone, empilés. */}
+      <ol className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-3">
         {steps.map((step, i) => (
           <Fragment key={step.title}>
             {i > 0 && (
-              <li aria-hidden="true" className="hidden items-center text-subtle md:flex">
+              <li aria-hidden="true" className="hidden items-center text-subtle lg:flex">
                 <ArrowRight size={18} />
               </li>
             )}
-            <li className="chaine-etape" style={teinte(step.visual)}>
+            <li className="chaine-etape md:max-lg:flex-row md:max-lg:items-center md:max-lg:gap-8" style={teinte(step.visual)}>
               {step.visual && <StepPicture visual={step.visual} />}
               <div className="flex flex-1 flex-col items-start gap-2">
                 <MonoMeta>{`Étape ${i + 1}`}</MonoMeta>
                 <h3 className="text-subheading text-foreground">{step.title}</h3>
                 <p className="text-sm text-muted">{step.text}</p>
+                <div className="mt-auto pt-3">
+                  <ArrowLink href={step.href}>{step.action}</ArrowLink>
+                </div>
               </div>
-              <ArrowLink href={step.href}>{step.action}</ArrowLink>
             </li>
           </Fragment>
         ))}

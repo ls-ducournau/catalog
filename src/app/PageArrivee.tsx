@@ -21,6 +21,7 @@ import { DuelsVisite, NotationVisite, PlaylistVisite, SortiesVisite } from "@/co
 import { ClavierLocal, VisiteProvider } from "@/components/visite/VisiteEtat";
 import { composerAccueil } from "@/lib/amorce";
 import { composerPaquet, vitrineChoisie } from "@/lib/demarrage";
+import { bibliothequeExemple, goutsExemple } from "@/lib/exemples";
 import type { ShowcaseTitle } from "@/lib/showcase";
 import { cleTitre } from "@/lib/visite";
 import type { Vitrine } from "@/lib/vitrine";
@@ -58,11 +59,14 @@ export function PageArrivee({ vitrine: brute, titres = 0 }: { vitrine: Vitrine; 
   // Les sections de l'accueil d'un compte, en version pour tous.
   const { moods, picks, lists } = composerAccueil(null, vitrine, null);
   const tous = [...new Map([...vitrine.rating, ...vitrine.picks, ...moods.flatMap((t) => t.titles), ...lists.flatMap((t) => t.titles)].map((t) => [cleTitre(t), t])).values()];
+  // Le radar de « Tes goûts » et la bibliothèque en chiffres, en exemples signalés (demande de Louis, 2026-11-10).
+  const gouts = goutsExemple(picks);
+  const bibliotheque = bibliothequeExemple(lists.flatMap((t) => t.titles));
   const cinema = vitrine.lists.find((t) => t.value === "cinema")?.titles ?? [];
   // Un invité qui a commencé : « Continuer » le ramène à son parcours, là où il l'a laissé (FR-18).
   const action = titres > 0 ? "Continuer" : "Tester";
   const tester = (
-    <Button href="/bienvenue" variant="primary" size="lg">
+    <Button href="/bienvenue" variant="primary" size="lg" className="flex-1 sm:flex-none">
       {action}
     </Button>
   );
@@ -78,9 +82,10 @@ export function PageArrivee({ vitrine: brute, titres = 0 }: { vitrine: Vitrine; 
             <p className="max-w-md text-balance text-base text-muted">
               À droite si ça te tente, à gauche si ce n&apos;est pas pour toi : ta bibliothèque se remplit, et Catalog te recommande ce qui va te plaire.
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-2">
+            {/* Au téléphone, les deux boutons se partagent la ligne à parts égales. */}
+            <div className="flex w-full max-w-sm items-center justify-center gap-2 sm:w-auto sm:max-w-none">
               {tester}
-              <Button href="#comment" size="lg">
+              <Button href="#comment" size="lg" className="flex-1 sm:flex-none">
                 Comment ça marche
               </Button>
             </div>
@@ -165,9 +170,9 @@ export function PageArrivee({ vitrine: brute, titres = 0 }: { vitrine: Vitrine; 
             <FeatureWall
               id="recommandations"
               title="À la une."
-              lead="Ici, les titres dont on parle cette semaine. Avec ta bibliothèque, ce mur devient ta pile : tes titres à voir, rangés dans l'ordre de tes goûts, chacun avec la raison de sa place."
+              lead="Ici, les titres dont on parle cette semaine, et un radar de goûts d'exemple. Avec ta bibliothèque, ce mur devient ta pile : tes titres à voir, rangés dans l'ordre de tes goûts, chacun avec la raison de sa place."
             >
-              <RecommendationsWall picks={picks} profile={null} pileGenres={{}} visitor heading="Tendances de la semaine" />
+              <RecommendationsWall picks={picks} profile={gouts?.profile ?? null} pileGenres={gouts?.pileGenres ?? {}} visitor heading="Tendances de la semaine" />
             </FeatureWall>
           )}
 
@@ -196,9 +201,11 @@ export function PageArrivee({ vitrine: brute, titres = 0 }: { vitrine: Vitrine; 
             <TitleListSection
               id="bibliotheque"
               title="Ta bibliothèque"
-              lead="Tout ce que tu as vu et tout ce qui t'attend, films, séries et documentaires, au même endroit. Ici, ce qui sort au cinéma et les mieux notés ; chez toi, ce que tu as balayé, à filtrer et à noter sur place."
+              lead="Tout ce que tu as vu et tout ce qui t'attend, films, séries et documentaires, au même endroit. Ici, ce qui sort au cinéma et les mieux notés, avec une bibliothèque d'exemple en chiffres ; chez toi, ce que tu as balayé, à filtrer et à noter sur place."
               tabs={lists}
+              stats={bibliotheque}
               library={false}
+              exemple
             />
           )}
 

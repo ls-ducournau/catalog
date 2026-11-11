@@ -14,7 +14,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { gsap } from "gsap";
-import { ArrowRight, Plus, Search, Undo2, X } from "lucide-react";
+import { ArrowRight, Check, Plus, Search, Undo2, X } from "lucide-react";
 import type { Transition } from "motion/react";
 import Link from "next/link";
 import { CompatibilityChip } from "@/components/CompatibilityChip";
@@ -151,19 +151,23 @@ function PickDetail({ title, onDismiss, suggestions }: { title: ShowcaseTitle; o
 /**
  * Fenêtre de commande (la palette de Raycast) sur ta pile classée : un champ qui filtre, la liste
  * (↑ ↓), le détail du titre choisi, ↵ pour sa fiche ; « Ne plus me proposer » l'écarte (annulable).
- * Un genre choisi dans « Tes goûts » recharge la liste sur ce genre.
+ * Un genre choisi dans « Tes goûts » recharge la liste sur ce genre ; pour un visiteur (`local`), il filtre
+ * les tendances déjà là, sans requête.
  */
 function PileWindow({
   picks,
   genre,
   onClearGenre,
   heading,
+  local = false,
 }: {
   picks: ShowcaseTitle[];
   genre: string | null;
   onClearGenre: () => void;
   /** Visiteur : ce ne sont pas « ta pile » mais les tendances. */
   heading?: string;
+  /** Visiteur : le genre choisi filtre `picks` sur place (pas de pile classée à demander). */
+  local?: boolean;
 }) {
   const router = useRouter();
   const suggestions = useSuggestions();
@@ -178,7 +182,7 @@ function PileWindow({
 
   // Un genre choisi : la pile classée, sur ce genre (lecture seule).
   useEffect(() => {
-    if (!genre) return;
+    if (!genre || local) return;
     let alive = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
@@ -192,15 +196,21 @@ function PileWindow({
     return () => {
       alive = false;
     };
-  }, [genre]);
+  }, [genre, local]);
 
   const rows = useMemo(() => {
-    const source = genre ? (byGenre?.genre === genre ? byGenre.titles : []) : picks;
+    const source = genre
+      ? local
+        ? picks.filter((t) => t.genres.includes(genre))
+        : byGenre?.genre === genre
+          ? byGenre.titles
+          : []
+      : picks;
     const q = fold(query.trim());
     return source
       .filter((t) => !dismissed.some((d) => d.id === t.id))
       .filter((t) => !q || fold(t.name).includes(q) || t.genres.some((g) => fold(genreLabel(g)).includes(q)));
-  }, [genre, byGenre, picks, dismissed, query]);
+  }, [genre, local, byGenre, picks, dismissed, query]);
 
   // La sélection reste dans la liste quand elle change.
   const selectedIndex = Math.min(index, Math.max(0, rows.length - 1));
@@ -303,7 +313,11 @@ function PileWindow({
           </div>
           <div className="h-px bg-contrast-subtle" />
           <p className="flex items-center justify-between px-4 pb-1 pt-3 text-2xs font-medium text-muted">
-            <span>{genre ? `Ta pile, en ${genreLabel(genre).toLowerCase()}` : (heading ?? "Ta pile, dans l'ordre")}</span>
+            <span>
+              {genre
+                ? `${local ? (heading ?? "Tendances") : "Ta pile"}, en ${genreLabel(genre).toLowerCase()}`
+                : (heading ?? "Ta pile, dans l'ordre")}
+            </span>
             <span aria-hidden="true" className="hidden items-center gap-1 sm:flex">
               <Kbd>↑</Kbd>
               <Kbd>↓</Kbd>
@@ -681,17 +695,20 @@ function RadarFocus({ index, value }: { index: number; value: number }) {
  * Tes goûts en radar Bklit : en jaune (la couleur des notes), les genres que tu notes le mieux ; en
  * gris, ce que ta pile en contient. Là où le gris déborde du jaune, ta pile attend des genres que
  * tu aimes moins. Les genres, en puces, filtrent la fenêtre ; le genre choisi s'allume sur le radar.
+ * `exemple` (page d'arrivée) : des goûts d'illustration, signalés « Exemple », sans lien vers un profil.
  */
 function TasteRadar({
   profile,
   pileGenres,
   genre,
   onGenre,
+  exemple = false,
 }: {
   profile: RecommendationProfile;
   pileGenres: Record<string, number>;
   genre: string | null;
   onGenre: (next: string | null) => void;
+  exemple?: boolean;
 }) {
   const reduced = useReducedMotion();
   const top = profile.genres.slice(0, 6);
@@ -715,12 +732,12 @@ function TasteRadar({
         <h3 id="gouts-titre" className="text-lg text-foreground">
           Tes goûts
         </h3>
-        <MonoMeta>{profile.ratedCount.toLocaleString("fr-FR")} notes</MonoMeta>
+        <MonoMeta>{exemple ? "Exemple" : `${profile.ratedCount.toLocaleString("fr-FR")} notes`}</MonoMeta>
       </div>
       <div
         className="mx-auto w-full max-w-72"
         role="img"
-        aria-label={`Genres les mieux notés, et leur part dans ta pile : ${top
+        aria-label={`${exemple ? "Exemple. " : ""}Genres les mieux notés, et leur part dans ta pile : ${top
           .map((g) => `${genreLabel(g.name)}, ${fr1(g.affinity)} étoiles, ${pileGenres[g.name] ?? 0} titres à voir`)
           .join(" ; ")}`}
       >
@@ -742,7 +759,7 @@ function TasteRadar({
           Ta pile
         </span>
       </div>
-      <div role="group" aria-label="Filtrer ta pile par genre" className="flex flex-wrap justify-center gap-2">
+      <div role="group" aria-label={exemple ? "Filtrer les tendances par genre" : "Filtrer ta pile par genre"} className="flex flex-wrap justify-center gap-2">
         {top.map((g) => (
           <Chip key={g.name} pressed={genre === g.name} onClick={() => onGenre(genre === g.name ? null : g.name)}>
             {radarLabel(genreLabel(g.name))}
@@ -753,8 +770,43 @@ function TasteRadar({
           </Chip>
         ))}
       </div>
-      <Link href="/recommendations" className="arrow-link mt-auto self-center text-sm">
-        Tout ton profil de goûts
+      {!exemple && (
+        <Link href="/recommendations" className="arrow-link mt-auto self-center text-sm">
+          Tout ton profil de goûts
+          <ArrowRight size={16} aria-hidden="true" />
+        </Link>
+      )}
+    </article>
+  );
+}
+
+/** Lire le radar (page d'arrivée) : à côté de l'exemple, ce que dit chaque forme, et comment avoir le sien. */
+const LECTURE_RADAR = [
+  "En jaune, tes notes : plus un genre s'éloigne du centre, plus tu l'aimes.",
+  "En gris, ta pile : la place de chaque genre dans ce qui t'attend.",
+  "Là où le gris dépasse le jaune, ta pile garde des genres que tu notes moins bien.",
+  "Touche un genre : la liste du dessus ne garde que lui.",
+];
+
+function LectureRadar() {
+  return (
+    <article aria-labelledby="lecture-radar-titre" className="feature-card taste-radar">
+      <h3 id="lecture-radar-titre" className="text-lg text-foreground">
+        Lire le radar
+      </h3>
+      <ul className="flex flex-col gap-3 text-sm text-muted">
+        {LECTURE_RADAR.map((point) => (
+          <li key={point} className="flex items-start gap-2">
+            <Check size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-subtle" />
+            <span>{point}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="border-l border-divider pl-3 text-sm text-foreground">
+        Le tien se dessine avec tes notes : ce que tu balaies « Déjà vu », tu le notes, et le radar suit.
+      </p>
+      <Link href="/bienvenue" className="arrow-link mt-auto self-start text-sm">
+        Commencer le tien
         <ArrowRight size={16} aria-hidden="true" />
       </Link>
     </article>
@@ -790,14 +842,23 @@ export function RecommendationsWall({
           genre={genre}
           onClearGenre={() => setGenre(null)}
           heading={heading ?? (visitor ? "Tendances de la semaine" : undefined)}
+          local={visitor}
         />
       </div>
       {!visitor && <DiscoverDeck />}
-      {/* Un visiteur note dans la Notation, juste au-dessus : pas de carte « Tes goûts » en double. */}
-      {visitor ? null : profile && profile.genres.length >= 3 ? (
+      {/* Un visiteur voit un radar d'exemple (sur les genres des tendances) et comment le lire. */}
+      {visitor ? (
+        profile &&
+        profile.genres.length >= 3 && (
+          <>
+            <TasteRadar profile={profile} pileGenres={pileGenres} genre={genre} onGenre={setGenre} exemple />
+            <LectureRadar />
+          </>
+        )
+      ) : profile && profile.genres.length >= 3 ? (
         <TasteRadar profile={profile} pileGenres={pileGenres} genre={genre} onGenre={setGenre} />
       ) : (
-        <article className={cn("feature-card taste-radar", visitor && "md:col-span-2")}>
+        <article className="feature-card taste-radar">
           <h3 className="text-lg text-foreground">Tes goûts</h3>
           <p className="text-base text-muted">
             <span className="text-foreground">Note quelques titres</span> et Catalog apprendra ce que tu aimes.

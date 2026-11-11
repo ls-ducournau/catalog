@@ -218,7 +218,7 @@ function Verso({
       )}
       <div className="mt-auto flex flex-wrap items-center gap-2 pt-2">
         <TrailerButton trailer={trailer} title={carte.name} />
-        <Button size="sm" variant="ghost" onClick={onRetour}>
+        <Button variant="ghost" onClick={onRetour}>
           Retour à l&apos;affiche
         </Button>
       </div>
@@ -730,7 +730,7 @@ export function SwipeDeck({
         <div className="flex shrink-0 items-center gap-2">
           {peutAnnuler && onAnnuler && (
             <Button
-              size="sm"
+              size="md"
               variant="ghost"
               onClick={onAnnuler}
               aria-keyshortcuts="Control+Z"

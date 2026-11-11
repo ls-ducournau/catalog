@@ -382,7 +382,7 @@ export function Bienvenue({
   // L'étape suivante, en bout de ligne : pleine quand l'objectif de l'étape est atteint.
   const pied = suivante ? (
     <Button
-      size="sm"
+      size="md"
       variant={ici.n >= ici.max ? "primary" : "secondary"}
       onClick={() => aller(suivante.id)}
     >
@@ -392,12 +392,12 @@ export function Bienvenue({
   ) : notes >= OBJECTIF_NOTES ? (
     <>
       {anonyme && (
-        <Button size="sm" href="/connexion?retour=/" variant="ghost">
+        <Button href="/connexion?retour=/" variant="ghost">
           Garder mon compte
         </Button>
       )}
       <Button
-        size="sm"
+        size="md"
         variant="primary"
         onClick={() => {
           // Un vrai rechargement : la découverte est finie, la barre du haut devient celle de l'application.
@@ -424,7 +424,7 @@ export function Bienvenue({
         <p className="text-sm text-muted">
           Note ce que tu as vu : tes recommandations partent de là.
         </p>
-        <Button size="sm" variant="primary" onClick={() => aller("note")}>
+        <Button variant="primary" onClick={() => aller("note")}>
           Noter mes titres vus
         </Button>
       </>
@@ -444,7 +444,7 @@ export function Bienvenue({
           <h1 className="mt-1 text-balance text-subheading text-foreground sm:text-heading-sm">
             {texte.titre}
           </h1>
-          <p className="line-clamp-2 max-w-xl text-balance text-sm text-muted">
+          <p className="line-clamp-2 max-w-xl [@media(max-height:44rem)]:hidden text-balance text-sm text-muted">
             {texte.pourquoi}
           </p>
         </>

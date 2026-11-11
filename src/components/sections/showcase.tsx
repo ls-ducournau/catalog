@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { gsap } from "gsap";
@@ -622,23 +622,40 @@ function LibraryStatsPanel({
   rating,
   onCategory,
   onRating,
+  exemple = false,
 }: {
   stats: LibraryStats;
   category: Category | null;
   rating: number | null;
   onCategory: (next: Category | null) => void;
   onRating: (next: number | null) => void;
+  /** Page d'arrivée : une bibliothèque d'exemple, signalée ; ses notes se lisent sans filtrer. */
+  exemple?: boolean;
 }) {
   const fr = (n: number) => n.toLocaleString("fr-FR");
   const watchedShare = stats.total > 0 ? (stats.watched / stats.total) * 100 : 0;
   const most = Math.max(...stats.ratings, 1);
   // La plus petite barre non vide reste visible (8 %) ; la plus haute remplit la piste.
   const barHeight = gsap.utils.mapRange(0, most, 8, 100);
+  const barre = (count: number, n: number) => (
+    <>
+      <MonoMeta aria-hidden="true">{fr(count)}</MonoMeta>
+      <span aria-hidden="true" className="rating-bar-track">
+        <span className="rating-bar-fill" data-zero={n === 0 || undefined} style={{ height: `${count > 0 ? barHeight(count) : 0}%` }} />
+      </span>
+      <span aria-hidden="true" className="flex h-4 items-center text-xs">
+        {n === 0 ? "💩" : <StarCount value={n} size={12} />}
+      </span>
+    </>
+  );
   return (
     <aside aria-label="Ta collection en chiffres" className="feature-stage library-stats lg:sticky lg:top-28 lg:self-start">
       <div className="flex flex-col gap-1">
         {/* Espace insécable ordinaire : Bricolage n'a pas l'espace fine de « 1 068 ». */}
-        <p className="font-heading text-heading font-semibold text-foreground">{fr(stats.total).replace(/ /g, " ")}</p>
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="font-heading text-heading font-semibold text-foreground">{fr(stats.total).replace(/ /g, " ")}</p>
+          {exemple && <MonoMeta>Exemple</MonoMeta>}
+        </div>
         <p className="text-sm text-muted">titres dans ta bibliothèque</p>
       </div>
       <div className="flex flex-col gap-2">
@@ -667,30 +684,39 @@ function LibraryStatsPanel({
       </div>
       <div className="flex flex-col gap-2">
         <p className="text-xs font-medium text-muted">Tes notes</p>
-        <div role="group" aria-label="Filtrer par note" className="rating-bars">
-          {stats.ratings.map((count, n) => (
-            <button
-              key={n}
-              type="button"
-              aria-pressed={rating === n}
-              disabled={count === 0}
-              onClick={() => onRating(rating === n ? null : n)}
-              aria-label={`${ratingName(n)} : ${fr(count)} titre${count > 1 ? "s" : ""}`}
-              className="rating-bar"
-            >
-              <MonoMeta aria-hidden="true">{fr(count)}</MonoMeta>
-              <span aria-hidden="true" className="rating-bar-track">
-                <span className="rating-bar-fill" data-zero={n === 0 || undefined} style={{ height: `${count > 0 ? barHeight(count) : 0}%` }} />
-              </span>
-              <span aria-hidden="true" className="flex h-4 items-center text-xs">
-                {n === 0 ? "💩" : <StarCount value={n} size={12} />}
-              </span>
-            </button>
-          ))}
-        </div>
+        {exemple ? (
+          <div
+            role="img"
+            aria-label={`Exemple de notes : ${stats.ratings.map((count, n) => `${ratingName(n)}, ${fr(count)}`).join(" ; ")}`}
+            className="rating-bars"
+          >
+            {stats.ratings.map((count, n) => (
+              <div key={n} className="rating-bar">
+                {barre(count, n)}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div role="group" aria-label="Filtrer par note" className="rating-bars">
+            {stats.ratings.map((count, n) => (
+              <button
+                key={n}
+                type="button"
+                aria-pressed={rating === n}
+                disabled={count === 0}
+                onClick={() => onRating(rating === n ? null : n)}
+                aria-label={`${ratingName(n)} : ${fr(count)} titre${count > 1 ? "s" : ""}`}
+                className="rating-bar"
+              >
+                {barre(count, n)}
+              </button>
+            ))}
+          </div>
+        )}
+        {exemple && <p className="text-xs text-muted">Chez toi, chaque type et chaque note filtre la liste.</p>}
       </div>
-      <Link href="/library" className="arrow-link mt-auto text-sm">
-        Ouvrir la bibliothèque
+      <Link href={exemple ? "/bienvenue" : "/library"} className="arrow-link mt-auto text-sm">
+        {exemple ? "Commencer la tienne" : "Ouvrir la bibliothèque"}
         <ArrowRight size={16} aria-hidden="true" />
       </Link>
     </aside>
@@ -729,6 +755,7 @@ export function TitleListSection({
   tabs,
   stats,
   library = true,
+  exemple = false,
 }: {
   id: string;
   title: string;
@@ -738,6 +765,11 @@ export function TitleListSection({
   stats?: LibraryStats;
   /** Faux pour un visiteur : pas de bibliothèque où chercher, seulement des suggestions. */
   library?: boolean;
+  /**
+   * Page d'arrivée : `stats` décrit une bibliothèque d'exemple faite des titres des onglets ; un type
+   * choisi les filtre sur place (sans requête), tous onglets confondus.
+   */
+  exemple?: boolean;
 }) {
   const router = useRouter();
   const suggestions = useSuggestions();
@@ -757,7 +789,7 @@ export function TitleListSection({
   const searchMode = q.length >= 2;
   const filtered = category !== null || rating !== null;
   // Ce que la grille montre : la liste reçue du serveur, ou une requête (recherche, filtres).
-  const fetchKey = searchMode || filtered ? JSON.stringify({ q: searchMode ? q : null, tab: searchMode ? null : active, category, rating }) : null;
+  const fetchKey = !exemple && (searchMode || filtered) ? JSON.stringify({ q: searchMode ? q : null, tab: searchMode ? null : active, category, rating }) : null;
 
   // Recherche et filtres, dans ta bibliothèque (lecture seule), 250 ms après le dernier changement.
   useEffect(() => {
@@ -788,10 +820,14 @@ export function TitleListSection({
     };
   }, [fetchKey, category, rating]);
 
+  // La bibliothèque d'exemple : les titres des onglets, sans doublon ; un type choisi les filtre ici.
+  const tousExemple = useMemo(() => (exemple ? [...new Map(tabs.flatMap((tab) => tab.titles).map((t) => [t.id, t])).values()] : []), [exemple, tabs]);
+  const filtreExemple = exemple && category !== null ? tousExemple.filter((t) => t.category === category) : null;
+
   if (!current) return null;
   const headingId = `${id}-titre`;
   const ready = !fetchKey || fetched?.key === fetchKey;
-  const base = fetchKey ? (fetched?.key === fetchKey ? fetched.titles : []) : current.titles;
+  const base = filtreExemple ? filtreExemple.slice(0, PER_LIST) : fetchKey ? (fetched?.key === fetchKey ? fetched.titles : []) : current.titles;
   const shown = base.map((t) => {
     const patch = patches.get(t.id);
     return patch ? { ...t, ...patch } : t;
@@ -850,7 +886,7 @@ export function TitleListSection({
   const filterLabel = [category && CATEGORY_PLURAL[category], rating !== null && (rating === 0 ? "💩" : `${rating} étoile${rating > 1 ? "s" : ""}`)]
     .filter(Boolean)
     .join(", ");
-  const total = fetched?.key === fetchKey ? fetched.total : null;
+  const total = filtreExemple ? filtreExemple.length : fetched?.key === fetchKey ? fetched.total : null;
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-8">
@@ -858,7 +894,14 @@ export function TitleListSection({
 
       <div className={cn("grid gap-6 lg:gap-8", stats && "lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]")}>
         {stats && (
-          <LibraryStatsPanel stats={stats} category={category} rating={rating} onCategory={setCategory} onRating={chooseRating} />
+          <LibraryStatsPanel
+            stats={stats}
+            category={category}
+            rating={rating}
+            onCategory={setCategory}
+            onRating={chooseRating}
+            exemple={exemple}
+          />
         )}
 
         <div className="flex min-w-0 flex-col gap-5">
@@ -870,6 +913,8 @@ export function TitleListSection({
               onChange={(next) => {
                 setActive(next);
                 setQuery("");
+                // Dans l'exemple, le type filtre tous les onglets : changer d'onglet le retire.
+                if (exemple) setCategory(null);
               }}
             />
             {library && (
@@ -887,7 +932,7 @@ export function TitleListSection({
             )}
           </div>
 
-          {fetchKey && (
+          {(fetchKey || filtreExemple) && (
             <div className="flex min-h-8 flex-wrap items-center justify-between gap-x-4 gap-y-2">
               <p aria-live="polite" className="text-sm text-muted">
                 {!ready
