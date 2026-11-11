@@ -58,8 +58,7 @@ Aucun défilement horizontal, aucun texte sous 12 px ; la bienvenue ne défile j
 ## Reste à décider ou à faire
 
 - Le bouton « Revenir en haut » recouvre un peu le contenu en bas à droite au téléphone (mineur).
-- Les boutons des démonstrations (« Vu », « Pas vu », « … me tente ») restent à 32 px au doigt : c'est la
-  taille `sm` du système de design sur écran tactile.
-- Les petits boutons de l'application (hors page d'arrivée et bienvenue) restent à 28 px : conformes au
-  minimum WCAG 2.5.8 (24 px), en deçà du confort au doigt (40 à 44 px). À traiter avec la refonte de
-  l'accueil d'un compte.
+- Les petits boutons (`sm`) restent à 32 px au doigt, sur la page d'arrivée (démonstrations : « Vu »,
+  « Pas vu », « … me tente ») comme dans l'application : c'est la règle du système de design sur écran
+  tactile, au-dessus du minimum WCAG 2.5.8 (24 px), en deçà du confort (40 à 44 px). À trancher avec la
+  refonte de l'accueil d'un compte.
